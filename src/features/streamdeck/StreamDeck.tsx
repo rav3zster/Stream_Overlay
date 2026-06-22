@@ -1,64 +1,33 @@
-import React, { useEffect, useState } from 'react';
-import { useStreamStore, type SceneType, type Alert } from '../../store/useStreamStore';
-import { Play, Pause, SkipForward, Mic, Volume2, Users, ShieldAlert, Sparkles, Layers, Palette, RefreshCw } from 'lucide-react';
+import React, { useState } from 'react';
+import { useOverlayStore, type SceneType, type AlertType } from '../../store/overlayStore';
+import { Play, Pause, SkipForward, Mic, Volume2, Users, ShieldAlert, Sparkles, Layers } from 'lucide-react';
 
 export const StreamDeck: React.FC = () => {
   const {
-    activeScene,
-    activeTheme,
-    streamerName,
-    currentSong,
+    currentScene: activeScene,
+    theme: activeTheme,
+    settings,
+    music: currentSong,
     setScene,
     triggerAlert,
     setTheme,
-    loadStateFromLocal
-  } = useStreamStore();
+  } = useOverlayStore();
+
+  const streamerName = settings.streamerName;
 
   const [micMuted, setMicMuted] = useState(false);
   const [avatarMuted, setAvatarMuted] = useState(false);
   const [slowMode, setSlowMode] = useState(false);
 
-  // Sync state with localstorage updates
-  useEffect(() => {
-    const handleStorageEvent = (e: StorageEvent) => {
-      if (e.key === 'vibe_studio_realtime_sync' && e.newValue) {
-        try {
-          const parsed = JSON.parse(e.newValue);
-          delete parsed.timestamp;
-          loadStateFromLocal(parsed);
-        } catch (err) {
-          console.warn(err);
-        }
-      }
-    };
-    window.addEventListener('storage', handleStorageEvent);
-    return () => window.removeEventListener('storage', handleStorageEvent);
-  }, [loadStateFromLocal]);
-
   // Alert simulation helper
-  const handleAlertTrigger = (type: Alert['type']) => {
+  const handleAlertTrigger = (type: AlertType) => {
     const names = ['KiraVT', 'VibeSeeker', 'NekoGamer', 'Yukari_Chan', 'DaveRetro'];
     const selectedName = names[Math.floor(Math.random() * names.length)];
-    
     let message = '';
     let amount = '';
-    if (type === 'donation') {
-      message = 'Support the stream! Keep it cozy!';
-      amount = `$${(Math.random() * 90 + 10).toFixed(2)}`;
-    } else if (type === 'subscribe') {
-      message = 'Tier 1 sub hype!';
-    }
-    
+    if (type === 'donation') { message = 'Support the stream! Keep it cozy!'; amount = `$${(Math.random() * 90 + 10).toFixed(2)}`; }
+    else if (type === 'subscribe') message = 'Tier 1 sub hype!';
     triggerAlert(type, selectedName, message, amount);
-
-    // Broadcast trigger
-    localStorage.setItem('vibe_overlay_broadcast_alert', JSON.stringify({
-      type,
-      user: selectedName,
-      message,
-      amount,
-      timestamp: Date.now()
-    }));
   };
 
   const scenesList: Array<{ type: SceneType; label: string; icon: string }> = [

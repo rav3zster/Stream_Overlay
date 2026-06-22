@@ -235,3 +235,122 @@ body {
   background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
   background-size: 20px 20px;
 }
+
+/* ==========================================================================
+   OVERLAY GLOBAL SHADOW UTILITY
+   ========================================================================== */
+.shadow-glow {
+  box-shadow: 0 0 16px var(--accent-primary-shadow, rgba(168,85,247,0.35));
+}
+.shadow-cyber {
+  box-shadow: 0 0 20px var(--accent-primary-shadow, rgba(168,85,247,0.4)), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+
+/* Used in scene cards / alert popup */
+:root {
+  --glow-shadow: 0 0 24px rgba(168,85,247,0.25), 0 8px 32px rgba(0,0,0,0.6);
+}
+
+/* ==========================================================================
+   KEYFRAME ANIMATIONS
+   ========================================================================== */
+
+/* Scanline CRT effect */
+@keyframes scanlineScroll {
+  0%   { background-position: 0 0; }
+  100% { background-position: 0 100%; }
+}
+.scanlines {
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  pointer-events: none;
+}
+
+/* Equalizer bars */
+@keyframes equalizerPulse {
+  0%   { transform: scaleY(0.2); }
+  100% { transform: scaleY(1); }
+}
+
+/* Eye blink */
+@keyframes blink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  95%            { transform: scaleY(0.05); }
+}
+
+/* Avatar slow float */
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+
+/* Card/scene float */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+
+/* Alert popup entrance */
+@keyframes alertPop {
+  0%   { transform: translateX(-50%) scale(0.7) translateY(-20px); opacity: 0; }
+  60%  { transform: translateX(-50%) scale(1.04) translateY(2px);  opacity: 1; }
+  100% { transform: translateX(-50%) scale(1.0)  translateY(0px);  opacity: 1; }
+}
+
+/* Ticker scroll */
+@keyframes scrollTicker {
+  0%   { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
+}
+
+/* Chat message fade in */
+@keyframes chatFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Pulsing glow dot */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 4px currentColor; opacity: 1; }
+  50%       { box-shadow: 0 0 12px currentColor; opacity: 0.7; }
+}
+
+/* Ping expand */
+@keyframes ping {
+  75%, 100% { transform: scale(2); opacity: 0; }
+}
+
+/* Pulse */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
+}
+
+/* CSS spin (album art) */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Bounce for ZZZ */
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
+}
+
+/* Glow theme text helper */
+.glow-text-theme {
+  text-shadow: var(--glow-text, 0 0 5px rgba(255,255,255,0.2));
+}
+
+/* Vibrating live indicator */
+@keyframes vibePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(1.08); }
+}
+
