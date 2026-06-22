@@ -1,0 +1,238 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   GLOBAL BASE
+   ========================================================================== */
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #07050F;
+  color: #F8F5FF;
+  overflow: hidden;
+  height: 100vh;
+  user-select: none;
+}
+
+/* ==========================================================================
+   THEME DECLARATIONS
+   ========================================================================== */
+
+/* 1. Cyber Synth */
+.theme-cyber-synth {
+  --bg-color: #05020a;
+  --panel-bg: rgba(14, 8, 26, 0.8);
+  --panel-border: #A855F7;
+  --accent-primary: #FF4DFF;
+  --accent-secondary: #5CFFE2;
+  --text-primary: #F8F5FF;
+  --text-secondary: #C084FC;
+  --font-display: 'Orbitron', sans-serif;
+  --font-body: 'Share Tech Mono', monospace;
+  --accent-primary-shadow: rgba(255, 77, 255, 0.6);
+  --accent-secondary-shadow: rgba(92, 255, 226, 0.4);
+  --glow-text: 0 0 10px #FF4DFF;
+}
+
+/* 2. Galaxy Violet */
+.theme-galaxy-violet {
+  --bg-color: #020005;
+  --panel-bg: rgba(12, 4, 20, 0.7);
+  --panel-border: rgba(192, 132, 252, 0.4);
+  --accent-primary: #A855F7;
+  --accent-secondary: #FF4DFF;
+  --text-primary: #FAF5FF;
+  --text-secondary: #D8B4FE;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --accent-primary-shadow: rgba(168, 85, 247, 0.5);
+  --accent-secondary-shadow: rgba(255, 77, 255, 0.35);
+  --glow-text: 0 0 12px #A855F7;
+}
+
+/* 3. Anime Bedroom */
+.theme-anime-bedroom {
+  --bg-color: #1a0f2b;
+  --panel-bg: rgba(43, 26, 66, 0.85);
+  --panel-border: #FBCFE8;
+  --accent-primary: #FBCFE8;
+  --accent-secondary: #C084FC;
+  --text-primary: #FFF1F2;
+  --text-secondary: #FDA4AF;
+  --font-display: 'Quicksand', sans-serif;
+  --font-body: 'Outfit', sans-serif;
+  --accent-primary-shadow: rgba(251, 207, 232, 0.5);
+  --accent-secondary-shadow: rgba(192, 132, 252, 0.3);
+  --glow-text: 0 0 8px #FBCFE8;
+}
+
+/* 4. Lo-fi Cafe */
+.theme-lo-fi-cafe {
+  --bg-color: #120c18;
+  --panel-bg: rgba(26, 18, 33, 0.8);
+  --panel-border: #b085f5;
+  --accent-primary: #d1c4e9;
+  --accent-secondary: #ffb74d;
+  --text-primary: #efebe9;
+  --text-secondary: #bcaaa4;
+  --font-display: 'Comfortaa', cursive;
+  --font-body: 'Outfit', sans-serif;
+  --accent-primary-shadow: rgba(209, 196, 233, 0.4);
+  --accent-secondary-shadow: rgba(255, 183, 77, 0.3);
+  --glow-text: 0 0 5px #d1c4e9;
+}
+
+/* 5. Sakura Night */
+.theme-sakura-night {
+  --bg-color: #140b1b;
+  --panel-bg: rgba(32, 16, 42, 0.75);
+  --panel-border: #FF80BF;
+  --accent-primary: #FF80BF;
+  --accent-secondary: #FBCFE8;
+  --text-primary: #FFF0F6;
+  --text-secondary: #F783AC;
+  --font-display: 'Outfit', sans-serif;
+  --font-body: 'Noto Sans JP', sans-serif;
+  --accent-primary-shadow: rgba(255, 128, 191, 0.5);
+  --accent-secondary-shadow: rgba(251, 207, 232, 0.3);
+  --glow-text: 0 0 10px #FF80BF;
+}
+
+/* 6. Neon Tokyo */
+.theme-neon-tokyo {
+  --bg-color: #030206;
+  --panel-bg: rgba(10, 6, 22, 0.85);
+  --panel-border: #FF0055;
+  --accent-primary: #FF0055;
+  --accent-secondary: #00FFCC;
+  --text-primary: #FFFFFF;
+  --text-secondary: #FF4DA6;
+  --font-display: 'Orbitron', sans-serif;
+  --font-body: 'Share Tech Mono', monospace;
+  --accent-primary-shadow: rgba(255, 0, 85, 0.6);
+  --accent-secondary-shadow: rgba(0, 255, 204, 0.4);
+  --glow-text: 0 0 12px #FF0055;
+}
+
+/* 7. Dark Amethyst */
+.theme-dark-amethyst {
+  --bg-color: #090312;
+  --panel-bg: rgba(18, 6, 30, 0.8);
+  --panel-border: #8b5cf6;
+  --accent-primary: #8b5cf6;
+  --accent-secondary: #c084fc;
+  --text-primary: #f5f3ff;
+  --text-secondary: #a78bfa;
+  --font-display: 'Cinzel Decorative', serif;
+  --font-body: 'Lora', serif;
+  --accent-primary-shadow: rgba(139, 92, 246, 0.5);
+  --accent-secondary-shadow: rgba(192, 132, 252, 0.3);
+  --glow-text: 0 0 8px #8b5cf6;
+}
+
+/* 8. Cosmic Nebula */
+.theme-cosmic-nebula {
+  --bg-color: #020008;
+  --panel-bg: rgba(8, 4, 20, 0.7);
+  --panel-border: #6366F1;
+  --accent-primary: #6366F1;
+  --accent-secondary: #38BDF8;
+  --text-primary: #F0F9FF;
+  --text-secondary: #7DD3FC;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --accent-primary-shadow: rgba(99, 102, 241, 0.5);
+  --accent-secondary-shadow: rgba(56, 189, 248, 0.35);
+  --glow-text: 0 0 10px #6366F1;
+}
+
+/* 9. Vaporwave */
+.theme-vaporwave {
+  --bg-color: #120e2e;
+  --panel-bg: rgba(30, 21, 61, 0.7);
+  --panel-border: #FF77FF;
+  --accent-primary: #00F5FF;
+  --accent-secondary: #FF77FF;
+  --text-primary: #FDF2F8;
+  --text-secondary: #F472B6;
+  --font-display: 'Orbitron', sans-serif;
+  --font-body: 'Share Tech Mono', monospace;
+  --accent-primary-shadow: rgba(0, 245, 255, 0.5);
+  --accent-secondary-shadow: rgba(255, 119, 255, 0.4);
+  --glow-text: 0 0 10px #00F5FF;
+}
+
+/* 10. Minimal Purple */
+.theme-minimal-purple {
+  --bg-color: #08070d;
+  --panel-bg: rgba(20, 19, 28, 0.85);
+  --panel-border: #3b3754;
+  --accent-primary: #C084FC;
+  --accent-secondary: #a78bfa;
+  --text-primary: #FAF5FF;
+  --text-secondary: #94a3b8;
+  --font-display: 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --accent-primary-shadow: rgba(192, 132, 252, 0.3);
+  --accent-secondary-shadow: rgba(167, 139, 250, 0.2);
+  --glow-text: none;
+}
+
+/* ==========================================================================
+   SCROLLBAR STYLES
+   ========================================================================== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.4);
+}
+
+/* ==========================================================================
+   GLITCH AND ANIMATION UTILITIES
+   ========================================================================== */
+.glow-border {
+  border: 1.5px solid var(--panel-border);
+  box-shadow: 0 0 10px var(--accent-primary-shadow);
+}
+
+.glow-text-theme {
+  text-shadow: var(--glow-text, 0 0 5px rgba(255,255,255,0.2));
+  color: var(--text-primary);
+}
+
+/* Grid overlay background inside OBS mode */
+.bg-grid-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: 50px 50px;
+  background-image: 
+    linear-gradient(to right, rgba(168, 85, 247, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(168, 85, 247, 0.04) 1px, transparent 1px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bg-dot-matrix {
+  background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
