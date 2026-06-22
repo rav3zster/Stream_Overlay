@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Dashboard } from './features/admin/Dashboard';
 import { OBSOverlay } from './features/overlay/OBSOverlay';
 import { StreamDeck } from './features/streamdeck/StreamDeck';
@@ -11,7 +12,6 @@ startMusicEngine();
 
 function App() {
   const loadFromBroadcast = useOverlayStore(s => s.loadFromBroadcast);
-  const setScene = useOverlayStore(s => s.setScene);
   const checkSchedule = useOverlayStore(s => s.checkSchedule);
 
   // Cross-tab sync: listen for localStorage broadcasts from admin → OBS mode
@@ -50,16 +50,22 @@ function App() {
     return () => clearInterval(t);
   }, []);
 
-  const path = window.location.pathname;
-
-  // Routing
-  if (path === '/obs') {
-    return <OBSOverlay />;
-  }
-  if (path === '/streamdeck') {
-    return <StreamDeck />;
-  }
-  return <Dashboard />;
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Dashboard activeTabInitial="scenes" />} />
+        <Route path="/obs" element={<OBSOverlay />} />
+        <Route path="/streamdeck" element={<StreamDeck />} />
+        <Route path="/widgets" element={<Dashboard activeTabInitial="widgets" />} />
+        <Route path="/goals" element={<Dashboard activeTabInitial="goals" />} />
+        <Route path="/scheduler" element={<Dashboard activeTabInitial="scheduler" />} />
+        <Route path="/marketplace" element={<Dashboard activeTabInitial="marketplace" />} />
+        <Route path="/integrations" element={<Dashboard activeTabInitial="integrations" />} />
+        <Route path="/settings" element={<Dashboard activeTabInitial="settings" />} />
+        <Route path="*" element={<Dashboard activeTabInitial="scenes" />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
 export default App;

@@ -31,6 +31,19 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+export interface Widget {
+  id: string;
+  type: string;
+  label: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  isLocked: boolean;
+  isHidden: boolean;
+  customData?: Record<string, any>;
+}
+
 export interface StreamEvent {
   id: string;
   type: AlertType;
@@ -134,6 +147,12 @@ export interface OverlayState {
     isActive: boolean;
   }>;
 
+  // Layout widgets for drag-and-drop editor
+  sceneWidgets: Record<SceneType, Widget[]>;
+  selectedWidgetId: string | null;
+  historyStack: Record<SceneType, Widget[][]>;
+  historyIndex: Record<SceneType, number>;
+
   // Actions
   setScene: (scene: SceneType) => void;
   setTheme: (theme: ThemeType) => void;
@@ -177,6 +196,18 @@ export interface OverlayState {
   // Realtime sync
   broadcastState: (slice: Partial<OverlayState>) => void;
   loadFromBroadcast: (data: Partial<OverlayState>) => void;
+
+  // Widget placement actions
+  updateWidget: (widgetId: string, fields: Partial<Widget>) => void;
+  addWidget: (type: string) => void;
+  removeWidget: (widgetId: string) => void;
+  duplicateWidget: (widgetId: string) => void;
+  selectWidget: (widgetId: string | null) => void;
+
+  // History stack actions
+  pushHistoryState: () => void;
+  undo: () => void;
+  redo: () => void;
 }
 
 // ==========================================================================
@@ -226,6 +257,41 @@ const DEFAULT_SCHEDULE = [
   { id: 'sch-5', time: '22:05', scene: 'main-stream' as SceneType, label: 'Game Session Pt.2', isActive: true },
   { id: 'sch-6', time: '23:30', scene: 'ending-stream' as SceneType, label: 'Outro & Raid', isActive: true },
 ];
+
+// ==========================================================================
+// DEFAULT WIDGETS LAYOUT PRESETS
+// ==========================================================================
+const DEFAULT_WIDGETS: Record<SceneType, Widget[]> = {
+  'starting-soon': [
+    { id: 'timer-soon', type: 'timer', label: 'Countdown Timer', x: 25, y: 30, w: 50, h: 25, isLocked: false, isHidden: false },
+    { id: 'music-soon', type: 'music', label: 'Now Playing Widget', x: 32, y: 65, w: 36, h: 14, isLocked: false, isHidden: false },
+    { id: 'event-soon', type: 'event-list', label: 'Recent Events Log', x: 10, y: 12, w: 80, h: 10, isLocked: true, isHidden: false }
+  ],
+  'main-stream': [
+    { id: 'game-main', type: 'game', label: 'Primary Game Stream', x: 2, y: 2, w: 76, h: 86, isLocked: true, isHidden: false },
+    { id: 'vtuber-main', type: 'vtuber', label: 'VTuber Model Corner', x: 80, y: 55, w: 18, h: 32, isLocked: false, isHidden: false },
+    { id: 'chat-main', type: 'chat', label: 'Chat Overlay', x: 80, y: 2, w: 18, h: 50, isLocked: false, isHidden: false },
+    { id: 'sub-main', type: 'sub-goal', label: 'Subscriber Progress Bar', x: 2, y: 91, w: 30, h: 6, isLocked: false, isHidden: false },
+    { id: 'dono-main', type: 'dono-goal', label: 'Donation Progress Bar', x: 35, y: 91, w: 30, h: 6, isLocked: false, isHidden: false },
+    { id: 'alerts-main', type: 'alerts', label: 'Alert Notification Box', x: 25, y: 15, w: 50, h: 20, isLocked: true, isHidden: true }
+  ],
+  'chat-session': [
+    { id: 'vtuber-chatting', type: 'vtuber', label: 'Large VTuber Avatar Frame', x: 5, y: 10, w: 38, h: 76, isLocked: false, isHidden: false },
+    { id: 'chat-chatting', type: 'chat', label: 'Live Scrolling Chat Box', x: 48, y: 20, w: 48, h: 52, isLocked: false, isHidden: false },
+    { id: 'music-chatting', type: 'music', label: 'Now Playing Widget', x: 48, y: 76, w: 22, h: 12, isLocked: false, isHidden: false },
+    { id: 'sub-chatting', type: 'sub-goal', label: 'Sub Goal Progress Bar', x: 74, y: 76, w: 22, h: 12, isLocked: false, isHidden: false },
+    { id: 'event-chatting', type: 'event-list', label: 'Recent Events Log', x: 5, y: 2, w: 90, h: 6, isLocked: true, isHidden: false }
+  ],
+  'brb': [
+    { id: 'vtuber-brb', type: 'vtuber', label: 'Resting Avatar', x: 40, y: 25, w: 20, h: 30, isLocked: false, isHidden: false },
+    { id: 'timer-brb', type: 'timer', label: 'Return Clock', x: 30, y: 60, w: 40, h: 12, isLocked: false, isHidden: false },
+    { id: 'chat-brb', type: 'chat', label: 'Mini Chat', x: 75, y: 10, w: 20, h: 75, isLocked: false, isHidden: false }
+  ],
+  'ending-stream': [
+    { id: 'timer-ending', type: 'timer', label: 'Goodbye Messages', x: 25, y: 35, w: 50, h: 20, isLocked: false, isHidden: false },
+    { id: 'socials-ending', type: 'socials', label: 'Social Handles Card', x: 30, y: 60, w: 40, h: 20, isLocked: false, isHidden: false }
+  ]
+};
 
 // ==========================================================================
 // STORE
@@ -295,10 +361,42 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
 
   schedule: DEFAULT_SCHEDULE,
 
+  // Layout editor initial states
+  sceneWidgets: DEFAULT_WIDGETS,
+  selectedWidgetId: null,
+  historyStack: {
+    'starting-soon': [[...DEFAULT_WIDGETS['starting-soon']]],
+    'main-stream': [[...DEFAULT_WIDGETS['main-stream']]],
+    'chat-session': [[...DEFAULT_WIDGETS['chat-session']]],
+    'brb': [[...DEFAULT_WIDGETS['brb']]],
+    'ending-stream': [[...DEFAULT_WIDGETS['ending-stream']]]
+  },
+  historyIndex: {
+    'starting-soon': 0,
+    'main-stream': 0,
+    'chat-session': 0,
+    'brb': 0,
+    'ending-stream': 0
+  },
+
   // ─── Scene & Theme ───────────────────────────────────────────────────────
   setScene: (scene) => {
-    set({ currentScene: scene });
-    broadcast({ currentScene: scene });
+    const prevScene = get().currentScene;
+    
+    // Timer Persistence behavior:
+    let updatedTimer = { ...get().timer };
+    if (prevScene === 'starting-soon' && scene !== 'starting-soon') {
+      // Leaving Starting Soon -> pause timer, preserve remaining time
+      updatedTimer = { ...updatedTimer, isRunning: false, isPaused: true };
+    } else if (prevScene !== 'starting-soon' && scene === 'starting-soon') {
+      // Returning to Starting Soon -> resume from previous value
+      if (updatedTimer.seconds > 0) {
+        updatedTimer = { ...updatedTimer, isRunning: true, isPaused: false };
+      }
+    }
+    
+    set({ currentScene: scene, timer: updatedTimer });
+    broadcast({ currentScene: scene, timer: updatedTimer });
   },
 
   setTheme: (theme) => {
@@ -540,6 +638,164 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
 
   loadFromBroadcast: (data) => {
     set(s => ({ ...s, ...data }));
+  },
+
+  // ─── Widget Placement Actions ─────────────────────────────────────────────
+  updateWidget: (widgetId, fields) => {
+    const scene = get().currentScene;
+    const currentWidgets = get().sceneWidgets[scene];
+    const updatedWidgets = currentWidgets.map(w => 
+      w.id === widgetId ? { ...w, ...fields } : w
+    );
+
+    set(state => ({
+      sceneWidgets: {
+        ...state.sceneWidgets,
+        [scene]: updatedWidgets
+      }
+    }));
+
+    broadcast({ sceneWidgets: get().sceneWidgets });
+  },
+
+  addWidget: (type) => {
+    const scene = get().currentScene;
+    const currentWidgets = get().sceneWidgets[scene];
+    const newId = `${type}-${Date.now()}`;
+    const newWidget: Widget = {
+      id: newId,
+      type,
+      label: `New ${type.toUpperCase()} widget`,
+      x: 35,
+      y: 35,
+      w: 20,
+      h: 15,
+      isLocked: false,
+      isHidden: false
+    };
+
+    set(state => ({
+      sceneWidgets: {
+        ...state.sceneWidgets,
+        [scene]: [...currentWidgets, newWidget]
+      },
+      selectedWidgetId: newId
+    }));
+
+    get().pushHistoryState();
+    broadcast({ sceneWidgets: get().sceneWidgets });
+  },
+
+  removeWidget: (widgetId) => {
+    const scene = get().currentScene;
+    const currentWidgets = get().sceneWidgets[scene];
+    
+    set(state => ({
+      sceneWidgets: {
+        ...state.sceneWidgets,
+        [scene]: currentWidgets.filter(w => w.id !== widgetId)
+      },
+      selectedWidgetId: state.selectedWidgetId === widgetId ? null : state.selectedWidgetId
+    }));
+
+    get().pushHistoryState();
+    broadcast({ sceneWidgets: get().sceneWidgets });
+  },
+
+  duplicateWidget: (widgetId) => {
+    const scene = get().currentScene;
+    const currentWidgets = get().sceneWidgets[scene];
+    const target = currentWidgets.find(w => w.id === widgetId);
+    if (!target) return;
+
+    const dupId = `${target.type}-${Date.now()}`;
+    const duplicate: Widget = {
+      ...target,
+      id: dupId,
+      label: `${target.label} (Copy)`,
+      x: Math.min(target.x + 4, 80),
+      y: Math.min(target.y + 4, 80),
+      isLocked: false
+    };
+
+    set(state => ({
+      sceneWidgets: {
+        ...state.sceneWidgets,
+        [scene]: [...currentWidgets, duplicate]
+      },
+      selectedWidgetId: dupId
+    }));
+
+    get().pushHistoryState();
+    broadcast({ sceneWidgets: get().sceneWidgets });
+  },
+
+  selectWidget: (widgetId) => {
+    set({ selectedWidgetId: widgetId });
+  },
+
+  // ─── Drag & Drop Editor History Stack ─────────────────────────────────────
+  pushHistoryState: () => {
+    const scene = get().currentScene;
+    const widgets = get().sceneWidgets[scene];
+    const stack = get().historyStack[scene] || [];
+    const index = get().historyIndex[scene] ?? -1;
+
+    // Prune standard futures if we made modifications on a historical node
+    const activeStack = stack.slice(0, index + 1);
+    
+    set(state => ({
+      historyStack: {
+        ...state.historyStack,
+        [scene]: [...activeStack, JSON.parse(JSON.stringify(widgets))]
+      },
+      historyIndex: {
+        ...state.historyIndex,
+        [scene]: index + 1
+      }
+    }));
+  },
+
+  undo: () => {
+    const scene = get().currentScene;
+    const stack = get().historyStack[scene];
+    const index = get().historyIndex[scene];
+
+    if (index > 0) {
+      const prevWidgets = stack[index - 1];
+      set(state => ({
+        sceneWidgets: {
+          ...state.sceneWidgets,
+          [scene]: JSON.parse(JSON.stringify(prevWidgets))
+        },
+        historyIndex: {
+          ...state.historyIndex,
+          [scene]: index - 1
+        }
+      }));
+      broadcast({ sceneWidgets: get().sceneWidgets });
+    }
+  },
+
+  redo: () => {
+    const scene = get().currentScene;
+    const stack = get().historyStack[scene];
+    const index = get().historyIndex[scene];
+
+    if (index < stack.length - 1) {
+      const nextWidgets = stack[index + 1];
+      set(state => ({
+        sceneWidgets: {
+          ...state.sceneWidgets,
+          [scene]: JSON.parse(JSON.stringify(nextWidgets))
+        },
+        historyIndex: {
+          ...state.historyIndex,
+          [scene]: index + 1
+        }
+      }));
+      broadcast({ sceneWidgets: get().sceneWidgets });
+    }
   },
 }));
 

@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useOverlayStore, type SceneType, type ThemeType } from '../../store/overlayStore';
 import { OBSOverlay } from '../overlay/OBSOverlay';
+import { SceneEditor } from '../editor/SceneEditor';
 import {
   Tv, Sparkles, Award, Calendar, ShoppingBag, Settings, Link2,
   Volume2, ShieldAlert, Users, Globe, Send, Copy, ExternalLink,
@@ -35,7 +37,12 @@ const MARKETPLACE_THEMES = [
   { id: 'mt-4', name: 'Retro Wave', author: 'PixelDreams', category: 'Retro', previewColor: '#ec4899', rating: 4.7, installs: 1560, isInstalled: false },
 ];
 
-export const Dashboard: React.FC = () => {
+interface DashboardProps {
+  activeTabInitial?: 'scenes' | 'widgets' | 'alerts' | 'goals' | 'scheduler' | 'marketplace' | 'integrations' | 'settings';
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes' }) => {
+  const navigate = useNavigate();
   const {
     currentScene, theme: activeTheme, viewerCount, settings,
     timer, aiMessages, alertHistory, schedule,
@@ -49,7 +56,11 @@ export const Dashboard: React.FC = () => {
   } = useOverlayStore();
 
   type TabType = 'scenes' | 'widgets' | 'alerts' | 'goals' | 'scheduler' | 'marketplace' | 'integrations' | 'settings';
-  const [activeTab, setActiveTab] = useState<TabType>('scenes');
+  const [activeTab, setActiveTab] = useState<TabType>(activeTabInitial);
+
+  useEffect(() => {
+    setActiveTab(activeTabInitial);
+  }, [activeTabInitial]);
 
   // Scheduler form state
   const [schTime, setSchTime] = useState('20:00');
@@ -220,7 +231,11 @@ export const Dashboard: React.FC = () => {
             <button
               key={tab}
               id={`tab-${tab}`}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => {
+                setActiveTab(tab);
+                if (tab === 'scenes') navigate('/');
+                else navigate(`/${tab}`);
+              }}
               className={`w-[48px] h-[48px] rounded-xl flex flex-col justify-center items-center gap-1 text-[9px] uppercase tracking-wider font-extrabold transition-all duration-200 ${
                 activeTab === tab
                   ? 'bg-vibePrimary/20 border border-vibePrimary text-white shadow-glow'
@@ -615,8 +630,8 @@ export const Dashboard: React.FC = () => {
               <OBSOverlay />
             </div>
           ) : (
-            <div className="w-full max-w-[900px] relative border border-purple-900/30 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden" style={{ aspectRatio: '16/9' }}>
-              <OBSOverlay />
+            <div className="w-full max-w-[900px] h-full flex flex-col justify-center">
+              <SceneEditor />
             </div>
           )}
         </main>

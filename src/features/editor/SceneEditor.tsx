@@ -1,21 +1,18 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { useStreamStore, type Widget } from '../../store/useStreamStore';
+import { useOverlayStore, type Widget } from '../../store/overlayStore';
 import { Move, Maximize2, Lock, Unlock, Trash2, Copy, Eye, EyeOff, RotateCcw, RotateCw, Grid, HelpCircle } from 'lucide-react';
 
 export const SceneEditor: React.FC = () => {
-  const {
-    activeScene,
-    activeTheme,
-    sceneWidgets,
-    selectedWidgetId,
-    updateWidget,
-    removeWidget,
-    duplicateWidget,
-    selectWidget,
-    pushHistoryState,
-    undo,
-    redo
-  } = useStreamStore();
+  const activeScene = useOverlayStore(s => s.currentScene);
+  const activeTheme = useOverlayStore(s => s.theme);
+  const selectedWidgetId = useOverlayStore(s => s.selectedWidgetId);
+  const updateWidget = useOverlayStore(s => s.updateWidget);
+  const removeWidget = useOverlayStore(s => s.removeWidget);
+  const duplicateWidget = useOverlayStore(s => s.duplicateWidget);
+  const selectWidget = useOverlayStore(s => s.selectWidget);
+  const pushHistoryState = useOverlayStore(s => s.pushHistoryState);
+  const undo = useOverlayStore(s => s.undo);
+  const redo = useOverlayStore(s => s.redo);
 
   const canvasRef = useRef<HTMLDivElement | null>(null);
   
@@ -32,7 +29,7 @@ export const SceneEditor: React.FC = () => {
   // Cache resize base sizes
   const [resizeStart, setResizeStart] = useState({ w: 0, h: 0, x: 0, y: 0, clientX: 0, clientY: 0 });
 
-  const widgets = sceneWidgets[activeScene] || [];
+  const widgets = useOverlayStore(s => s.sceneWidgets[s.currentScene] || []);
 
   // Click outside to deselect widget
   const handleCanvasClick = (e: React.MouseEvent) => {
