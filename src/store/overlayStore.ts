@@ -33,14 +33,48 @@ export interface ChatMessage {
 
 export interface Widget {
   id: string;
+  parentId?: string; // Grouping support
   type: string;
   label: string;
   x: number;
   y: number;
   w: number;
   h: number;
-  isLocked: boolean;
-  isHidden: boolean;
+  rotation: number;
+  opacity: number;
+  scale: number;
+  zIndex: number;
+  visible: boolean;
+  locked: boolean;
+  style: {
+    borderRadius?: number;
+    background?: string;
+    borderSize?: number;
+    borderStyle?: string;
+    borderColor?: string;
+    glowColor?: string;
+    glowBlur?: number;
+    shadowX?: number;
+    shadowY?: number;
+    shadowBlur?: number;
+    shadowColor?: string;
+    fontFamily?: string;
+    fontSize?: number;
+    fontWeight?: string;
+    fontColor?: string;
+    textAlign?: 'left' | 'center' | 'right';
+    padding?: number;
+  };
+  animation: {
+    type: 'none' | 'fade' | 'scale' | 'slide' | 'bounce' | 'glow' | 'pulse' | 'float' | 'shake';
+    duration: number;
+    delay: number;
+    loop: boolean;
+  };
+  content: {
+    type: string;
+    settings: Record<string, any>;
+  };
   customData?: Record<string, any>;
 }
 
@@ -149,60 +183,59 @@ export interface OverlayState {
 
   // Layout widgets for drag-and-drop editor
   sceneWidgets: Record<SceneType, Widget[]>;
-  selectedWidgetId: string | null;
+  selectedWidgetId: string | null; // For backward compatibility
+  selectedWidgetIds: string[]; // Multi-select support
+  canvasZoom: number;
+  canvasPan: { x: number; y: number };
+  clipboardStyle: { style: Widget['style']; animation: Widget['animation'] } | null;
+  templates: Record<string, Widget[]>;
   historyStack: Record<SceneType, Widget[][]>;
   historyIndex: Record<SceneType, number>;
 
-  // Actions
+  // Widget placement actions
+  updateWidget: (widgetId: string, fields: Partial<Widget>) => void;
+  updateWidgets: (updates: Record<string, Partial<Widget>>) => void;
+  addWidget: (type: string) => void;
+  removeWidget: (widgetId: string) => void;
+  duplicateWidget: (widgetId: string) => void;
+  selectWidget: (widgetId: string | null) => void; // Keep for compatibility
+  selectWidgets: (widgetIds: string[]) => void;
+  setCanvasZoom: (zoom: number) => void;
+  setCanvasPan: (pan: { x: number; y: number }) => void;
+  copyWidgetStyle: (widgetId: string) => void;
+  pasteWidgetStyle: (widgetId: string) => void;
+  alignSelected: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
+  distributeSelected: (direction: 'horizontal' | 'vertical') => void;
+  groupSelectedWidgets: () => void;
+  ungroupWidgets: (groupId: string) => void;
+  saveTemplate: (name: string) => void;
+  loadTemplate: (name: string) => void;
+  bringToFront: (widgetId: string) => void;
+  sendBackward: (widgetId: string) => void;
+
+  // Standard scene & state actions
   setScene: (scene: SceneType) => void;
   setTheme: (theme: ThemeType) => void;
-
-  // Timer actions
   addTime: (seconds: number) => void;
   pauseTimer: () => void;
   resumeTimer: () => void;
   resetTimer: (seconds?: number) => void;
   tickTimer: () => void;
-
-  // Chat actions
   addChatMessage: (username: string, text: string, badge?: ChatMessage['badge'], platform?: ChatMessage['platform']) => void;
   clearChat: () => void;
   setShowChat: (show: boolean) => void;
-
-  // Avatar
   setShowAvatar: (show: boolean) => void;
-
-  // Ticker
   setShowTicker: (show: boolean) => void;
-
-  // Alert actions
   triggerAlert: (type: AlertType, username: string, message?: string, amount?: string) => void;
   dismissAlert: () => void;
-
-  // Goal actions
   updateGoal: (type: 'sub' | 'donation' | 'follower', field: 'current' | 'target', value: number) => void;
-
-  // Settings
   updateSettings: (partial: Partial<OverlaySettings>) => void;
-
-  // AI command
   executeAICommand: (prompt: string) => void;
-
-  // Scheduler
   addScheduleEvent: (time: string, scene: SceneType, label: string) => void;
   removeScheduleEvent: (id: string) => void;
   checkSchedule: (currentTime: string) => void;
-
-  // Realtime sync
   broadcastState: (slice: Partial<OverlayState>) => void;
   loadFromBroadcast: (data: Partial<OverlayState>) => void;
-
-  // Widget placement actions
-  updateWidget: (widgetId: string, fields: Partial<Widget>) => void;
-  addWidget: (type: string) => void;
-  removeWidget: (widgetId: string) => void;
-  duplicateWidget: (widgetId: string) => void;
-  selectWidget: (widgetId: string | null) => void;
 
   // History stack actions
   pushHistoryState: () => void;
@@ -263,33 +296,147 @@ const DEFAULT_SCHEDULE = [
 // ==========================================================================
 const DEFAULT_WIDGETS: Record<SceneType, Widget[]> = {
   'starting-soon': [
-    { id: 'timer-soon', type: 'timer', label: 'Countdown Timer', x: 25, y: 30, w: 50, h: 25, isLocked: false, isHidden: false },
-    { id: 'music-soon', type: 'music', label: 'Now Playing Widget', x: 32, y: 65, w: 36, h: 14, isLocked: false, isHidden: false },
-    { id: 'event-soon', type: 'event-list', label: 'Recent Events Log', x: 10, y: 12, w: 80, h: 10, isLocked: true, isHidden: false }
+    {
+      id: 'timer-soon', type: 'timer', label: 'Countdown Timer', x: 25, y: 30, w: 50, h: 25,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 1, visible: true, locked: false,
+      style: { borderRadius: 12, background: 'rgba(14, 8, 26, 0.8)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'float', duration: 6, delay: 0, loop: true },
+      content: { type: 'timer', settings: { size: 'full', customLabel: 'STREAM STARTING SOON' } }
+    },
+    {
+      id: 'music-soon', type: 'music', label: 'Now Playing Widget', x: 32, y: 65, w: 36, h: 14,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 2, visible: true, locked: false,
+      style: { borderRadius: 30, background: 'rgba(0, 0, 0, 0.45)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'none', duration: 1, delay: 0, loop: false },
+      content: { type: 'music', settings: { compact: true } }
+    },
+    {
+      id: 'event-log-shared', type: 'event-list', label: 'Recent Events Log', x: 10, y: 12, w: 80, h: 10,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 3, visible: true, locked: true,
+      style: { borderRadius: 8, background: 'rgba(14, 8, 26, 0.8)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'none', duration: 1, delay: 0, loop: false },
+      content: { type: 'event-list', settings: {} }
+    }
   ],
   'main-stream': [
-    { id: 'game-main', type: 'game', label: 'Primary Game Stream', x: 2, y: 2, w: 76, h: 86, isLocked: true, isHidden: false },
-    { id: 'vtuber-main', type: 'vtuber', label: 'VTuber Model Corner', x: 80, y: 55, w: 18, h: 32, isLocked: false, isHidden: false },
-    { id: 'chat-main', type: 'chat', label: 'Chat Overlay', x: 80, y: 2, w: 18, h: 50, isLocked: false, isHidden: false },
-    { id: 'sub-main', type: 'sub-goal', label: 'Subscriber Progress Bar', x: 2, y: 91, w: 30, h: 6, isLocked: false, isHidden: false },
-    { id: 'dono-main', type: 'dono-goal', label: 'Donation Progress Bar', x: 35, y: 91, w: 30, h: 6, isLocked: false, isHidden: false },
-    { id: 'alerts-main', type: 'alerts', label: 'Alert Notification Box', x: 25, y: 15, w: 50, h: 20, isLocked: true, isHidden: true }
+    {
+      id: 'game-main', type: 'game', label: 'Primary Game Stream', x: 2, y: 2, w: 76, h: 86,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 1, visible: true, locked: true,
+      style: { borderRadius: 8, background: 'rgba(14, 8, 26, 0.2)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'none', duration: 1, delay: 0, loop: false },
+      content: { type: 'game', settings: {} }
+    },
+    {
+      id: 'vtuber-main', type: 'vtuber', label: 'VTuber Model Corner', x: 80, y: 55, w: 18, h: 32,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 2, visible: true, locked: false,
+      style: { borderRadius: 8, background: 'rgba(14, 8, 26, 0.8)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'float', duration: 4, delay: 0, loop: true },
+      content: { type: 'vtuber', settings: {} }
+    },
+    {
+      id: 'chat-main', type: 'chat', label: 'Chat Overlay', x: 80, y: 2, w: 18, h: 50,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 3, visible: true, locked: false,
+      style: { borderRadius: 8, background: 'rgba(14, 8, 26, 0.8)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'none', duration: 1, delay: 0, loop: false },
+      content: { type: 'chat', settings: { size: 'medium' } }
+    },
+    {
+      id: 'sub-main', type: 'sub-goal', label: 'Subscriber Progress Bar', x: 2, y: 91, w: 30, h: 6,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 4, visible: true, locked: false,
+      style: { borderRadius: 8, background: 'rgba(14, 8, 26, 0.8)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'none', duration: 1, delay: 0, loop: false },
+      content: { type: 'sub-goal', settings: {} }
+    },
+    {
+      id: 'dono-main', type: 'dono-goal', label: 'Donation Progress Bar', x: 35, y: 91, w: 30, h: 6,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 5, visible: true, locked: false,
+      style: { borderRadius: 8, background: 'rgba(14, 8, 26, 0.8)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'none', duration: 1, delay: 0, loop: false },
+      content: { type: 'dono-goal', settings: {} }
+    },
+    {
+      id: 'alerts-main', type: 'alerts', label: 'Alert Notification Box', x: 25, y: 15, w: 50, h: 20,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 6, visible: false, locked: true,
+      style: { borderRadius: 8, background: 'rgba(14, 8, 26, 0.8)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'scale', duration: 0.5, delay: 0, loop: false },
+      content: { type: 'alerts', settings: {} }
+    }
   ],
   'chat-session': [
-    { id: 'vtuber-chatting', type: 'vtuber', label: 'Large VTuber Avatar Frame', x: 5, y: 10, w: 38, h: 76, isLocked: false, isHidden: false },
-    { id: 'chat-chatting', type: 'chat', label: 'Live Scrolling Chat Box', x: 48, y: 20, w: 48, h: 52, isLocked: false, isHidden: false },
-    { id: 'music-chatting', type: 'music', label: 'Now Playing Widget', x: 48, y: 76, w: 22, h: 12, isLocked: false, isHidden: false },
-    { id: 'sub-chatting', type: 'sub-goal', label: 'Sub Goal Progress Bar', x: 74, y: 76, w: 22, h: 12, isLocked: false, isHidden: false },
-    { id: 'event-chatting', type: 'event-list', label: 'Recent Events Log', x: 5, y: 2, w: 90, h: 6, isLocked: true, isHidden: false }
+    {
+      id: 'vtuber-chatting', type: 'vtuber', label: 'Large VTuber Avatar Frame', x: 5, y: 10, w: 38, h: 76,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 1, visible: true, locked: false,
+      style: { borderRadius: 8, background: 'rgba(14, 8, 26, 0.8)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'float', duration: 5, delay: 0, loop: true },
+      content: { type: 'vtuber', settings: {} }
+    },
+    {
+      id: 'chat-chatting', type: 'chat', label: 'Live Scrolling Chat Box', x: 48, y: 20, w: 48, h: 52,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 2, visible: true, locked: false,
+      style: { borderRadius: 8, background: 'rgba(14, 8, 26, 0.8)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'none', duration: 1, delay: 0, loop: false },
+      content: { type: 'chat', settings: { size: 'large' } }
+    },
+    {
+      id: 'music-chatting', type: 'music', label: 'Now Playing Widget', x: 48, y: 76, w: 22, h: 12,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 3, visible: true, locked: false,
+      style: { borderRadius: 8, background: 'rgba(14, 8, 26, 0.8)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'none', duration: 1, delay: 0, loop: false },
+      content: { type: 'music', settings: { compact: false } }
+    },
+    {
+      id: 'sub-chatting', type: 'sub-goal', label: 'Sub Goal Progress Bar', x: 74, y: 76, w: 22, h: 12,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 4, visible: true, locked: false,
+      style: { borderRadius: 8, background: 'rgba(14, 8, 26, 0.8)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'none', duration: 1, delay: 0, loop: false },
+      content: { type: 'sub-goal', settings: {} }
+    },
+    {
+      id: 'event-log-shared', type: 'event-list', label: 'Recent Events Log', x: 5, y: 2, w: 90, h: 6,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 5, visible: true, locked: true,
+      style: { borderRadius: 8, background: 'rgba(14, 8, 26, 0.8)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'none', duration: 1, delay: 0, loop: false },
+      content: { type: 'event-list', settings: {} }
+    }
   ],
   'brb': [
-    { id: 'vtuber-brb', type: 'vtuber', label: 'Resting Avatar', x: 40, y: 25, w: 20, h: 30, isLocked: false, isHidden: false },
-    { id: 'timer-brb', type: 'timer', label: 'Return Clock', x: 30, y: 60, w: 40, h: 12, isLocked: false, isHidden: false },
-    { id: 'chat-brb', type: 'chat', label: 'Mini Chat', x: 75, y: 10, w: 20, h: 75, isLocked: false, isHidden: false }
+    {
+      id: 'vtuber-brb', type: 'vtuber', label: 'Resting Avatar', x: 40, y: 25, w: 20, h: 30,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 1, visible: true, locked: false,
+      style: { borderRadius: 8, background: 'rgba(14, 8, 26, 0.8)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'float', duration: 6, delay: 0, loop: true },
+      content: { type: 'vtuber', settings: {} }
+    },
+    {
+      id: 'timer-brb', type: 'timer', label: 'Return Clock', x: 30, y: 60, w: 40, h: 12,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 2, visible: true, locked: false,
+      style: { borderRadius: 8, background: 'rgba(14, 8, 26, 0.8)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'none', duration: 1, delay: 0, loop: false },
+      content: { type: 'timer', settings: { size: 'full', customLabel: 'BE RIGHT BACK' } }
+    },
+    {
+      id: 'chat-brb', type: 'chat', label: 'Mini Chat', x: 75, y: 10, w: 20, h: 75,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 3, visible: true, locked: false,
+      style: { borderRadius: 8, background: 'rgba(14, 8, 26, 0.8)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'none', duration: 1, delay: 0, loop: false },
+      content: { type: 'chat', settings: { size: 'mini' } }
+    }
   ],
   'ending-stream': [
-    { id: 'timer-ending', type: 'timer', label: 'Goodbye Messages', x: 25, y: 35, w: 50, h: 20, isLocked: false, isHidden: false },
-    { id: 'socials-ending', type: 'socials', label: 'Social Handles Card', x: 30, y: 60, w: 40, h: 20, isLocked: false, isHidden: false }
+    {
+      id: 'timer-ending', type: 'timer', label: 'Goodbye Messages', x: 25, y: 35, w: 50, h: 20,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 1, visible: true, locked: false,
+      style: { borderRadius: 8, background: 'rgba(14, 8, 26, 0.8)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'none', duration: 1, delay: 0, loop: false },
+      content: { type: 'timer', settings: { size: 'full', customLabel: 'STREAM ENDING' } }
+    },
+    {
+      id: 'socials-ending', type: 'socials', label: 'Social Handles Card', x: 30, y: 60, w: 40, h: 20,
+      rotation: 0, opacity: 100, scale: 1, zIndex: 2, visible: true, locked: false,
+      style: { borderRadius: 8, background: 'rgba(14, 8, 26, 0.8)', borderSize: 1, borderStyle: 'solid', borderColor: '#A855F7', glowColor: '#FF4DFF', glowBlur: 0, padding: 4 },
+      animation: { type: 'none', duration: 1, delay: 0, loop: false },
+      content: { type: 'socials', settings: {} }
+    }
   ]
 };
 
@@ -364,6 +511,11 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   // Layout editor initial states
   sceneWidgets: DEFAULT_WIDGETS,
   selectedWidgetId: null,
+  selectedWidgetIds: [],
+  canvasZoom: 1.0,
+  canvasPan: { x: 0, y: 0 },
+  clipboardStyle: null,
+  templates: {},
   historyStack: {
     'starting-soon': [[...DEFAULT_WIDGETS['starting-soon']]],
     'main-stream': [[...DEFAULT_WIDGETS['main-stream']]],
@@ -380,7 +532,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   },
 
   // ─── Scene & Theme ───────────────────────────────────────────────────────
-  setScene: (scene) => {
+  setScene: (scene: SceneType) => {
     const prevScene = get().currentScene;
     
     // Timer Persistence behavior:
@@ -399,13 +551,13 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     broadcast({ currentScene: scene, timer: updatedTimer });
   },
 
-  setTheme: (theme) => {
+  setTheme: (theme: ThemeType) => {
     set({ theme });
     broadcast({ theme });
   },
 
   // ─── Timer ───────────────────────────────────────────────────────────────
-  addTime: (seconds) => {
+  addTime: (seconds: number) => {
     set(s => ({ timer: { ...s.timer, seconds: s.timer.seconds + seconds } }));
     broadcast({ timer: get().timer });
   },
@@ -420,7 +572,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     broadcast({ timer: get().timer });
   },
 
-  resetTimer: (seconds = 600) => {
+  resetTimer: (seconds: number = 600) => {
     set({ timer: { seconds, isRunning: true, isPaused: false } });
     broadcast({ timer: get().timer });
   },
@@ -432,7 +584,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   },
 
   // ─── Chat ─────────────────────────────────────────────────────────────────
-  addChatMessage: (username, text, badge, platform) => {
+  addChatMessage: (username: string, text: string, badge?: ChatMessage['badge'], platform?: ChatMessage['platform']) => {
     const msg: ChatMessage = {
       id: `chat-${Date.now()}`,
       username,
@@ -448,24 +600,24 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
 
   clearChat: () => { set({ chatMessages: [] }); },
 
-  setShowChat: (show) => {
+  setShowChat: (show: boolean) => {
     set({ showChat: show });
     broadcast({ showChat: show });
   },
 
   // ─── Avatar & Ticker ──────────────────────────────────────────────────────
-  setShowAvatar: (show) => {
+  setShowAvatar: (show: boolean) => {
     set({ showAvatar: show });
     broadcast({ showAvatar: show });
   },
 
-  setShowTicker: (show) => {
+  setShowTicker: (show: boolean) => {
     set({ showTicker: show });
     broadcast({ showTicker: show });
   },
 
   // ─── Alerts ───────────────────────────────────────────────────────────────
-  triggerAlert: (type, username, message, amount) => {
+  triggerAlert: (type: AlertType, username: string, message?: string, amount?: string) => {
     const alert: Alert = {
       id: `alert-${Date.now()}`,
       type, username, message, amount,
@@ -516,7 +668,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   },
 
   // ─── Goals ────────────────────────────────────────────────────────────────
-  updateGoal: (type, field, value) => {
+  updateGoal: (type: 'sub' | 'donation' | 'follower', field: 'current' | 'target', value: number) => {
     if (type === 'sub') {
       set(s => ({ subGoal: { ...s.subGoal, [field]: value } }));
     } else if (type === 'donation') {
@@ -528,13 +680,13 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   },
 
   // ─── Settings ─────────────────────────────────────────────────────────────
-  updateSettings: (partial) => {
+  updateSettings: (partial: Partial<OverlaySettings>) => {
     set(s => ({ settings: { ...s.settings, ...partial } }));
     broadcast({ settings: get().settings });
   },
 
   // ─── AI Companion ─────────────────────────────────────────────────────────
-  executeAICommand: (prompt) => {
+  executeAICommand: (prompt: string) => {
     const p = prompt.toLowerCase().trim();
     let response = "I didn't understand that. Try: 'switch to BRB', 'add 5 minutes', 'hide chat', 'show avatar'.";
 
@@ -613,18 +765,18 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   },
 
   // ─── Scheduler ────────────────────────────────────────────────────────────
-  addScheduleEvent: (time, scene, label) => {
+  addScheduleEvent: (time: string, scene: SceneType, label: string) => {
     const event = { id: `sch-${Date.now()}`, time, scene, label, isActive: true };
     set(s => ({
       schedule: [...s.schedule, event].sort((a, b) => a.time.localeCompare(b.time))
     }));
   },
 
-  removeScheduleEvent: (id) => {
+  removeScheduleEvent: (id: string) => {
     set(s => ({ schedule: s.schedule.filter(e => e.id !== id) }));
   },
 
-  checkSchedule: (currentTime) => {
+  checkSchedule: (currentTime: string) => {
     const match = get().schedule.find(e => e.isActive && e.time === currentTime);
     if (match && get().currentScene !== match.scene) {
       get().setScene(match.scene);
@@ -632,28 +784,90 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   },
 
   // ─── Realtime ─────────────────────────────────────────────────────────────
-  broadcastState: (slice) => {
+  broadcastState: (slice: Partial<OverlayState>) => {
     broadcast(slice as Record<string, unknown>);
   },
 
-  loadFromBroadcast: (data) => {
+  loadFromBroadcast: (data: Partial<OverlayState>) => {
     set(s => ({ ...s, ...data }));
   },
 
   // ─── Widget Placement Actions ─────────────────────────────────────────────
   updateWidget: (widgetId, fields) => {
-    const scene = get().currentScene;
-    const currentWidgets = get().sceneWidgets[scene];
-    const updatedWidgets = currentWidgets.map(w => 
-      w.id === widgetId ? { ...w, ...fields } : w
-    );
-
-    set(state => ({
-      sceneWidgets: {
-        ...state.sceneWidgets,
-        [scene]: updatedWidgets
+    const currentScene = get().currentScene;
+    
+    // Split fields into global and local
+    const globalFields: Partial<Widget> = {};
+    const localFields: Partial<Widget> = {};
+    
+    const localKeys = ['x', 'y', 'w', 'h', 'rotation', 'opacity', 'scale', 'zIndex', 'visible', 'locked', 'parentId'];
+    
+    Object.entries(fields).forEach(([key, val]) => {
+      if (localKeys.includes(key)) {
+        (localFields as any)[key] = val;
+      } else {
+        (globalFields as any)[key] = val;
       }
-    }));
+    });
+
+    set(state => {
+      const nextSceneWidgets = { ...state.sceneWidgets };
+      
+      // Update all scenes for global fields, and only current scene for local fields
+      Object.keys(nextSceneWidgets).forEach(s => {
+        const sceneKey = s as SceneType;
+        nextSceneWidgets[sceneKey] = nextSceneWidgets[sceneKey].map(w => {
+          if (w.id === widgetId) {
+            const updates = sceneKey === currentScene 
+              ? { ...globalFields, ...localFields } 
+              : globalFields;
+            return { ...w, ...updates };
+          }
+          return w;
+        });
+      });
+      
+      return { sceneWidgets: nextSceneWidgets };
+    });
+
+    broadcast({ sceneWidgets: get().sceneWidgets });
+  },
+
+  updateWidgets: (updates) => {
+    const currentScene = get().currentScene;
+    const localKeys = ['x', 'y', 'w', 'h', 'rotation', 'opacity', 'scale', 'zIndex', 'visible', 'locked', 'parentId'];
+
+    set(state => {
+      const nextSceneWidgets = { ...state.sceneWidgets };
+      
+      Object.keys(nextSceneWidgets).forEach(s => {
+        const sceneKey = s as SceneType;
+        nextSceneWidgets[sceneKey] = nextSceneWidgets[sceneKey].map(w => {
+          const widgetUpdates = updates[w.id];
+          if (widgetUpdates) {
+            const globalFields: Partial<Widget> = {};
+            const localFields: Partial<Widget> = {};
+            
+            Object.entries(widgetUpdates).forEach(([key, val]) => {
+              if (localKeys.includes(key)) {
+                (localFields as any)[key] = val;
+              } else {
+                (globalFields as any)[key] = val;
+              }
+            });
+            
+            const finalUpdates = sceneKey === currentScene
+              ? { ...globalFields, ...localFields }
+              : globalFields;
+              
+            return { ...w, ...finalUpdates };
+          }
+          return w;
+        });
+      });
+      
+      return { sceneWidgets: nextSceneWidgets };
+    });
 
     broadcast({ sceneWidgets: get().sceneWidgets });
   },
@@ -670,8 +884,35 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
       y: 35,
       w: 20,
       h: 15,
-      isLocked: false,
-      isHidden: false
+      rotation: 0,
+      opacity: 100,
+      scale: 1.0,
+      zIndex: currentWidgets.length + 1,
+      visible: true,
+      locked: false,
+      style: {
+        borderRadius: 8,
+        background: 'rgba(14, 8, 26, 0.8)',
+        borderSize: 1,
+        borderStyle: 'solid',
+        borderColor: '#A855F7',
+        glowColor: '#FF4DFF',
+        glowBlur: 0,
+        padding: 4
+      },
+      animation: {
+        type: 'none',
+        duration: 1,
+        delay: 0,
+        loop: false
+      },
+      content: {
+        type,
+        settings: {
+          customLabel: '',
+          customText: ''
+        }
+      }
     };
 
     set(state => ({
@@ -679,6 +920,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
         ...state.sceneWidgets,
         [scene]: [...currentWidgets, newWidget]
       },
+      selectedWidgetIds: [newId],
       selectedWidgetId: newId
     }));
 
@@ -690,13 +932,17 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     const scene = get().currentScene;
     const currentWidgets = get().sceneWidgets[scene];
     
-    set(state => ({
-      sceneWidgets: {
-        ...state.sceneWidgets,
-        [scene]: currentWidgets.filter(w => w.id !== widgetId)
-      },
-      selectedWidgetId: state.selectedWidgetId === widgetId ? null : state.selectedWidgetId
-    }));
+    set(state => {
+      const selectedWidgetIds = state.selectedWidgetIds.filter(id => id !== widgetId);
+      return {
+        sceneWidgets: {
+          ...state.sceneWidgets,
+          [scene]: currentWidgets.filter(w => w.id !== widgetId)
+        },
+        selectedWidgetIds,
+        selectedWidgetId: selectedWidgetIds[0] || null
+      };
+    });
 
     get().pushHistoryState();
     broadcast({ sceneWidgets: get().sceneWidgets });
@@ -710,12 +956,13 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
 
     const dupId = `${target.type}-${Date.now()}`;
     const duplicate: Widget = {
-      ...target,
+      ...JSON.parse(JSON.stringify(target)),
       id: dupId,
       label: `${target.label} (Copy)`,
       x: Math.min(target.x + 4, 80),
       y: Math.min(target.y + 4, 80),
-      isLocked: false
+      locked: false,
+      zIndex: currentWidgets.length + 1
     };
 
     set(state => ({
@@ -723,6 +970,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
         ...state.sceneWidgets,
         [scene]: [...currentWidgets, duplicate]
       },
+      selectedWidgetIds: [dupId],
       selectedWidgetId: dupId
     }));
 
@@ -731,7 +979,224 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   },
 
   selectWidget: (widgetId) => {
-    set({ selectedWidgetId: widgetId });
+    set({
+      selectedWidgetId: widgetId,
+      selectedWidgetIds: widgetId ? [widgetId] : []
+    });
+  },
+
+  selectWidgets: (widgetIds) => {
+    set({
+      selectedWidgetIds: widgetIds,
+      selectedWidgetId: widgetIds[0] || null
+    });
+  },
+
+  setCanvasZoom: (zoom) => {
+    set({ canvasZoom: Math.max(0.2, Math.min(zoom, 4)) });
+  },
+
+  setCanvasPan: (pan) => {
+    set({ canvasPan: pan });
+  },
+
+  copyWidgetStyle: (widgetId) => {
+    const scene = get().currentScene;
+    const widgets = get().sceneWidgets[scene];
+    const target = widgets.find(w => w.id === widgetId);
+    if (target) {
+      set({
+        clipboardStyle: {
+          style: JSON.parse(JSON.stringify(target.style)),
+          animation: JSON.parse(JSON.stringify(target.animation))
+        }
+      });
+    }
+  },
+
+  pasteWidgetStyle: (widgetId) => {
+    const clipboard = get().clipboardStyle;
+    if (!clipboard) return;
+
+    set(state => {
+      const nextSceneWidgets = { ...state.sceneWidgets };
+      Object.keys(nextSceneWidgets).forEach(s => {
+        const sceneKey = s as SceneType;
+        nextSceneWidgets[sceneKey] = nextSceneWidgets[sceneKey].map(w => 
+          w.id === widgetId
+            ? {
+                ...w,
+                style: JSON.parse(JSON.stringify(clipboard.style)),
+                animation: JSON.parse(JSON.stringify(clipboard.animation))
+              }
+            : w
+        );
+      });
+      return { sceneWidgets: nextSceneWidgets };
+    });
+
+    get().pushHistoryState();
+    broadcast({ sceneWidgets: get().sceneWidgets });
+  },
+
+  alignSelected: (alignment) => {
+    const scene = get().currentScene;
+    const widgets = get().sceneWidgets[scene];
+    const selectedIds = get().selectedWidgetIds;
+    if (selectedIds.length <= 1) return;
+
+    const selectedWidgets = widgets.filter(w => selectedIds.includes(w.id));
+    
+    // Compute bounds
+    const minX = Math.min(...selectedWidgets.map(w => w.x));
+    const maxX = Math.max(...selectedWidgets.map(w => w.x + w.w));
+    const minY = Math.min(...selectedWidgets.map(w => w.y));
+    const maxY = Math.max(...selectedWidgets.map(w => w.y + w.h));
+    
+    const updates: Record<string, Partial<Widget>> = {};
+
+    selectedWidgets.forEach(w => {
+      if (alignment === 'left') {
+        updates[w.id] = { x: minX };
+      } else if (alignment === 'right') {
+        updates[w.id] = { x: maxX - w.w };
+      } else if (alignment === 'center') {
+        const center = minX + (maxX - minX) / 2;
+        updates[w.id] = { x: center - w.w / 2 };
+      } else if (alignment === 'top') {
+        updates[w.id] = { y: minY };
+      } else if (alignment === 'bottom') {
+        updates[w.id] = { y: maxY - w.h };
+      } else if (alignment === 'middle') {
+        const middle = minY + (maxY - minY) / 2;
+        updates[w.id] = { y: middle - w.h / 2 };
+      }
+    });
+
+    get().updateWidgets(updates);
+    get().pushHistoryState();
+  },
+
+  distributeSelected: (direction) => {
+    const scene = get().currentScene;
+    const widgets = get().sceneWidgets[scene];
+    const selectedIds = get().selectedWidgetIds;
+    if (selectedIds.length <= 2) return;
+
+    const selectedWidgets = widgets.filter(w => selectedIds.includes(w.id));
+    const updates: Record<string, Partial<Widget>> = {};
+
+    if (direction === 'horizontal') {
+      const sorted = [...selectedWidgets].sort((a, b) => a.x - b.x);
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+      const totalWidthOfWidgets = sorted.reduce((sum, w) => sum + w.w, 0);
+      const totalSpan = last.x + last.w - first.x;
+      const remainingSpace = totalSpan - totalWidthOfWidgets;
+      const gap = remainingSpace / (sorted.length - 1);
+
+      let currentX = first.x;
+      sorted.forEach((w, index) => {
+        if (index > 0 && index < sorted.length - 1) {
+          updates[w.id] = { x: currentX };
+        }
+        currentX += w.w + gap;
+      });
+    } else {
+      const sorted = [...selectedWidgets].sort((a, b) => a.y - b.y);
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+      const totalHeightOfWidgets = sorted.reduce((sum, w) => sum + w.h, 0);
+      const totalSpan = last.y + last.h - first.y;
+      const remainingSpace = totalSpan - totalHeightOfWidgets;
+      const gap = remainingSpace / (sorted.length - 1);
+
+      let currentY = first.y;
+      sorted.forEach((w, index) => {
+        if (index > 0 && index < sorted.length - 1) {
+          updates[w.id] = { y: currentY };
+        }
+        currentY += w.h + gap;
+      });
+    }
+
+    get().updateWidgets(updates);
+    get().pushHistoryState();
+  },
+
+  groupSelectedWidgets: () => {
+    const scene = get().currentScene;
+    const selectedIds = get().selectedWidgetIds;
+    if (selectedIds.length <= 1) return;
+
+    const groupId = `group-${Date.now()}`;
+    const updates: Record<string, Partial<Widget>> = {};
+    selectedIds.forEach(id => {
+      updates[id] = { parentId: groupId };
+    });
+
+    get().updateWidgets(updates);
+    get().pushHistoryState();
+  },
+
+  ungroupWidgets: (groupId) => {
+    const scene = get().currentScene;
+    const widgets = get().sceneWidgets[scene];
+    const updates: Record<string, Partial<Widget>> = {};
+    
+    widgets.forEach(w => {
+      if (w.parentId === groupId) {
+        updates[w.id] = { parentId: undefined };
+      }
+    });
+
+    get().updateWidgets(updates);
+    get().pushHistoryState();
+  },
+
+  saveTemplate: (name) => {
+    const scene = get().currentScene;
+    const widgets = get().sceneWidgets[scene];
+    set(state => ({
+      templates: {
+        ...state.templates,
+        [name]: JSON.parse(JSON.stringify(widgets))
+      }
+    }));
+  },
+
+  loadTemplate: (name) => {
+    const templateWidgets = get().templates[name];
+    if (!templateWidgets) return;
+
+    const scene = get().currentScene;
+    set(state => ({
+      sceneWidgets: {
+        ...state.sceneWidgets,
+        [scene]: JSON.parse(JSON.stringify(templateWidgets))
+      },
+      selectedWidgetIds: [],
+      selectedWidgetId: null
+    }));
+
+    get().pushHistoryState();
+    broadcast({ sceneWidgets: get().sceneWidgets });
+  },
+
+  bringToFront: (widgetId) => {
+    const scene = get().currentScene;
+    const widgets = get().sceneWidgets[scene];
+    const maxZ = Math.max(...widgets.map(w => w.zIndex || 0), 0);
+    get().updateWidget(widgetId, { zIndex: maxZ + 1 });
+  },
+
+  sendBackward: (widgetId) => {
+    const scene = get().currentScene;
+    const widgets = get().sceneWidgets[scene];
+    const target = widgets.find(w => w.id === widgetId);
+    if (!target) return;
+    const currentZ = target.zIndex || 1;
+    get().updateWidget(widgetId, { zIndex: Math.max(1, currentZ - 1) });
   },
 
   // ─── Drag & Drop Editor History Stack ─────────────────────────────────────

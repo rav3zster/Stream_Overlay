@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useOverlayStore, type SceneType, type ThemeType } from '../../store/overlayStore';
 import { OBSOverlay } from '../overlay/OBSOverlay';
 import { SceneEditor } from '../editor/SceneEditor';
+import { LayerPanel } from './LayerPanel';
+import { WidgetInspector } from './WidgetInspector';
 import {
   Tv, Sparkles, Award, Calendar, ShoppingBag, Settings, Link2,
   Volume2, ShieldAlert, Users, Globe, Send, Copy, ExternalLink,
@@ -48,12 +50,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
     timer, aiMessages, alertHistory, schedule,
     chatMessages, showChat, showAvatar, showTicker,
     subGoal, donationGoal, followerGoal,
+    selectedWidgetId,
     setScene, setTheme, addTime, pauseTimer, resumeTimer, resetTimer,
     setShowChat, setShowAvatar, setShowTicker,
     triggerAlert, executeAICommand, updateGoal,
     addScheduleEvent, removeScheduleEvent, updateSettings,
     addChatMessage,
   } = useOverlayStore();
+
+  const [rightPanelTab, setRightPanelTab] = useState<'inspector' | 'controls'>('controls');
+
+  // Auto-switch to inspector when a widget is selected
+  useEffect(() => {
+    if (selectedWidgetId) {
+      setRightPanelTab('inspector');
+    }
+  }, [selectedWidgetId]);
 
   type TabType = 'scenes' | 'widgets' | 'alerts' | 'goals' | 'scheduler' | 'marketplace' | 'integrations' | 'settings';
   const [activeTab, setActiveTab] = useState<TabType>(activeTabInitial);
@@ -344,30 +356,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
                 </div>
               </div>
 
-              {/* Visibility toggles */}
+              {/* Dynamic Layer Panel */}
               <div className="border-t border-purple-900/30 pt-4">
-                <h3 className="text-xs uppercase font-extrabold tracking-widest text-slate-400 mb-2">Layer Visibility</h3>
-                <div className="flex flex-col gap-2">
-                  {[
-                    { label: '💬 Chat Overlay', value: showChat, toggle: setShowChat },
-                    { label: '😊 VTuber Avatar', value: showAvatar, toggle: setShowAvatar },
-                    { label: '📢 Ticker Bar', value: showTicker, toggle: setShowTicker },
-                  ].map(({ label, value, toggle }) => (
-                    <div key={label} className="flex justify-between items-center p-2 bg-[#120f26] border border-purple-950 rounded-lg text-xs">
-                      <span className="font-semibold text-slate-200">{label}</span>
-                      <button
-                        onClick={() => toggle(!value)}
-                        className={`px-2 py-1 rounded text-[9px] font-extrabold tracking-wider uppercase transition flex items-center gap-1 ${
-                          value
-                            ? 'bg-emerald-950 border border-emerald-500/30 text-emerald-400'
-                            : 'bg-red-950 border border-red-500/30 text-red-400'
-                        }`}
-                      >
-                        {value ? <><Eye size={10} /> Visible</> : <><EyeOff size={10} /> Hidden</>}
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                <LayerPanel />
               </div>
             </div>
           )}
@@ -636,112 +627,134 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
           )}
         </main>
 
-        {/* RIGHT PANEL: Simulators + Chat + AI + Events */}
+        {/* RIGHT PANEL: Simulators + Chat + AI + Events OR Widget Inspector */}
         <aside className="w-[300px] bg-[#0c0a1a]/85 border-l border-purple-900/30 p-5 flex flex-col gap-4 z-20 overflow-y-auto flex-shrink-0">
-
-          {/* Event Simulators */}
-          <div className="flex flex-col gap-3">
-            <h2 className="text-xs uppercase font-extrabold tracking-widest text-slate-400">Quick Event Simulators</h2>
-            <div className="grid grid-cols-2 gap-2">
-              {([
-                { type: 'follow' as const, icon: '💖', label: 'Follower' },
-                { type: 'subscribe' as const, icon: '⭐', label: 'Subscriber' },
-                { type: 'donation' as const, icon: '💵', label: 'Donation' },
-                { type: 'raid' as const, icon: '🔥', label: 'Raid' },
-              ]).map(({ type, icon, label }) => (
-                <button
-                  key={type}
-                  id={`sim-${type}`}
-                  onClick={() => handleAlertTest(type)}
-                  className="py-2 bg-[#171331] border border-purple-900/40 hover:border-purple-700 text-slate-200 hover:text-white rounded-lg text-xs font-semibold flex flex-col items-center gap-1 active:scale-95 transition"
-                >
-                  <span>{icon}</span> {label}
-                </button>
-              ))}
-            </div>
+          
+          {/* Tab selector */}
+          <div className="flex bg-[#100c22] border border-purple-950 rounded-lg p-0.5 flex-shrink-0">
+            <button
+              onClick={() => setRightPanelTab('controls')}
+              className={`flex-grow py-1 rounded text-[10px] font-bold uppercase transition ${rightPanelTab === 'controls' ? 'bg-vibePrimary text-white shadow-glow' : 'text-slate-400 hover:text-white'}`}
+            >
+              Control Panel
+            </button>
+            <button
+              onClick={() => setRightPanelTab('inspector')}
+              className={`flex-grow py-1 rounded text-[10px] font-bold uppercase transition ${rightPanelTab === 'inspector' ? 'bg-vibePrimary text-white shadow-glow' : 'text-slate-400 hover:text-white'}`}
+            >
+              Inspector {selectedWidgetId && '●'}
+            </button>
           </div>
 
-          {/* Chat Simulator */}
-          <div className="flex flex-col gap-2 border-t border-purple-900/30 pt-3">
-            <h2 className="text-xs uppercase font-extrabold tracking-widest text-slate-400 flex items-center gap-1.5">
-              <MessageSquare size={11} /> Send Chat Message
-            </h2>
-            <div className="bg-[#100c22] border border-purple-950 rounded-xl overflow-hidden max-h-[120px]">
-              <div className="overflow-y-auto p-2 max-h-[80px]" style={{ scrollbarWidth: 'none' }}>
-                {chatMessages.slice(-5).map(m => (
-                  <div key={m.id} className="text-[10px] text-slate-300 mb-1">
-                    <span className="font-bold" style={{ color: m.color }}>{m.username}: </span>
-                    {m.text}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <form onSubmit={handleChatSend} className="flex flex-col gap-1.5">
-              <input value={chatName} onChange={e => setChatName(e.target.value)} className="bg-black/30 border border-purple-950 rounded p-1 text-[10px] text-slate-300 w-full focus:outline-none" placeholder="Username" />
-              <div className="flex gap-1.5">
-                <input value={chatInput} onChange={e => setChatInput(e.target.value)} className="flex-grow bg-black/35 border border-purple-950 rounded p-1.5 text-xs text-white focus:outline-none focus:border-vibePrimary" placeholder="Type message..." />
-                <button type="submit" className="p-1.5 bg-vibePrimary text-white rounded flex items-center justify-center">
-                  <Send size={13} />
-                </button>
-              </div>
-            </form>
-          </div>
-
-          {/* AI Companion */}
-          <div className="flex-grow flex flex-col bg-[#100c22] border border-purple-950 rounded-xl overflow-hidden min-h-[180px]">
-            <div className="px-3 py-2 bg-black/40 border-b border-purple-950 flex items-center gap-2 text-xs font-extrabold text-vibeSecondary font-display tracking-widest flex-shrink-0">
-              <Sparkles size={14} className="text-vibeAccent" /> VIBE_AI COMPANION
-            </div>
-            <div ref={aiScrollRef} className="flex-grow overflow-y-auto p-3 flex flex-col gap-2 max-h-[200px]" style={{ scrollbarWidth: 'thin' }}>
-              {aiMessages.map(msg => (
-                <div
-                  key={msg.id}
-                  className={`p-2 rounded-lg text-xs leading-relaxed max-w-[85%] ${
-                    msg.sender === 'user'
-                      ? 'bg-vibePrimary/20 border border-vibePrimary/30 text-white self-end'
-                      : 'bg-slate-900 border border-slate-800 text-slate-300 self-start'
-                  }`}
-                >
-                  <span className="block text-[8px] font-black opacity-50 mb-0.5 tracking-wider uppercase font-display">
-                    {msg.sender === 'user' ? 'YOU' : 'AI ASSISTANT'}
-                  </span>
-                  {msg.text}
+          {rightPanelTab === 'inspector' ? (
+            <WidgetInspector />
+          ) : (
+            <>
+              {/* Event Simulators */}
+              <div className="flex flex-col gap-3">
+                <h2 className="text-xs uppercase font-extrabold tracking-widest text-slate-400">Quick Event Simulators</h2>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    { type: 'follow' as const, icon: '💖', label: 'Follower' },
+                    { type: 'subscribe' as const, icon: '⭐', label: 'Subscriber' },
+                    { type: 'donation' as const, icon: '💵', label: 'Donation' },
+                    { type: 'raid' as const, icon: '🔥', label: 'Raid' },
+                  ]).map(({ type, icon, label }) => (
+                    <button
+                      key={type}
+                      id={`sim-${type}`}
+                      onClick={() => handleAlertTest(type)}
+                      className="py-2 bg-[#171331] border border-purple-900/40 hover:border-purple-700 text-slate-200 hover:text-white rounded-lg text-xs font-semibold flex flex-col items-center gap-1 active:scale-95 transition"
+                    >
+                      <span>{icon}</span> {label}
+                    </button>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <form onSubmit={handleAISend} className="p-2 border-t border-purple-950 flex gap-1.5 bg-black/20 flex-shrink-0">
-              <input
-                id="ai-prompt-input"
-                type="text"
-                placeholder="Ask me: 'Switch to BRB'..."
-                value={aiPrompt}
-                onChange={e => setAiPrompt(e.target.value)}
-                className="flex-grow bg-black/35 border border-purple-950 rounded-lg p-1.5 text-xs text-white focus:outline-none focus:border-vibePrimary"
-              />
-              <button type="submit" className="p-1.5 bg-vibePrimary hover:bg-vibePrimary/80 text-white rounded-lg flex items-center justify-center transition">
-                <Send size={13} />
-              </button>
-            </form>
-          </div>
+              </div>
 
-          {/* Events History */}
-          <div className="flex flex-col gap-2 max-h-[140px] flex-shrink-0">
-            <h2 className="text-xs uppercase font-extrabold tracking-widest text-slate-400">Events Stream</h2>
-            <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[110px] pr-1" style={{ scrollbarWidth: 'thin' }}>
-              {alertHistory.length === 0 && (
-                <span className="text-[10px] text-white/30 italic">No events yet. Use simulators above!</span>
-              )}
-              {alertHistory.map(evt => (
-                <div key={evt.id} className="p-1.5 bg-[#120f28] border border-purple-950 rounded-md text-[10px] flex justify-between items-center">
-                  <div>
-                    <span className="font-bold text-white mr-1">{evt.username}</span>
-                    <span className="text-slate-400 lowercase">{evt.type}d</span>
+              {/* Chat Simulator */}
+              <div className="flex flex-col gap-2 border-t border-purple-900/30 pt-3">
+                <h2 className="text-xs uppercase font-extrabold tracking-widest text-slate-400 flex items-center gap-1.5">
+                  <MessageSquare size={11} /> Send Chat Message
+                </h2>
+                <div className="bg-[#100c22] border border-purple-950 rounded-xl overflow-hidden max-h-[120px]">
+                  <div className="overflow-y-auto p-2 max-h-[80px]" style={{ scrollbarWidth: 'none' }}>
+                    {chatMessages.slice(-5).map(m => (
+                      <div key={m.id} className="text-[10px] text-slate-300 mb-1">
+                        <span className="font-bold" style={{ color: m.color }}>{m.username}: </span>
+                        {m.text}
+                      </div>
+                    ))}
                   </div>
-                  <span className="text-purple-400 font-semibold">{evt.amount || 'New'}</span>
                 </div>
-              ))}
-            </div>
-          </div>
+                <form onSubmit={handleChatSend} className="flex flex-col gap-1.5">
+                  <input value={chatName} onChange={e => setChatName(e.target.value)} className="bg-black/30 border border-purple-950 rounded p-1 text-[10px] text-slate-300 w-full focus:outline-none" placeholder="Username" />
+                  <div className="flex gap-1.5">
+                    <input value={chatInput} onChange={e => setChatInput(e.target.value)} className="flex-grow bg-black/35 border border-purple-950 rounded p-1.5 text-xs text-white focus:outline-none focus:border-vibePrimary" placeholder="Type message..." />
+                    <button type="submit" className="p-1.5 bg-vibePrimary text-white rounded flex items-center justify-center">
+                      <Send size={13} />
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* AI Companion */}
+              <div className="flex-grow flex flex-col bg-[#100c22] border border-purple-950 rounded-xl overflow-hidden min-h-[180px]">
+                <div className="px-3 py-2 bg-black/40 border-b border-purple-950 flex items-center gap-2 text-xs font-extrabold text-vibeSecondary font-display tracking-widest flex-shrink-0">
+                  <Sparkles size={14} className="text-vibeAccent" /> VIBE_AI COMPANION
+                </div>
+                <div ref={aiScrollRef} className="flex-grow overflow-y-auto p-3 flex flex-col gap-2 max-h-[200px]" style={{ scrollbarWidth: 'thin' }}>
+                  {aiMessages.map(msg => (
+                    <div
+                      key={msg.id}
+                      className={`p-2 rounded-lg text-xs leading-relaxed max-w-[85%] ${
+                        msg.sender === 'user'
+                          ? 'bg-vibePrimary/20 border border-vibePrimary/30 text-white self-end'
+                          : 'bg-slate-900 border border-slate-800 text-slate-300 self-start'
+                      }`}
+                    >
+                      <span className="block text-[8px] font-black opacity-50 mb-0.5 tracking-wider uppercase font-display">
+                        {msg.sender === 'user' ? 'YOU' : 'AI ASSISTANT'}
+                      </span>
+                      {msg.text}
+                    </div>
+                  ))}
+                </div>
+                <form onSubmit={handleAISend} className="p-2 border-t border-purple-950 flex gap-1.5 bg-black/20 flex-shrink-0">
+                  <input
+                    id="ai-prompt-input"
+                    type="text"
+                    placeholder="Ask me: 'Switch to BRB'..."
+                    value={aiPrompt}
+                    onChange={e => setAiPrompt(e.target.value)}
+                    className="flex-grow bg-black/35 border border-purple-950 rounded-lg p-1.5 text-xs text-white focus:outline-none focus:border-vibePrimary"
+                  />
+                  <button type="submit" className="p-1.5 bg-vibePrimary hover:bg-vibePrimary/80 text-white rounded-lg flex items-center justify-center transition">
+                    <Send size={13} />
+                  </button>
+                </form>
+              </div>
+
+              {/* Events History */}
+              <div className="flex flex-col gap-2 max-h-[140px] flex-shrink-0">
+                <h2 className="text-xs uppercase font-extrabold tracking-widest text-slate-400">Events Stream</h2>
+                <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[110px] pr-1" style={{ scrollbarWidth: 'thin' }}>
+                  {alertHistory.length === 0 && (
+                    <span className="text-[10px] text-white/30 italic">No events yet. Use simulators above!</span>
+                  )}
+                  {alertHistory.map(evt => (
+                    <div key={evt.id} className="p-1.5 bg-[#120f28] border border-purple-950 rounded-md text-[10px] flex justify-between items-center">
+                      <div>
+                        <span className="font-bold text-white mr-1">{evt.username}</span>
+                        <span className="text-slate-400 lowercase">{evt.type}d</span>
+                      </div>
+                      <span className="text-purple-400 font-semibold">{evt.amount || 'New'}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </aside>
       </div>
     </div>

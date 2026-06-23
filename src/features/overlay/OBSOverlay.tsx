@@ -1,11 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useOverlayStore } from '../../store/overlayStore';
 import { TickerWidget } from '../../widgets/TickerWidget';
-import { StartingSoonScene } from '../../scenes/StartingSoonScene';
-import { MainStreamScene } from '../../scenes/MainStreamScene';
-import { ChatScene } from '../../scenes/ChatScene';
-import { BRBScene } from '../../scenes/BRBScene';
-import { EndingScene } from '../../scenes/EndingScene';
+import { WidgetRenderer } from '../../widgets/WidgetRenderer';
 
 export const OBSOverlay: React.FC = () => {
   const currentScene = useOverlayStore(s => s.currentScene);
@@ -95,17 +91,19 @@ export const OBSOverlay: React.FC = () => {
   }, [theme]);
 
   // ──────────────────────────────────────────────────────────────
-  // Render the active scene
+  // Render the active scene widgets dynamically
   // ──────────────────────────────────────────────────────────────
+  const widgets = useOverlayStore(s => s.sceneWidgets[s.currentScene] || []);
+
   const renderScene = () => {
-    switch (currentScene) {
-      case 'starting-soon':  return <StartingSoonScene />;
-      case 'main-stream':    return <MainStreamScene />;
-      case 'chat-session':   return <ChatScene />;
-      case 'brb':            return <BRBScene />;
-      case 'ending-stream':  return <EndingScene />;
-      default:               return <StartingSoonScene />;
-    }
+    const sortedWidgets = [...widgets].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+    return (
+      <div className="absolute inset-0 z-10 overflow-hidden pointer-events-none">
+        {sortedWidgets.map(widget => (
+          <WidgetRenderer key={widget.id} widget={widget} isEditor={false} />
+        ))}
+      </div>
+    );
   };
 
   return (
