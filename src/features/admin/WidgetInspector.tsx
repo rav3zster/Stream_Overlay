@@ -37,8 +37,10 @@ const CONTENT_TYPES = [
   { value: 'cpu-usage', label: '💻 CPU & RAM Usage Monitor' },
   { value: 'countdown', label: '⏲️ Custom Event Countdown' },
   { value: 'custom-text', label: '✍️ Custom Label / Text / Quote' },
-  { value: 'pet-widget', label: '🐱 Interative Pixel Pet' },
-  { value: 'polls', label: '🗳️ Live Chat Poll' }
+  { value: 'pet-widget', label: '🐱 Interactive Pixel Pet' },
+  { value: 'polls', label: '🗳️ Live Chat Poll' },
+  { value: 'media', label: '🖼️ Custom Media Asset' },
+  { value: 'game-frame', label: '🎮 Gameplay Capture Frame' }
 ];
 
 export const WidgetInspector: React.FC = () => {
@@ -325,6 +327,176 @@ export const WidgetInspector: React.FC = () => {
                 onChange={(e) => handleContentSettingsUpdate({ maxMessages: parseInt(e.target.value) || 10 })}
                 className="bg-black/50 border border-purple-950 rounded p-0.5 text-[10px] w-12 text-center"
               />
+            </div>
+          </div>
+        )}
+
+        {widget.content?.type === 'media' && (
+          <div className="bg-black/35 rounded p-2 border border-white/5 mt-1 flex flex-col gap-1.5">
+            <span className="text-[9px] font-bold text-purple-400">Media settings:</span>
+            
+            <div className="flex flex-col gap-0.5">
+              <label className="text-[8px] text-slate-400">Media source URL</label>
+              <input 
+                type="text"
+                value={widget.content?.settings?.url || ''}
+                onChange={(e) => handleContentSettingsUpdate({ url: e.target.value })}
+                className="bg-black/50 border border-purple-950 rounded p-1 text-[10px]"
+                placeholder="https://..."
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <div>
+                <label className="text-[8px] text-slate-400">Render Mode</label>
+                <select
+                  value={widget.content?.settings?.mediaMode || 'image'}
+                  onChange={(e) => handleContentSettingsUpdate({ mediaMode: e.target.value })}
+                  className="w-full bg-black/50 border border-purple-950 rounded p-0.5 text-[10px]"
+                >
+                  <option value="image">Image / PNG / WebP</option>
+                  <option value="gif">Animated GIF</option>
+                  <option value="video">MP4 Video Clip</option>
+                  <option value="lottie">Lottie Animation</option>
+                  <option value="svg">SVG Vector Graphics</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[8px] text-slate-400">Hover Animation</label>
+                <select
+                  value={widget.content?.settings?.hoverEffect || 'none'}
+                  onChange={(e) => handleContentSettingsUpdate({ hoverEffect: e.target.value })}
+                  className="w-full bg-black/50 border border-purple-950 rounded p-0.5 text-[10px]"
+                >
+                  <option value="none">Static (None)</option>
+                  <option value="scale">Zoom scale</option>
+                  <option value="glow">Neon Glow</option>
+                  <option value="lift">Shadow Lift</option>
+                  <option value="grayscale">Grayscale hover</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <div>
+                <label className="text-[8px] text-slate-400">Blend Mode</label>
+                <select
+                  value={widget.content?.settings?.blendMode || 'normal'}
+                  onChange={(e) => handleContentSettingsUpdate({ blendMode: e.target.value })}
+                  className="w-full bg-black/50 border border-purple-950 rounded p-0.5 text-[10px]"
+                >
+                  <option value="normal">Normal</option>
+                  <option value="screen">Screen</option>
+                  <option value="multiply">Multiply</option>
+                  <option value="overlay">Overlay</option>
+                  <option value="color-dodge">Color Dodge</option>
+                  <option value="luminosity">Luminosity</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[8px] text-slate-400">Shape Mask</label>
+                <select
+                  value={widget.content?.settings?.masking || 'none'}
+                  onChange={(e) => handleContentSettingsUpdate({ masking: e.target.value })}
+                  className="w-full bg-black/50 border border-purple-950 rounded p-0.5 text-[10px]"
+                >
+                  <option value="none">Rectangle (Default)</option>
+                  <option value="circle">Circle / Avatar</option>
+                  <option value="rhombus">Diamond / Rhombus</option>
+                  <option value="triangle">Triangle</option>
+                  <option value="hexagon">Hexagon Badge</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 mt-1.5">
+              <input 
+                type="checkbox"
+                id="loop-media"
+                checked={widget.content?.settings?.loop ?? true}
+                onChange={(e) => handleContentSettingsUpdate({ loop: e.target.checked })}
+                className="rounded text-vibePrimary focus:ring-vibePrimary"
+              />
+              <label htmlFor="loop-media" className="text-[8.5px] font-bold text-slate-300">Loop Animation / Video</label>
+            </div>
+
+            <div className="flex flex-col gap-1 border-t border-white/5 pt-1.5 mt-1.5">
+              <label className="text-[8px] text-purple-400 font-bold">Crop Insets (%)</label>
+              <div className="grid grid-cols-4 gap-1 text-center">
+                <div>
+                  <span className="text-[7px] text-slate-400 block">Top</span>
+                  <input
+                    type="number"
+                    value={widget.content?.settings?.crop?.top ?? 0}
+                    onChange={(e) => handleContentSettingsUpdate({
+                      crop: { ...(widget.content?.settings?.crop || { top: 0, right: 0, bottom: 0, left: 0 }), top: parseInt(e.target.value) || 0 }
+                    })}
+                    className="w-full bg-black/50 border border-purple-950 rounded text-center p-0.5 text-[10px]"
+                  />
+                </div>
+                <div>
+                  <span className="text-[7px] text-slate-400 block">Right</span>
+                  <input
+                    type="number"
+                    value={widget.content?.settings?.crop?.right ?? 0}
+                    onChange={(e) => handleContentSettingsUpdate({
+                      crop: { ...(widget.content?.settings?.crop || { top: 0, right: 0, bottom: 0, left: 0 }), right: parseInt(e.target.value) || 0 }
+                    })}
+                    className="w-full bg-black/50 border border-purple-950 rounded text-center p-0.5 text-[10px]"
+                  />
+                </div>
+                <div>
+                  <span className="text-[7px] text-slate-400 block">Bottom</span>
+                  <input
+                    type="number"
+                    value={widget.content?.settings?.crop?.bottom ?? 0}
+                    onChange={(e) => handleContentSettingsUpdate({
+                      crop: { ...(widget.content?.settings?.crop || { top: 0, right: 0, bottom: 0, left: 0 }), bottom: parseInt(e.target.value) || 0 }
+                    })}
+                    className="w-full bg-black/50 border border-purple-950 rounded text-center p-0.5 text-[10px]"
+                  />
+                </div>
+                <div>
+                  <span className="text-[7px] text-slate-400 block">Left</span>
+                  <input
+                    type="number"
+                    value={widget.content?.settings?.crop?.left ?? 0}
+                    onChange={(e) => handleContentSettingsUpdate({
+                      crop: { ...(widget.content?.settings?.crop || { top: 0, right: 0, bottom: 0, left: 0 }), left: parseInt(e.target.value) || 0 }
+                    })}
+                    className="w-full bg-black/50 border border-purple-950 rounded text-center p-0.5 text-[10px]"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {widget.content?.type === 'game-frame' && (
+          <div className="bg-black/35 rounded p-2 border border-white/5 mt-1 flex flex-col gap-1.5">
+            <span className="text-[9px] font-bold text-purple-400">Game Frame Cutout settings:</span>
+            
+            <div className="flex flex-col gap-0.5">
+              <label className="text-[8px] text-slate-400">Title Bar text</label>
+              <input 
+                type="text"
+                value={widget.content?.settings?.titleText || 'GAMEPLAY WINDOW'}
+                onChange={(e) => handleContentSettingsUpdate({ titleText: e.target.value })}
+                className="bg-black/50 border border-purple-950 rounded p-1 text-[10px]"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 mt-1">
+              <input 
+                type="checkbox"
+                id="show-title-bar"
+                checked={widget.content?.settings?.titleBar ?? true}
+                onChange={(e) => handleContentSettingsUpdate({ titleBar: e.target.checked })}
+                className="rounded text-vibePrimary focus:ring-vibePrimary"
+              />
+              <label htmlFor="show-title-bar" className="text-[8.5px] font-bold text-slate-300">Show Window Header Bar</label>
             </div>
           </div>
         )}

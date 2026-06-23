@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useOverlayStore, type SceneType, type ThemeType } from '../../store/overlayStore';
+import { useOverlayStore, type SceneType, type ThemeType, type Widget } from '../../store/overlayStore';
 import { OBSOverlay } from '../overlay/OBSOverlay';
 import { SceneEditor } from '../editor/SceneEditor';
 import { LayerPanel } from './LayerPanel';
@@ -9,7 +9,8 @@ import {
   Tv, Sparkles, Award, Calendar, ShoppingBag, Settings, Link2,
   Volume2, ShieldAlert, Users, Globe, Send, Copy, ExternalLink,
   ChevronRight, Radio, Play, Plus, Trash, Pause, RotateCcw,
-  Clock, Eye, EyeOff, Youtube, MessageSquare, Timer
+  Clock, Eye, EyeOff, Youtube, MessageSquare, Timer,
+  FolderOpen, UploadCloud
 } from 'lucide-react';
 
 // ── Twitch icon as inline SVG (not in lucide) ──────────────────────────────
@@ -30,6 +31,38 @@ const THEMES: Array<{ key: ThemeType; label: string; bg: string }> = [
   { key: 'cosmic-nebula', label: 'Cosmic Nebula', bg: 'linear-gradient(135deg, #6366F1, #38BDF8)' },
   { key: 'vaporwave', label: 'Vaporwave', bg: 'linear-gradient(135deg, #00F5FF, #FF77FF)' },
   { key: 'minimal-purple', label: 'Minimal Purple', bg: 'linear-gradient(135deg, #C084FC, #94a3b8)' },
+  
+  // Design Languages
+  { key: 'minimal-white', label: 'Minimal White', bg: '#FFFFFF' },
+  { key: 'minimal-dark', label: 'Minimal Dark', bg: '#1A1A1A' },
+  { key: 'flat-ui', label: 'Flat UI', bg: 'linear-gradient(135deg, #3B82F6, #EF4444)' },
+  { key: 'glassmorphism', label: 'Glassmorphism', bg: 'rgba(255,255,255,0.2)' },
+  { key: 'neumorphism', label: 'Neumorphism', bg: '#E0E0E0' },
+  { key: 'retro-crt', label: 'Retro CRT', bg: 'repeating-linear-gradient(0deg, #111, #111 2px, #222 2px, #222 4px)' },
+  
+  // Seasonals
+  { key: 'halloween', label: 'Halloween', bg: 'linear-gradient(135deg, #F97316, #7C2D12)' },
+  { key: 'christmas', label: 'Christmas', bg: 'linear-gradient(135deg, #DC2626, #16A34A)' },
+  { key: 'snow', label: 'Snow Season', bg: 'linear-gradient(135deg, #E0F2FE, #93C5FD)' },
+  
+  // Corporate / Modern
+  { key: 'corporate', label: 'Corporate Tech', bg: 'linear-gradient(135deg, #1E3A8A, #3B82F6)' },
+  { key: 'modern', label: 'Modern Clean', bg: 'linear-gradient(135deg, #0F172A, #334155)' },
+  { key: 'luxury', label: 'Luxury Gold', bg: 'linear-gradient(135deg, #111, #D4AF37)' },
+  
+  // Motorsports
+  { key: 'mclaren', label: 'McLaren F1', bg: 'linear-gradient(135deg, #FF8000, #1A1A1A)' },
+  { key: 'porsche-gulf', label: 'Porsche Gulf', bg: 'linear-gradient(135deg, #709CB8, #FF5800)' },
+  { key: 'ferrari', label: 'Ferrari F1', bg: 'linear-gradient(135deg, #C4151C, #FFEB3B)' },
+  { key: 'mercedes-amg', label: 'Mercedes AMG', bg: 'linear-gradient(135deg, #CCCCCC, #00A3A6)' },
+  { key: 'red-bull', label: 'Red Bull Racing', bg: 'linear-gradient(135deg, #001A30, #FFCC00)' },
+  
+  // Blanks
+  { key: 'transparent', label: 'Pure Transparent', bg: 'transparent' },
+  { key: 'pure-black', label: 'Pure Black', bg: '#000000' },
+  { key: 'pure-white', label: 'Pure White', bg: '#FFFFFF' },
+  { key: 'blank-dark', label: 'Minimal Dark Blank', bg: '#090D16' },
+  { key: 'blank-light', label: 'Minimal Light Blank', bg: '#F8FAFC' },
 ];
 
 const MARKETPLACE_THEMES = [
@@ -67,7 +100,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
     }
   }, [selectedWidgetId]);
 
-  type TabType = 'scenes' | 'widgets' | 'alerts' | 'goals' | 'scheduler' | 'marketplace' | 'integrations' | 'settings';
+  type TabType = 'scenes' | 'widgets' | 'alerts' | 'goals' | 'scheduler' | 'marketplace' | 'integrations' | 'settings' | 'assets';
   const [activeTab, setActiveTab] = useState<TabType>(activeTabInitial);
 
   useEffect(() => {
@@ -92,6 +125,57 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
   const [editTwitter, setEditTwitter] = useState(settings.socials.twitter);
   const [editYoutube, setEditYoutube] = useState(settings.socials.youtube);
   const [editDiscord, setEditDiscord] = useState(settings.socials.discord);
+  const [editDisableAnimations, setEditDisableAnimations] = useState(settings.disableAnimations || false);
+  const [editAnimationPack, setEditAnimationPack] = useState(settings.activeAnimationPack || 'float');
+
+  const [assets, setAssets] = useState<Array<{
+    id: string;
+    name: string;
+    type: 'image' | 'gif' | 'video' | 'lottie' | 'svg';
+    url: string;
+    size: string;
+  }>>([
+    { id: 'asset-1', name: 'Abstract Cyber Wave', type: 'image', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80', size: '240 KB' },
+    { id: 'asset-2', name: 'Cyberpunk Grid Sunset', type: 'gif', url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZkMTNjc3B3dW16cTY0bzMzd3VjM2txNm1qam05Z2ZpZnYzdXQxOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKUM3cGE6wy4UZy/giphy.gif', size: '1.2 MB' },
+    { id: 'asset-3', name: 'Motorsport F1 Motion', type: 'video', url: 'https://assets.mixkit.co/videos/preview/mixkit-abstract-laser-lights-background-loop-41851-large.mp4', size: '4.8 MB' },
+    { id: 'asset-4', name: 'Twinkle Lottie Ring', type: 'lottie', url: 'https://assets2.lottiefiles.com/packages/lf20_aay9skwa.json', size: '12 KB' },
+  ]);
+
+  const addMediaWidget = (assetUrl: string, assetType: string, assetName: string) => {
+    const currentWidgets = useOverlayStore.getState().sceneWidgets[currentScene];
+    const newId = `media-${Date.now()}`;
+    const newWidget: Widget = {
+      id: newId,
+      type: 'media',
+      label: assetName,
+      x: 30, y: 30, w: 25, h: 20,
+      rotation: 0, opacity: 100, scale: 1.0, zIndex: currentWidgets.length + 1,
+      visible: true, locked: false,
+      style: { borderRadius: 8, background: 'transparent', borderSize: 0, borderStyle: 'none', borderColor: '', glowBlur: 0, padding: 0 },
+      animation: { type: 'none', duration: 1, delay: 0, loop: false },
+      content: {
+        type: 'media',
+        settings: {
+          url: assetUrl,
+          mediaMode: assetType as any,
+          loop: true,
+          blendMode: 'normal',
+          masking: 'none',
+          hoverEffect: 'none',
+          crop: { top: 0, right: 0, bottom: 0, left: 0 }
+        }
+      }
+    };
+    useOverlayStore.setState(state => ({
+      sceneWidgets: {
+        ...state.sceneWidgets,
+        [currentScene]: [...currentWidgets, newWidget]
+      },
+      selectedWidgetIds: [newId],
+      selectedWidgetId: newId
+    }));
+    useOverlayStore.getState().pushHistoryState();
+  };
 
   // Chat sim
   const [chatInput, setChatInput] = useState('');
@@ -139,6 +223,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
   const handleSettingsSave = () => {
     updateSettings({
       streamTitle: editTitle, activeGame: editGame, streamerName: editName, tickerText: editTicker,
+      disableAnimations: editDisableAnimations, activeAnimationPack: editAnimationPack,
       socials: { twitch: editTwitch, twitter: editTwitter, youtube: editYoutube, discord: editDiscord },
     });
   };
@@ -164,6 +249,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
     { tab: 'widgets', icon: <Sparkles size={18} />, label: 'Theme' },
     { tab: 'goals', icon: <Award size={18} />, label: 'Goals' },
     { tab: 'scheduler', icon: <Calendar size={18} />, label: 'Timing' },
+    { tab: 'assets', icon: <FolderOpen size={18} />, label: 'Assets' },
     { tab: 'marketplace', icon: <ShoppingBag size={18} />, label: 'Shop' },
     { tab: 'integrations', icon: <Link2 size={18} />, label: 'Links' },
     { tab: 'settings', icon: <Settings size={18} />, label: 'Config' },
@@ -263,7 +349,75 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
         {/* LEFT CONTENT PANEL */}
         <aside className="w-[300px] bg-[#0c0a1a]/50 border-r border-purple-900/30 p-5 overflow-y-auto flex flex-col gap-5 z-20 flex-shrink-0">
 
-          {/* SCENES TAB */}
+          {/* ASSETS TAB */}
+          {activeTab === 'assets' && (
+            <div className="flex flex-col gap-4">
+              <div>
+                <h2 className="text-sm font-black font-display text-white mb-1 uppercase tracking-wider">ASSETS LIBRARY</h2>
+                <p className="text-[11px] text-slate-400">Upload and place graphics, GIFs, videos, and Lottie animations.</p>
+              </div>
+
+              {/* Upload Drop Zone */}
+              <div 
+                className="p-4 border-2 border-dashed border-purple-900/40 hover:border-purple-600/80 rounded-xl bg-black/25 flex flex-col items-center justify-center text-center cursor-pointer transition"
+                onClick={() => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*,video/*,.json,image/gif';
+                  input.onchange = (e: any) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const url = URL.createObjectURL(file);
+                      let mediaType: 'image' | 'gif' | 'video' | 'lottie' | 'svg' = 'image';
+                      if (file.type.includes('gif')) mediaType = 'gif';
+                      else if (file.type.includes('video')) mediaType = 'video';
+                      else if (file.name.endsWith('.json')) mediaType = 'lottie';
+                      else if (file.type.includes('svg')) mediaType = 'svg';
+
+                      setAssets(prev => [
+                        ...prev,
+                        {
+                          id: `asset-${Date.now()}`,
+                          name: file.name,
+                          type: mediaType,
+                          url: url,
+                          size: `${(file.size / 1024).toFixed(0)} KB`
+                        }
+                      ]);
+                    }
+                  };
+                  input.click();
+                }}
+              >
+                <UploadCloud className="text-purple-400 mb-1" size={24} />
+                <span className="text-[10px] font-bold text-slate-300">Select or drop media files</span>
+                <span className="text-[8px] text-white/30 mt-0.5">Supports PNG, WebP, GIF, MP4, Lottie, SVG</span>
+              </div>
+
+              {/* Library grid list */}
+              <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
+                {assets.map(asset => (
+                  <div key={asset.id} className="p-2.5 bg-[#110d24] border border-purple-950 rounded-xl flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <div className="w-8 h-8 rounded border border-white/5 bg-black/40 flex-shrink-0 flex items-center justify-center text-[14px]">
+                        {asset.type === 'video' ? '📹' : asset.type === 'gif' ? '🖼️' : asset.type === 'lottie' ? '💫' : '🎨'}
+                      </div>
+                      <div className="overflow-hidden">
+                        <span className="block text-xs font-bold text-white truncate w-[110px]">{asset.name}</span>
+                        <span className="text-[9px] text-slate-400 capitalize">{asset.type} · {asset.size}</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => addMediaWidget(asset.url, asset.type, asset.name)}
+                      className="px-2 py-1 bg-vibePrimary hover:bg-vibePrimary/80 text-white rounded font-bold text-[9px] transition flex-shrink-0"
+                    >
+                      + Place
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {activeTab === 'scenes' && (
             <div className="flex flex-col gap-4">
               <div>
@@ -605,6 +759,39 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
                       </div>
                     ))}
                   </div>
+                </div>
+                <div className="flex items-center gap-2 py-1">
+                  <input 
+                    type="checkbox" 
+                    id="disable-anims" 
+                    checked={editDisableAnimations} 
+                    onChange={e => setEditDisableAnimations(e.target.checked)} 
+                    className="rounded text-vibePrimary focus:ring-vibePrimary"
+                  />
+                  <label htmlFor="disable-anims" className="text-[10px] font-bold text-slate-300">Disable All Animations</label>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-[10px] font-semibold text-slate-400">Background Animation Pack</label>
+                  <select
+                    value={editAnimationPack}
+                    onChange={e => setEditAnimationPack(e.target.value)}
+                    className="bg-black/30 border border-purple-950 rounded p-1.5 text-xs text-white"
+                  >
+                    <option value="static">Static (None)</option>
+                    <option value="minimal">Minimal</option>
+                    <option value="float">Float (Default)</option>
+                    <option value="glow">Glow Pulse</option>
+                    <option value="pulse">Opacity Pulse</option>
+                    <option value="aurora">Aurora Glow</option>
+                    <option value="wave">Sinewave Float</option>
+                    <option value="neon">Neon Sparkle</option>
+                    <option value="particle-rain">Particle Rain</option>
+                    <option value="snow">Snow Season</option>
+                    <option value="fireflies">Summer Fireflies</option>
+                    <option value="stars">Twinkling Stars</option>
+                    <option value="rain">Streaking Rain</option>
+                    <option value="fog">Drifting Fog</option>
+                  </select>
                 </div>
                 <button onClick={handleSettingsSave} className="py-1.5 bg-gradient-to-r from-vibePrimary to-vibeSecondary text-white text-xs font-bold rounded-lg shadow-glow hover:brightness-110">
                   Save Settings

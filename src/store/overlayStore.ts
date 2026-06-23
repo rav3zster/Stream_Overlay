@@ -8,7 +8,11 @@ export type SceneType = 'starting-soon' | 'main-stream' | 'chat-session' | 'brb'
 export type ThemeType =
   | 'cyber-synth' | 'galaxy-violet' | 'anime-bedroom' | 'lo-fi-cafe'
   | 'sakura-night' | 'neon-tokyo' | 'dark-amethyst' | 'cosmic-nebula'
-  | 'vaporwave' | 'minimal-purple';
+  | 'vaporwave' | 'minimal-purple'
+  | 'minimal-white' | 'minimal-dark' | 'flat-ui' | 'glassmorphism' | 'neumorphism' | 'retro-crt'
+  | 'halloween' | 'christmas' | 'snow' | 'corporate' | 'modern' | 'luxury'
+  | 'mclaren' | 'porsche-gulf' | 'ferrari' | 'mercedes-amg' | 'red-bull'
+  | 'transparent' | 'pure-black' | 'pure-white' | 'blank-dark' | 'blank-light';
 
 export type AlertType = 'follow' | 'subscribe' | 'donation' | 'raid' | 'host';
 
@@ -104,6 +108,8 @@ export interface OverlaySettings {
   overlayOpacity: number;
   particleDensity: 'off' | 'low' | 'medium' | 'high';
   tickerSpeed: 'slow' | 'normal' | 'fast';
+  disableAnimations: boolean;
+  activeAnimationPack: string;
 }
 
 export interface OverlayTimer {
@@ -496,6 +502,8 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     overlayOpacity: 85,
     particleDensity: 'medium',
     tickerSpeed: 'normal',
+    disableAnimations: false,
+    activeAnimationPack: 'float',
   },
 
   aiMessages: [

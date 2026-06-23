@@ -6,6 +6,7 @@ import { WidgetRenderer } from '../../widgets/WidgetRenderer';
 export const OBSOverlay: React.FC = () => {
   const currentScene = useOverlayStore(s => s.currentScene);
   const theme = useOverlayStore(s => s.theme);
+  const settings = useOverlayStore(s => s.settings);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // ──────────────────────────────────────────────────────────────
@@ -56,7 +57,42 @@ export const OBSOverlay: React.FC = () => {
         ctx.save();
         ctx.globalAlpha = d.a;
 
-        if (['cyber-synth', 'vaporwave', 'neon-tokyo'].includes(theme)) {
+        const animPack = settings.activeAnimationPack || 'float';
+
+        if (animPack === 'snow') {
+          d.sy = Math.abs(d.sy) + 0.4;
+          ctx.fillStyle = `rgba(255, 255, 255, ${d.a * 0.9})`;
+          ctx.beginPath();
+          ctx.arc(d.x, d.y, d.s * 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (animPack === 'rain') {
+          d.sy = Math.abs(d.sy) * 2.5 + 4;
+          d.sx = 0.5;
+          ctx.strokeStyle = `rgba(160, 207, 255, ${d.a * 0.45})`;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(d.x, d.y);
+          ctx.lineTo(d.x + d.sx * 5, d.y + d.sy * 2);
+          ctx.stroke();
+        } else if (animPack === 'fireflies') {
+          ctx.fillStyle = `rgba(220, 255, 100, ${Math.sin(Date.now() * 0.003 + d.rot) * 0.4 + 0.5})`;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = '#dcf550';
+          ctx.beginPath();
+          ctx.arc(d.x, d.y, d.s * 1.3, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (animPack === 'stars') {
+          ctx.fillStyle = `rgba(255, 255, 255, ${Math.sin(Date.now() * 0.004 + d.x * 0.1) * 0.5 + 0.5})`;
+          ctx.beginPath();
+          ctx.arc(d.x, d.y, d.s * 0.7, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (animPack === 'fog') {
+          d.sx = (d.sx > 0 ? 1 : -1) * 0.08;
+          ctx.fillStyle = `rgba(255, 255, 255, ${d.a * 0.03})`;
+          ctx.beginPath();
+          ctx.arc(d.x, d.y, d.s * 25, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (['cyber-synth', 'vaporwave', 'neon-tokyo'].includes(theme)) {
           ctx.fillStyle = d.s > 2.5 ? '#FF4DFF' : '#5CFFE2';
           ctx.shadowBlur = 8; ctx.shadowColor = ctx.fillStyle;
           ctx.fillRect(d.x, d.y, d.s * 1.5, d.s * 1.5);
@@ -88,7 +124,7 @@ export const OBSOverlay: React.FC = () => {
 
     draw();
     return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', onResize); };
-  }, [theme]);
+  }, [theme, settings.disableAnimations, settings.activeAnimationPack]);
 
   // ──────────────────────────────────────────────────────────────
   // Render the active scene widgets dynamically
@@ -106,17 +142,48 @@ export const OBSOverlay: React.FC = () => {
     );
   };
 
+  const cutoutWidgets = widgets.filter(w => w.type === 'game-frame' && w.visible);
+
   return (
     <div
       id="overlay-canvas"
       className={`theme-${theme} w-full h-screen relative overflow-hidden select-none`}
-      style={{ fontFamily: 'var(--font-body)', background: 'var(--bg-color, #07050F)' }}
+      style={{ fontFamily: 'var(--font-body)', background: 'transparent' }}
     >
-      {/* Particle canvas */}
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full z-0 pointer-events-none" />
+      {/* Isolated background blending layers */}
+      <div className="absolute inset-0 z-0 pointer-events-none" style={{ isolation: 'isolate' }}>
+        {/* Background color */}
+        <div 
+          className="absolute inset-0"
+          style={{ background: theme === 'transparent' ? 'transparent' : 'var(--bg-color, #07050F)' }}
+        />
 
-      {/* Grid overlay */}
-      <div className="bg-grid-overlay" />
+        {/* Particle canvas */}
+        {!settings.disableAnimations && (
+          <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
+        )}
+
+        {/* Grid overlay */}
+        <div className="bg-grid-overlay absolute inset-0" />
+
+        {/* Transparent game frame cutouts */}
+        {cutoutWidgets.map(w => (
+          <div
+            key={`cutout-${w.id}`}
+            style={{
+              position: 'absolute',
+              left: `${w.x}%`,
+              top: `${w.y}%`,
+              width: `${w.w}%`,
+              height: `${w.h}%`,
+              borderRadius: `${w.style?.borderRadius ?? 8}px`,
+              background: '#000000',
+              mixBlendMode: 'destination-out' as any,
+              transform: `rotate(${w.rotation || 0}deg) scale(${w.scale || 1.0})`,
+            }}
+          />
+        ))}
+      </div>
 
       {/* Scanline effect */}
       <div className="scanlines absolute inset-0 w-full h-full z-40 pointer-events-none opacity-20" />

@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { type Widget } from '../store/overlayStore';
+import { useOverlayStore, type Widget } from '../store/overlayStore';
+import { MediaWidget } from './MediaWidget';
+import { GameFrameWidget } from './GameFrameWidget';
 import { TimerWidget } from './TimerWidget';
 import { ChatWidget } from './ChatWidget';
 import { MusicWidget } from './MusicWidget';
@@ -30,6 +32,8 @@ interface WidgetRendererProps {
 }
 
 export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor = false }) => {
+  const disableAnimations = useOverlayStore(s => s.settings.disableAnimations);
+
   // If hidden on live OBS overlay, render nothing
   if (!widget.visible && !isEditor) return null;
 
@@ -61,8 +65,8 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
   };
 
   const getAnimateProps = () => {
-    // Disable animations in editor mode to make edit easy
-    if (isEditor) return {};
+    // Disable animations in editor mode or globally to make edit easy
+    if (isEditor || disableAnimations) return {};
     if (!widget.animation || widget.animation.type === 'none') return {};
     
     const duration = widget.animation.duration || 1;
@@ -174,6 +178,10 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
         return <PetWidget />;
       case 'polls':
         return <PollsWidget />;
+      case 'media':
+        return <MediaWidget settings={settings} />;
+      case 'game-frame':
+        return <GameFrameWidget settings={settings} />;
       
       default:
         return (

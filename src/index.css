@@ -182,6 +182,314 @@ body {
   --glow-text: none;
 }
 
+/* 11. Minimal White */
+.theme-minimal-white {
+  --bg-color: #f8fafc;
+  --panel-bg: rgba(255, 255, 255, 0.9);
+  --panel-border: #e2e8f0;
+  --accent-primary: #0f172a;
+  --accent-secondary: #475569;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --font-display: 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --glow-text: none;
+}
+
+/* 12. Minimal Dark */
+.theme-minimal-dark {
+  --bg-color: #0f172a;
+  --panel-bg: rgba(30, 41, 59, 0.9);
+  --panel-border: #334155;
+  --accent-primary: #f8fafc;
+  --accent-secondary: #94a3b8;
+  --text-primary: #f8fafc;
+  --text-secondary: #64748b;
+  --font-display: 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --glow-text: none;
+}
+
+/* 13. Flat UI */
+.theme-flat-ui {
+  --bg-color: #2c3e50;
+  --panel-bg: #34495e;
+  --panel-border: #bdc3c7;
+  --accent-primary: #3498db;
+  --accent-secondary: #e74c3c;
+  --text-primary: #ecf0f1;
+  --text-secondary: #bdc3c7;
+  --font-display: 'Montserrat', sans-serif;
+  --font-body: 'Lato', sans-serif;
+  --glow-text: none;
+}
+
+/* 14. Glassmorphism */
+.theme-glassmorphism {
+  --bg-color: #0f0b21;
+  --panel-bg: rgba(255, 255, 255, 0.08);
+  --panel-border: rgba(255, 255, 255, 0.15);
+  --accent-primary: #a855f7;
+  --accent-secondary: #ec4899;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.6);
+  --font-display: 'Outfit', sans-serif;
+  --font-body: 'Outfit', sans-serif;
+  --glow-text: 0 0 8px rgba(168, 85, 247, 0.5);
+}
+
+/* 15. Neumorphism */
+.theme-neumorphism {
+  --bg-color: #e0e0e0;
+  --panel-bg: #e0e0e0;
+  --panel-border: transparent;
+  --accent-primary: #3b82f6;
+  --accent-secondary: #10b981;
+  --text-primary: #333333;
+  --text-secondary: #666666;
+  --font-display: 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --glow-text: none;
+}
+
+/* 16. Retro CRT */
+.theme-retro-crt {
+  --bg-color: #051405;
+  --panel-bg: rgba(5, 20, 5, 0.9);
+  --panel-border: #33ff33;
+  --accent-primary: #33ff33;
+  --accent-secondary: #11aa11;
+  --text-primary: #33ff33;
+  --text-secondary: #228822;
+  --font-display: 'Share Tech Mono', monospace;
+  --font-body: 'Share Tech Mono', monospace;
+  --glow-text: 0 0 8px #33ff33;
+}
+
+/* 17. Halloween */
+.theme-halloween {
+  --bg-color: #0d0601;
+  --panel-bg: rgba(31, 14, 2, 0.85);
+  --panel-border: #f97316;
+  --accent-primary: #f97316;
+  --accent-secondary: #a855f7;
+  --text-primary: #ffedd5;
+  --text-secondary: #fdba74;
+  --font-display: 'Quicksand', sans-serif;
+  --font-body: 'Outfit', sans-serif;
+  --glow-text: 0 0 10px #f97316;
+}
+
+/* 18. Christmas */
+.theme-christmas {
+  --bg-color: #0a1f11;
+  --panel-bg: rgba(220, 38, 38, 0.15);
+  --panel-border: #dc2626;
+  --accent-primary: #ef4444;
+  --accent-secondary: #10b981;
+  --text-primary: #fef2f2;
+  --text-secondary: #fca5a5;
+  --font-display: 'Outfit', sans-serif;
+  --font-body: 'Outfit', sans-serif;
+  --glow-text: 0 0 8px #ef4444;
+}
+
+/* 19. Snow Season */
+.theme-snow {
+  --bg-color: #0f1e2d;
+  --panel-bg: rgba(147, 197, 253, 0.15);
+  --panel-border: #93c5fd;
+  --accent-primary: #e0f2fe;
+  --accent-secondary: #60a5fa;
+  --text-primary: #f0f9ff;
+  --text-secondary: #93c5fd;
+  --font-display: 'Outfit', sans-serif;
+  --font-body: 'Outfit', sans-serif;
+  --glow-text: 0 0 8px #93c5fd;
+}
+
+/* 20. Corporate Tech */
+.theme-corporate {
+  --bg-color: #0f172a;
+  --panel-bg: rgba(255, 255, 255, 0.95);
+  --panel-border: #cbd5e1;
+  --accent-primary: #1e3a8a;
+  --accent-secondary: #3b82f6;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --font-display: 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --glow-text: none;
+}
+
+/* 21. Modern Clean */
+.theme-modern {
+  --bg-color: #020617;
+  --panel-bg: rgba(15, 23, 42, 0.8);
+  --panel-border: #334155;
+  --accent-primary: #38bdf8;
+  --accent-secondary: #f43f5e;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --font-display: 'Outfit', sans-serif;
+  --font-body: 'Outfit', sans-serif;
+  --glow-text: none;
+}
+
+/* 22. Luxury Gold */
+.theme-luxury {
+  --bg-color: #0a0a0a;
+  --panel-bg: rgba(20, 20, 20, 0.95);
+  --panel-border: #d4af37;
+  --accent-primary: #d4af37;
+  --accent-secondary: #ffffff;
+  --text-primary: #f5f5f5;
+  --text-secondary: #a3a3a3;
+  --font-display: 'Lora', serif;
+  --font-body: 'Lora', serif;
+  --glow-text: 0 0 6px rgba(212, 175, 55, 0.5);
+}
+
+/* 23. McLaren F1 Theme */
+.theme-mclaren {
+  --bg-color: #0a0a0a;
+  --panel-bg: rgba(20, 20, 20, 0.9);
+  --panel-border: #ff8000;
+  --accent-primary: #ff8000;
+  --accent-secondary: #ffffff;
+  --text-primary: #f5f5f5;
+  --text-secondary: #8c8c8c;
+  --font-display: 'Orbitron', sans-serif;
+  --font-body: 'Share Tech Mono', monospace;
+  --glow-text: 0 0 8px rgba(255, 128, 0, 0.6);
+}
+
+/* 24. Porsche Gulf Theme */
+.theme-porsche-gulf {
+  --bg-color: #121e2c;
+  --panel-bg: rgba(112, 156, 184, 0.15);
+  --panel-border: #709cb8;
+  --accent-primary: #709cb8;
+  --accent-secondary: #ff5800;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --font-display: 'Outfit', sans-serif;
+  --font-body: 'Outfit', sans-serif;
+  --glow-text: 0 0 6px rgba(112, 156, 184, 0.4);
+}
+
+/* 25. Ferrari Theme */
+.theme-ferrari {
+  --bg-color: #0b0202;
+  --panel-bg: rgba(196, 21, 28, 0.1);
+  --panel-border: #c4151c;
+  --accent-primary: #c4151c;
+  --accent-secondary: #ffeb3b;
+  --text-primary: #ffffff;
+  --text-secondary: #e5e7eb;
+  --font-display: 'Orbitron', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --glow-text: 0 0 8px rgba(196, 21, 28, 0.5);
+}
+
+/* 26. Mercedes AMG Theme */
+.theme-mercedes-amg {
+  --bg-color: #0b0f12;
+  --panel-bg: rgba(26, 31, 36, 0.85);
+  --panel-border: #00a3a6;
+  --accent-primary: #00a3a6;
+  --accent-secondary: #cccccc;
+  --text-primary: #ffffff;
+  --text-secondary: #9ca3af;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --glow-text: 0 0 10px rgba(0, 163, 166, 0.6);
+}
+
+/* 27. Red Bull Racing Theme */
+.theme-red-bull {
+  --bg-color: #000c1a;
+  --panel-bg: rgba(0, 26, 48, 0.85);
+  --panel-border: #ffcc00;
+  --accent-primary: #ffcc00;
+  --accent-secondary: #ef4444;
+  --text-primary: #ffffff;
+  --text-secondary: #e5e7eb;
+  --font-display: 'Orbitron', sans-serif;
+  --font-body: 'Share Tech Mono', monospace;
+  --glow-text: 0 0 8px #ffcc00;
+}
+
+/* 28. Pure Transparent Blank */
+.theme-transparent {
+  --bg-color: transparent;
+  --panel-bg: transparent;
+  --panel-border: transparent;
+  --accent-primary: #ffffff;
+  --accent-secondary: #ffffff;
+  --text-primary: #ffffff;
+  --text-secondary: #a3a3a3;
+  --font-display: 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --glow-text: none;
+}
+
+/* 29. Pure Black Blank */
+.theme-pure-black {
+  --bg-color: #000000;
+  --panel-bg: #000000;
+  --panel-border: transparent;
+  --accent-primary: #ffffff;
+  --accent-secondary: #ffffff;
+  --text-primary: #ffffff;
+  --text-secondary: #a3a3a3;
+  --font-display: 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --glow-text: none;
+}
+
+/* 30. Pure White Blank */
+.theme-pure-white {
+  --bg-color: #ffffff;
+  --panel-bg: #ffffff;
+  --panel-border: transparent;
+  --accent-primary: #000000;
+  --accent-secondary: #000000;
+  --text-primary: #000000;
+  --text-secondary: #525252;
+  --font-display: 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --glow-text: none;
+}
+
+/* 31. Minimal Dark Blank */
+.theme-blank-dark {
+  --bg-color: #090d16;
+  --panel-bg: transparent;
+  --panel-border: transparent;
+  --accent-primary: #ffffff;
+  --accent-secondary: #6b7280;
+  --text-primary: #ffffff;
+  --text-secondary: #9ca3af;
+  --font-display: 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --glow-text: none;
+}
+
+/* 32. Minimal Light Blank */
+.theme-blank-light {
+  --bg-color: #f8fafc;
+  --panel-bg: transparent;
+  --panel-border: transparent;
+  --accent-primary: #0f172a;
+  --accent-secondary: #94a3b8;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --font-display: 'Inter', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --glow-text: none;
+}
+
 /* ==========================================================================
    SCROLLBAR STYLES
    ========================================================================== */
