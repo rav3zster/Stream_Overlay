@@ -56,12 +56,17 @@ function App() {
         <Route path="/" element={<Dashboard activeTabInitial="scenes" />} />
         <Route path="/obs" element={<OBSOverlay />} />
         <Route path="/streamdeck" element={<StreamDeck />} />
+        <Route path="/scenes" element={<Dashboard activeTabInitial="scenes" />} />
+        <Route path="/themes" element={<Dashboard activeTabInitial="widgets" />} />
         <Route path="/widgets" element={<Dashboard activeTabInitial="widgets" />} />
         <Route path="/goals" element={<Dashboard activeTabInitial="goals" />} />
+        <Route path="/assets" element={<Dashboard activeTabInitial="assets" />} />
+        <Route path="/settings" element={<Dashboard activeTabInitial="settings" />} />
+        <Route path="/shop" element={<Dashboard activeTabInitial="marketplace" />} />
+        <Route path="/links" element={<Dashboard activeTabInitial="integrations" />} />
         <Route path="/scheduler" element={<Dashboard activeTabInitial="scheduler" />} />
         <Route path="/marketplace" element={<Dashboard activeTabInitial="marketplace" />} />
         <Route path="/integrations" element={<Dashboard activeTabInitial="integrations" />} />
-        <Route path="/settings" element={<Dashboard activeTabInitial="settings" />} />
         <Route path="*" element={<Dashboard activeTabInitial="scenes" />} />
       </Routes>
     </BrowserRouter>

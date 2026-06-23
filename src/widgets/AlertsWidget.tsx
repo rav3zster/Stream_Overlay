@@ -300,7 +300,117 @@ export const AlertsWidget: React.FC = () => {
   }
 
   // ──────────────────────────────────────────────────────────────
-  // 8. STANDARD CYBERPUNK / FALLBACK ALERT BOX
+  // 8. PASTEL PLANETS BADGE
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'planets') {
+    return (
+      <div
+        className="absolute top-[5%] left-1/2 z-50 pointer-events-none -translate-x-1/2 w-[min(380px,38vw)]"
+        style={{ animation: 'alertPop 0.4s cubic-bezier(0.175,0.885,0.32,1.275) forwards' }}
+      >
+        <div className="relative rounded-[24px] bg-[#3a2b5e] border-[4px] border-[#BDB2FF] p-4 shadow-[0_8px_24px_rgba(28,20,44,0.45)] flex flex-col items-center justify-center text-center text-[#E8AEFF] overflow-hidden">
+          <div className="absolute -top-1 -left-1 text-xs text-[#FFD6A5] select-none pointer-events-none animate-bounce" style={{ animationDuration: '4s' }}>✦</div>
+          <div className="absolute -bottom-1 -right-1 text-xs text-[#FFD6A5] select-none pointer-events-none">✦</div>
+          <div className="w-10 h-10 rounded-full bg-[#BDB2FF] flex items-center justify-center text-lg mb-1 shadow-sm flex-shrink-0 animate-spin" style={{ animationDuration: '10s' }}>
+            🛸
+          </div>
+          <span className="text-[0.65vw] font-black uppercase tracking-wider text-[#FFD6A5] mb-1">
+            {TYPE_LABELS[activeAlert.type] || activeAlert.type}
+          </span>
+          <span className="text-[1.6vw] font-black text-white tracking-tight">
+            {activeAlert.username}
+          </span>
+          {activeAlert.amount && (
+            <span className="mt-1 font-bold text-[#FFD6A5] text-[0.9vw]">
+              {activeAlert.amount}
+            </span>
+          )}
+          {activeAlert.message && (
+            <div className="text-[0.75vw] italic text-[#E8AEFF]/80 mt-2 border-t border-[#BDB2FF]/20 pt-2 w-full">
+              "{activeAlert.message}"
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 9. HIGH TECH CYBER HUD SYSTEM INTERRUPT
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'cyberhud') {
+    return (
+      <div
+        className="absolute top-[5%] left-1/2 z-50 pointer-events-none -translate-x-1/2 w-[min(380px,38vw)]"
+        style={{ animation: 'alertPop 0.3s ease-out forwards' }}
+      >
+        <div className="relative bg-[#0e1621]/95 border border-[#00F0FF] p-4 text-[#00F0FF] font-mono leading-normal shadow-[0_0_20px_rgba(0,240,255,0.35)] overflow-hidden">
+          <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-[#00F0FF]" />
+          <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-[#00F0FF]" />
+          <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[#00F0FF]" />
+          <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-[#00F0FF]" />
+          
+          <div className="text-[0.55vw] text-[#00F0FF]/60 uppercase tracking-widest font-mono flex justify-between border-b border-[#00F0FF]/25 pb-1 mb-2">
+            <span>SYS_SIGNAL_INCOMING</span>
+            <span>SEC_LVL_0</span>
+          </div>
+          
+          <div className="text-[0.65vw] text-slate-400 uppercase tracking-widest font-bold">
+            EVENT: {TYPE_LABELS[activeAlert.type] || activeAlert.type.toUpperCase()}
+          </div>
+          <div className="text-[1.5vw] font-black tracking-widest text-white truncate mt-1 animate-pulse">
+            &gt;&gt; {activeAlert.username.toUpperCase()}
+          </div>
+          {activeAlert.amount && (
+            <div className="text-[0.8vw] text-cyan-300 font-extrabold mt-1.5 font-mono">
+              VAL: {activeAlert.amount}
+            </div>
+          )}
+          {activeAlert.message && (
+            <div className="text-[0.65vw] italic text-slate-300 mt-2 border-t border-[#00F0FF]/20 pt-2 font-mono">
+              "{activeAlert.message}"
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 10. ARENA ESPORTS TELEMETRY NOTIFICATION
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'esports') {
+    return (
+      <div
+        className="absolute top-[5%] left-1/2 z-50 pointer-events-none -translate-x-1/2 w-[min(440px,44vw)]"
+        style={{ animation: 'alertPop 0.35s cubic-bezier(0.16,1,0.3,1) forwards' }}
+      >
+        <div className="relative bg-[#050c20]/95 text-white border-2 border-[#2979FF] p-4 shadow-[0_8px_24px_rgba(2,4,12,0.8)] overflow-hidden">
+          <div className="absolute top-0 right-0 w-8 h-full bg-[#2979FF]/10 skew-x-12 translate-x-4 pointer-events-none" />
+          <div className="text-[0.6vw] font-black uppercase tracking-wider text-[#2979FF] flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 bg-[#2979FF] rotate-45" />
+            {TYPE_LABELS[activeAlert.type] || activeAlert.type.toUpperCase()}
+          </div>
+          <div className="text-[1.6vw] font-black tracking-tight text-white uppercase mt-1 truncate">
+            {activeAlert.username}
+          </div>
+          {activeAlert.amount && (
+            <span className="inline-block mt-1 bg-[#2979FF] text-white font-black px-2.5 py-0.5 text-[0.75vw]">
+              CREDIT: {activeAlert.amount}
+            </span>
+          )}
+          {activeAlert.message && (
+            <div className="text-[0.7vw] font-medium text-slate-300 italic mt-2 border-l-2 border-[#2979FF] pl-2">
+              "{activeAlert.message}"
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 11. STANDARD CYBERPUNK / FALLBACK ALERT BOX
   // ──────────────────────────────────────────────────────────────
   return (
     <div

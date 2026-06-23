@@ -11,13 +11,17 @@ export const StreamDeck: React.FC = () => {
     setScene,
     triggerAlert,
     setTheme,
+    toggleMusicPlay,
+    nextMusicTrack,
+    showChat,
+    showAvatar,
+    setShowChat,
+    setShowAvatar,
   } = useOverlayStore();
 
   const streamerName = settings.streamerName;
 
   const [micMuted, setMicMuted] = useState(false);
-  const [avatarMuted, setAvatarMuted] = useState(false);
-  const [slowMode, setSlowMode] = useState(false);
 
   // Alert simulation helper
   const handleAlertTrigger = (type: AlertType) => {
@@ -135,26 +139,26 @@ export const StreamDeck: React.FC = () => {
             <span className="text-[9px] uppercase tracking-wider mt-1">{micMuted ? 'Mic MUTED' : 'Mic ON'}</span>
           </button>
           <button
-            onClick={() => setAvatarMuted(!avatarMuted)}
+            onClick={() => setShowAvatar(!showAvatar)}
             className={`h-16 rounded-xl flex flex-col justify-center items-center transition border active:scale-95 ${
-              avatarMuted 
+              !showAvatar 
                 ? 'bg-purple-950/60 border-purple-500 text-purple-300 font-bold' 
                 : 'bg-[#101424] border-purple-900/40 text-slate-300'
             }`}
           >
-            <Users size={18} className={avatarMuted ? 'text-purple-400 animate-pulse' : 'text-slate-400'} />
-            <span className="text-[9px] uppercase tracking-wider mt-1">{avatarMuted ? 'Avatar AFK' : 'Avatar LIVE'}</span>
+            <Users size={18} className={!showAvatar ? 'text-purple-400 animate-pulse' : 'text-slate-400'} />
+            <span className="text-[9px] uppercase tracking-wider mt-1">{!showAvatar ? 'Avatar AFK' : 'Avatar LIVE'}</span>
           </button>
           <button
-            onClick={() => setSlowMode(!slowMode)}
+            onClick={() => setShowChat(!showChat)}
             className={`h-16 rounded-xl flex flex-col justify-center items-center transition border active:scale-95 ${
-              slowMode 
+              !showChat 
                 ? 'bg-amber-950/60 border-amber-500 text-amber-300 font-bold' 
                 : 'bg-[#101424] border-purple-900/40 text-slate-300'
             }`}
           >
-            <ShieldAlert size={18} className={slowMode ? 'text-amber-400' : 'text-slate-400'} />
-            <span className="text-[9px] uppercase tracking-wider mt-1">Slow Chat</span>
+            <ShieldAlert size={18} className={!showChat ? 'text-amber-400' : 'text-slate-400'} />
+            <span className="text-[9px] uppercase tracking-wider mt-1">{!showChat ? 'Chat OFF' : 'Chat ON'}</span>
           </button>
         </div>
       </section>
@@ -162,18 +166,26 @@ export const StreamDeck: React.FC = () => {
       {/* Music Quick Player bar */}
       <section className="bg-[#120e24]/70 border border-purple-900/30 rounded-2xl p-3 flex justify-between items-center gap-3">
         <div className="overflow-hidden flex-grow flex items-center gap-2">
-          <img src={currentSong.albumArt} alt="" className="w-8 h-8 rounded-lg" />
+          <img src={currentSong.albumArt} alt="" className="w-8 h-8 rounded-lg" style={{ animation: currentSong.isPlaying ? 'spin 12s linear infinite' : 'none' }} />
           <div className="overflow-hidden leading-tight">
             <span className="block text-[11px] font-bold text-white truncate">{currentSong.title}</span>
             <span className="block text-[9px] text-purple-400 truncate">{currentSong.artist}</span>
           </div>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          <button className="p-2 bg-purple-900/30 hover:bg-purple-800/40 rounded-full text-white/80 transition active:scale-90">
+          <button 
+            onClick={() => nextMusicTrack()}
+            className="p-2 bg-purple-900/30 hover:bg-purple-800/40 rounded-full text-white/80 transition active:scale-90"
+            title="Next Track"
+          >
             <SkipForward size={14} />
           </button>
-          <button className="p-2 bg-vibePrimary text-white rounded-full transition shadow-glow active:scale-90">
-            <Play size={14} />
+          <button 
+            onClick={() => toggleMusicPlay()}
+            className="p-2 bg-vibePrimary text-white rounded-full transition shadow-glow active:scale-90 flex items-center justify-center"
+            title={currentSong.isPlaying ? "Pause" : "Play"}
+          >
+            {currentSong.isPlaying ? <Pause size={14} /> : <Play size={14} />}
           </button>
         </div>
       </section>

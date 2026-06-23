@@ -250,6 +250,10 @@ export interface OverlayState {
   loadFromBroadcast: (data: Partial<OverlayState>) => void;
   applyThemeLayoutPreset: () => void;
 
+  // Music controls
+  toggleMusicPlay: () => void;
+  nextMusicTrack: () => void;
+
   // History stack actions
 
   pushHistoryState: () => void;
@@ -455,97 +459,113 @@ const DEFAULT_WIDGETS: Record<SceneType, Widget[]> = {
 };
 
 // ==========================================================================
+// STORE INITIALIZER
+// ==========================================================================
+const getInitialState = () => {
+  const defaultState = {
+    currentScene: 'starting-soon' as SceneType,
+    theme: 'cyber-synth' as ThemeType,
+    timer: { seconds: 600, isRunning: true, isPaused: false },
+    chatMessages: INITIAL_CHAT,
+    showChat: true,
+    showAvatar: true,
+    showTicker: true,
+    music: {
+      title: 'After Dark',
+      artist: 'Mr. Kitty',
+      albumArt: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100&auto=format&fit=crop&q=60',
+      isPlaying: true,
+      progress: 42,
+      duration: 224,
+    },
+    latestFollower: 'Yukari_Chan',
+    latestSubscriber: 'GamerDave',
+    latestDonation: { user: 'Aria', amount: '$20.00' } as { user: string; amount: string } | null,
+    recentEvents: [] as StreamEvent[],
+    viewerCount: 142,
+    subGoal: { current: 145, target: 200 },
+    donationGoal: { current: 210, target: 500 },
+    followerGoal: { current: 1700, target: 2000 },
+    alertQueue: [] as Alert[],
+    activeAlert: null as Alert | null,
+    alertHistory: [] as Alert[],
+    settings: {
+      streamTitle: 'Indie Game Night: Hollow Knight Hollows!',
+      streamerName: 'Rave_VT',
+      activeGame: 'Hollow Knight',
+      tickerText: '✨ Welcome to the stream! Keep chat positive. ✨ !discord to join the community! ✨ Subs unlock exclusive emotes & badges! ✨ Schedule: Mon/Wed/Fri 8PM EST.',
+      socials: {
+        twitch: '/rave_vtuber',
+        twitter: '@RaveVT',
+        youtube: 'RaveVT',
+        discord: 'rave.gg/discord',
+      },
+      avatarPosition: 'bottom-right' as const,
+      chatSize: 'medium' as const,
+      borderRadius: 8,
+      animationSpeed: 'normal' as const,
+      overlayOpacity: 85,
+      particleDensity: 'medium' as const,
+      tickerSpeed: 'normal' as const,
+      disableAnimations: false,
+      activeAnimationPack: 'float',
+    },
+    aiMessages: [
+      {
+        id: 'ai-0',
+        sender: 'assistant' as const,
+        text: '👋 VIBE_AI online. Try: "Switch to BRB", "Add 5 minutes", "Hide chat", "Show avatar", "Switch to gameplay", "Reset timer".'
+      }
+    ],
+    schedule: DEFAULT_SCHEDULE,
+    sceneWidgets: DEFAULT_WIDGETS,
+    selectedWidgetId: null as string | null,
+    selectedWidgetIds: [] as string[],
+    canvasZoom: 1.0,
+    canvasPan: { x: 0, y: 0 },
+    clipboardStyle: null as { style: Widget['style']; animation: Widget['animation'] } | null,
+    templates: {} as Record<string, Widget[]>,
+    historyStack: {
+      'starting-soon': [[...DEFAULT_WIDGETS['starting-soon']]],
+      'main-stream': [[...DEFAULT_WIDGETS['main-stream']]],
+      'chat-session': [[...DEFAULT_WIDGETS['chat-session']]],
+      'brb': [[...DEFAULT_WIDGETS['brb']]],
+      'ending-stream': [[...DEFAULT_WIDGETS['ending-stream']]]
+    } as Record<SceneType, Widget[][]>,
+    historyIndex: {
+      'starting-soon': 0,
+      'main-stream': 0,
+      'chat-session': 0,
+      'brb': 0,
+      'ending-stream': 0
+    } as Record<SceneType, number>,
+  };
+
+  try {
+    const saved = localStorage.getItem('vibe_overlay_state');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return {
+        ...defaultState,
+        ...parsed,
+        chatMessages: defaultState.chatMessages, // Keep fresh mock chat messages
+        alertQueue: [],
+        activeAlert: null,
+        historyStack: parsed.historyStack || defaultState.historyStack,
+        historyIndex: parsed.historyIndex || defaultState.historyIndex,
+      };
+    }
+  } catch (e) {
+    console.error('Failed to load state from localStorage', e);
+  }
+  return defaultState;
+};
+
+// ==========================================================================
 // STORE
 // ==========================================================================
 export const useOverlayStore = create<OverlayState>((set, get) => ({
-  currentScene: 'starting-soon',
-  theme: 'cyber-synth',
-
-  timer: { seconds: 600, isRunning: true, isPaused: false },
-
-  chatMessages: INITIAL_CHAT,
-  showChat: true,
-
-  showAvatar: true,
-  showTicker: true,
-
-  music: {
-    title: 'After Dark',
-    artist: 'Mr. Kitty',
-    albumArt: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100&auto=format&fit=crop&q=60',
-    isPlaying: true,
-    progress: 42,
-    duration: 224,
-  },
-
-  latestFollower: 'Yukari_Chan',
-  latestSubscriber: 'GamerDave',
-  latestDonation: { user: 'Aria', amount: '$20.00' },
-  recentEvents: [],
-  viewerCount: 142,
-
-  subGoal: { current: 145, target: 200 },
-  donationGoal: { current: 210, target: 500 },
-  followerGoal: { current: 1700, target: 2000 },
-
-  alertQueue: [],
-  activeAlert: null,
-  alertHistory: [],
-
-  settings: {
-    streamTitle: 'Indie Game Night: Hollow Knight Hollows!',
-    streamerName: 'Rave_VT',
-    activeGame: 'Hollow Knight',
-    tickerText: '✨ Welcome to the stream! Keep chat positive. ✨ !discord to join the community! ✨ Subs unlock exclusive emotes & badges! ✨ Schedule: Mon/Wed/Fri 8PM EST.',
-    socials: {
-      twitch: '/rave_vtuber',
-      twitter: '@RaveVT',
-      youtube: 'RaveVT',
-      discord: 'rave.gg/discord',
-    },
-    avatarPosition: 'bottom-right',
-    chatSize: 'medium',
-    borderRadius: 8,
-    animationSpeed: 'normal',
-    overlayOpacity: 85,
-    particleDensity: 'medium',
-    tickerSpeed: 'normal',
-    disableAnimations: false,
-    activeAnimationPack: 'float',
-  },
-
-  aiMessages: [
-    {
-      id: 'ai-0',
-      sender: 'assistant',
-      text: '👋 VIBE_AI online. Try: "Switch to BRB", "Add 5 minutes", "Hide chat", "Show avatar", "Switch to gameplay", "Reset timer".'
-    }
-  ],
-
-  schedule: DEFAULT_SCHEDULE,
-
-  // Layout editor initial states
-  sceneWidgets: DEFAULT_WIDGETS,
-  selectedWidgetId: null,
-  selectedWidgetIds: [],
-  canvasZoom: 1.0,
-  canvasPan: { x: 0, y: 0 },
-  clipboardStyle: null,
-  templates: {},
-  historyStack: {
-    'starting-soon': [[...DEFAULT_WIDGETS['starting-soon']]],
-    'main-stream': [[...DEFAULT_WIDGETS['main-stream']]],
-    'chat-session': [[...DEFAULT_WIDGETS['chat-session']]],
-    'brb': [[...DEFAULT_WIDGETS['brb']]],
-    'ending-stream': [[...DEFAULT_WIDGETS['ending-stream']]]
-  },
-  historyIndex: {
-    'starting-soon': 0,
-    'main-stream': 0,
-    'chat-session': 0,
-    'brb': 0,
-    'ending-stream': 0
-  },
+  ...getInitialState(),
 
   // ─── Scene & Theme ───────────────────────────────────────────────────────
   setScene: (scene: SceneType) => {
@@ -1441,7 +1461,70 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
       broadcast({ sceneWidgets: get().sceneWidgets });
     }
   },
+
+  toggleMusicPlay: () => {
+    set(s => {
+      const nextPlaying = !s.music.isPlaying;
+      const updated = { music: { ...s.music, isPlaying: nextPlaying } };
+      broadcast(updated);
+      return updated;
+    });
+  },
+
+  nextMusicTrack: () => {
+    const songs = [
+      { title: 'After Dark', artist: 'Mr. Kitty', albumArt: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100&auto=format&fit=crop&q=60', duration: 224 },
+      { title: 'Nightcall', artist: 'Kavinsky', albumArt: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=100&auto=format&fit=crop&q=60', duration: 258 },
+      { title: 'Resonance', artist: 'HOME', albumArt: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=100&auto=format&fit=crop&q=60', duration: 212 },
+      { title: 'Midnight City', artist: 'M83', albumArt: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&auto=format&fit=crop&q=60', duration: 243 }
+    ];
+    set(s => {
+      const currentIdx = songs.findIndex(x => x.title === s.music.title);
+      const nextIdx = (currentIdx + 1) % songs.length;
+      const nextSong = songs[nextIdx];
+      const updated = {
+        music: {
+          ...s.music,
+          title: nextSong.title,
+          artist: nextSong.artist,
+          albumArt: nextSong.albumArt,
+          duration: nextSong.duration,
+          progress: 0,
+          isPlaying: true
+        }
+      };
+      broadcast(updated);
+      return updated;
+    });
+  }
 }));
+
+// Persist store changes to localStorage
+if (typeof window !== 'undefined') {
+  useOverlayStore.subscribe((state) => {
+    try {
+      const persistedState = {
+        theme: state.theme,
+        currentScene: state.currentScene,
+        settings: state.settings,
+        subGoal: state.subGoal,
+        donationGoal: state.donationGoal,
+        followerGoal: state.followerGoal,
+        schedule: state.schedule,
+        sceneWidgets: state.sceneWidgets,
+        timer: state.timer,
+        recentEvents: state.recentEvents,
+        alertHistory: state.alertHistory,
+        templates: state.templates,
+        historyStack: state.historyStack,
+        historyIndex: state.historyIndex,
+      };
+      localStorage.setItem('vibe_overlay_state', JSON.stringify(persistedState));
+    } catch (e) {
+      console.error('Failed to save state to localStorage', e);
+    }
+  });
+}
 
 // ==========================================================================
 // TIMER TICK ENGINE — runs globally outside components

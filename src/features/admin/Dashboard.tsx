@@ -68,15 +68,24 @@ const THEMES: Array<{ key: ThemeType; label: string; bg: string }> = [
   { key: 'esports-blue', label: 'Esports Telemetry', bg: 'linear-gradient(135deg, #2979FF, #00081C)' },
 ];
 
-const MARKETPLACE_THEMES = [
-  { id: 'mt-1', name: 'Solaris Horizon', author: 'KiraDesigns', category: 'Warm', previewColor: '#f97316', rating: 4.8, installs: 1240, isInstalled: false },
-  { id: 'mt-2', name: 'Arctic Eclipse', author: 'NekoStudios', category: 'Cool', previewColor: '#38bdf8', rating: 4.6, installs: 980, isInstalled: false },
-  { id: 'mt-3', name: 'Void Walker', author: 'Yukari_Art', category: 'Dark', previewColor: '#6366f1', rating: 4.9, installs: 2100, isInstalled: true },
-  { id: 'mt-4', name: 'Retro Wave', author: 'PixelDreams', category: 'Retro', previewColor: '#ec4899', rating: 4.7, installs: 1560, isInstalled: false },
+const MARKETPLACE_THEMES: Array<{
+  id: string;
+  name: string;
+  author: string;
+  category: string;
+  previewColor: string;
+  rating: number;
+  installs: number;
+  themeKey: ThemeType;
+}> = [
+  { id: 'mt-1', name: 'Solaris Horizon', author: 'KiraDesigns', category: 'Warm', previewColor: '#f97316', rating: 4.8, installs: 1240, themeKey: 'luxury-gold' },
+  { id: 'mt-2', name: 'Arctic Eclipse', author: 'NekoStudios', category: 'Cool', previewColor: '#38bdf8', rating: 4.6, installs: 980, themeKey: 'snow-season' },
+  { id: 'mt-3', name: 'Void Walker', author: 'Yukari_Art', category: 'Dark', previewColor: '#6366f1', rating: 4.9, installs: 2100, themeKey: 'cyber-synth' },
+  { id: 'mt-4', name: 'Retro Wave', author: 'PixelDreams', category: 'Retro', previewColor: '#ec4899', rating: 4.7, installs: 1560, themeKey: 'synthwave' },
 ];
 
 interface DashboardProps {
-  activeTabInitial?: 'scenes' | 'widgets' | 'alerts' | 'goals' | 'scheduler' | 'marketplace' | 'integrations' | 'settings';
+  activeTabInitial?: 'scenes' | 'widgets' | 'alerts' | 'goals' | 'scheduler' | 'marketplace' | 'integrations' | 'settings' | 'assets';
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes' }) => {
@@ -675,28 +684,32 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
                 <p className="text-[11px] text-slate-400">Premium community visual overlay configurations.</p>
               </div>
               <div className="flex flex-col gap-3">
-                {MARKETPLACE_THEMES.map(t => (
-                  <div key={t.id} className="p-3 bg-[#130f2c] border border-purple-950 rounded-xl flex items-center justify-between gap-2">
-                    <div className="overflow-hidden">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.previewColor }} />
-                        <span className="font-bold text-xs text-white">{t.name}</span>
+                {MARKETPLACE_THEMES.map(t => {
+                  const isActive = activeTheme === t.themeKey;
+                  return (
+                    <div key={t.id} className="p-3 bg-[#130f2c] border border-purple-950 rounded-xl flex items-center justify-between gap-2">
+                      <div className="overflow-hidden">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.previewColor }} />
+                          <span className="font-bold text-xs text-white">{t.name}</span>
+                        </div>
+                        <span className="text-[9px] text-slate-400">by {t.author} · {t.category}</span>
+                        <div className="text-[9px] text-amber-400 font-extrabold mt-1">★ {t.rating} ({t.installs} downloads)</div>
                       </div>
-                      <span className="text-[9px] text-slate-400">by {t.author} · {t.category}</span>
-                      <div className="text-[9px] text-amber-400 font-extrabold mt-1">★ {t.rating} ({t.installs} downloads)</div>
+                      <button
+                        disabled={isActive}
+                        onClick={() => setTheme(t.themeKey)}
+                        className={`px-3 py-1 rounded font-bold text-[10px] transition flex-shrink-0 ${
+                          isActive
+                            ? 'bg-purple-950/30 border border-purple-800 text-purple-400'
+                            : 'bg-vibePrimary hover:bg-vibePrimary/80 text-white shadow-glow'
+                        }`}
+                      >
+                        {isActive ? 'Active' : 'Get'}
+                      </button>
                     </div>
-                    <button
-                      disabled={t.isInstalled}
-                      className={`px-3 py-1 rounded font-bold text-[10px] transition flex-shrink-0 ${
-                        t.isInstalled
-                          ? 'bg-purple-950/30 border border-purple-800 text-purple-400'
-                          : 'bg-vibePrimary hover:bg-vibePrimary/80 text-white shadow-glow'
-                      }`}
-                    >
-                      {t.isInstalled ? 'Active' : 'Get'}
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
