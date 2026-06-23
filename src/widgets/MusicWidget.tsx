@@ -54,28 +54,48 @@ export const MusicWidget: React.FC<MusicWidgetProps> = ({ compact = false }) => 
   // ──────────────────────────────────────────────────────────────
   if (profile === 'racing') {
     return (
-      <div className="flex items-center gap-[0.8vw] h-full px-[1vw] py-[0.4vw] font-mono leading-none">
-        <div className="w-[3vw] h-[3vw] border border-white/10 flex-shrink-0 flex items-center justify-center relative bg-black/80">
-          <img src={music.albumArt} alt="cover" className="w-[90%] h-[90%] object-cover" />
-          <div className="absolute inset-0 border-[1.5px] border-[var(--accent-primary)] opacity-40 animate-pulse pointer-events-none" />
+      <div className="flex flex-col justify-between h-full w-full p-[0.8vw] gap-[0.4vw] font-mono text-white leading-none select-none">
+        {/* Header */}
+        <div className="flex justify-between items-center text-[0.45vw] font-extrabold text-slate-500 uppercase tracking-widest border-b border-white/5 pb-1 flex-shrink-0">
+          <span>NOW PLAYING</span>
+          <span className="text-[var(--accent-primary)] animate-pulse">LIVE_FEED</span>
         </div>
-        <div className="flex-grow overflow-hidden min-w-0 flex flex-col justify-center">
-          <span className="text-[0.45vw] text-slate-500 font-extrabold uppercase tracking-widest">AUDIO SOURCE CHANNEL</span>
-          <span className="text-[0.85vw] font-black text-white truncate uppercase tracking-tight mt-0.5">{music.title}</span>
-          <span className="text-[0.65vw] text-[var(--accent-primary)] truncate font-semibold mt-0.5">{music.artist}</span>
+
+        {/* Content row */}
+        <div className="flex items-center gap-[0.8vw] flex-grow my-0.5 overflow-hidden">
+          <div className="w-[3.2vw] h-[3.2vw] border border-white/10 flex-shrink-0 flex items-center justify-center relative bg-black/85">
+            <img src={music.albumArt} alt="cover" className="w-[90%] h-[90%] object-cover" />
+            <div className="absolute inset-0 border-[1.5px] border-[var(--accent-primary)] opacity-40 animate-pulse pointer-events-none" />
+          </div>
+          <div className="flex-grow overflow-hidden min-w-0 flex flex-col justify-center">
+            <span className="text-[0.85vw] font-black text-white truncate uppercase tracking-tight">{music.title}</span>
+            <span className="text-[0.6vw] text-[var(--accent-primary)] truncate font-semibold mt-0.5">{music.artist}</span>
+          </div>
         </div>
-        <div className="flex flex-col justify-center items-end flex-shrink-0">
-          <span className="text-[0.45vw] text-slate-500 font-extrabold uppercase tracking-wider mb-1">DECIBELS</span>
-          <div className="flex items-end gap-[1.5px] h-[1.6vw] pl-1 border-l border-white/5">
+
+        {/* Progress & Waveform */}
+        <div className="flex flex-col gap-[0.4vw] flex-shrink-0">
+          <div className="flex items-center gap-[0.4vw] text-[0.5vw] text-slate-400">
+            <span className="font-mono">{fmt(music.progress)}</span>
+            <div className="flex-grow h-[2px] bg-white/5 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] transition-all duration-1000" 
+                style={{ width: `${pct}%` }} 
+              />
+            </div>
+            <span className="font-mono">{fmt(music.duration)}</span>
+          </div>
+          {/* Small EQ Wave at the bottom */}
+          <div className="flex items-end justify-center gap-[2px] h-[1.2vw] pt-0.5">
             {EQ_BARS.map((bar, i) => (
               <span
                 key={i}
-                className="w-[2.5px] bg-[var(--accent-primary)]"
+                className="w-[2.5px] bg-[var(--accent-primary)] rounded-t-sm"
                 style={{
                   height: bar.height,
                   animation: music.isPlaying
                     ? `equalizerPulse ${bar.duration} ${bar.delay} ease-in-out infinite alternate`
-                    : '5px',
+                    : '3px',
                 }}
               />
             ))}

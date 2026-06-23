@@ -65,10 +65,10 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ maxMessages = 12, size =
   // ──────────────────────────────────────────────────────────────
   if (profile === 'racing') {
     return (
-      <div className="flex flex-col h-full font-mono text-white leading-none overflow-hidden">
-        <div className="flex justify-between items-center px-[0.8vw] py-[0.4vw] border-b border-white/10 bg-black/50 text-[0.55vw] font-extrabold text-slate-400">
-          <span className="tracking-widest">DRIVERS TEAM RADIO CH</span>
-          <span className="text-[var(--accent-primary)]">SIGNAL: LOCK 100%</span>
+      <div className="flex flex-col h-full font-mono text-white leading-none overflow-hidden bg-black/10">
+        <div className="flex justify-between items-center px-[0.8vw] py-[0.4vw] border-b border-white/10 bg-black/50 text-[0.55vw] font-extrabold text-[var(--accent-primary)] uppercase tracking-wider">
+          <span className="tracking-widest">LIVE CHAT FEED</span>
+          <span className="text-slate-400 font-bold">SIGNAL: LOCK 100%</span>
         </div>
         <div
           ref={scrollRef}
@@ -78,16 +78,24 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ maxMessages = 12, size =
           {visible.map((msg, i) => {
             const teamBadgeNum = (msg.username.length * 7) % 99 + 1;
             return (
-              <div key={msg.id} className="flex gap-[0.5vw] items-start border-l-2 border-[var(--accent-primary)] pl-2 bg-white/5 py-[0.3vw] px-[0.5vw]">
-                <div className="flex-shrink-0 bg-[var(--accent-primary)] text-black text-[0.5vw] font-black w-[1.2vw] h-[1.2vw] flex items-center justify-center rounded-sm">
+              <div key={msg.id} className="flex gap-[0.5vw] items-start border-l-2 border-[var(--accent-primary)] pl-2 bg-white/5 py-[0.3vw] px-[0.5vw] rounded-r">
+                <div 
+                  className="flex-shrink-0 text-black text-[0.5vw] font-black w-[1.2vw] h-[1.2vw] flex items-center justify-center rounded-sm"
+                  style={{ backgroundColor: msg.color || 'var(--accent-primary)' }}
+                >
                   #{teamBadgeNum}
                 </div>
                 <div className="flex-grow overflow-hidden leading-tight">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className={`${nameSz} font-black text-white uppercase`}>{msg.username}</span>
+                    <span 
+                      className={`${nameSz} font-black uppercase`}
+                      style={{ color: msg.color || '#ffffff' }}
+                    >
+                      {msg.username}
+                    </span>
                     <span className="text-[0.45vw] text-slate-500 font-bold">CAR #{teamBadgeNum}</span>
                   </div>
-                  <p className={`${textSize} text-slate-200 mt-1 break-words font-medium`}>{msg.text.toUpperCase()}</p>
+                  <p className={`${textSize} text-slate-200 mt-1 break-words font-medium`}>{msg.text}</p>
                 </div>
               </div>
             );

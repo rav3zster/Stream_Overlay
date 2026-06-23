@@ -83,45 +83,55 @@ export const getThemeLayoutPreset = (theme: ThemeType, scene: SceneType): Partia
   const profile = getThemeProfile(theme);
 
   switch (profile) {
-    case 'racing': // F1 dashboard layout
-      if (scene === 'main-stream') {
+    case 'racing': // F1 dashboard layout exactly matching the screenshot
+      if (scene === 'main-stream' || scene === 'chat-session') {
         return [
           {
             id: 'game-main',
             type: 'game-frame',
-            label: 'F1 Game Capture Window',
-            x: 4, y: 14, w: 92, h: 72,
+            label: scene === 'main-stream' ? 'F1 Game Capture Window' : 'Large Webcam Window',
+            x: 4, y: 12, w: 72, h: 72,
             rotation: 0, opacity: 100, scale: 1.0, zIndex: 1, visible: true, locked: true,
             style: { borderRadius: 0, background: 'transparent', borderSize: 3, borderStyle: 'solid', borderColor: 'var(--panel-border)', glowBlur: 0, padding: 0 },
             animation: { type: 'none', duration: 1, delay: 0, loop: false },
-            content: { type: 'game-frame', settings: { titleBar: true, titleText: 'F1 TELEMETRY CAM' } }
+            content: { type: 'game-frame', settings: { titleBar: false, titleText: '' } }
           },
           {
             id: 'timer-main',
             type: 'timer',
-            label: 'Tachometer Timer',
-            x: 41, y: 2, w: 18, h: 10,
+            label: 'Lap Timer Panel',
+            x: 4, y: 86, w: 72, h: 10,
             rotation: 0, opacity: 100, scale: 1.0, zIndex: 3, visible: true, locked: false,
             style: { borderRadius: 0, background: 'rgba(10, 10, 10, 0.95)', borderSize: 2, borderStyle: 'solid', borderColor: 'var(--accent-primary)', glowBlur: 4, padding: 4 },
             animation: { type: 'none', duration: 1, delay: 0, loop: false },
-            content: { type: 'timer', settings: { size: 'compact', customLabel: 'LAP TIMER' } }
+            content: { type: 'timer', settings: { size: 'full', customLabel: 'STREAM STARTING SOON' } }
           },
           {
-            id: 'sub-main',
-            type: 'sub-goal',
-            label: 'RPM Progress Goal',
-            x: 4, y: 2, w: 35, h: 10,
+            id: 'follower-stat',
+            type: 'follower-goal',
+            label: 'Latest Follower Stat',
+            x: 4, y: 2, w: 29, h: 8,
             rotation: 0, opacity: 100, scale: 1.0, zIndex: 4, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(10, 10, 10, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#333333', padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'follower-goal', settings: { compact: true } }
+          },
+          {
+            id: 'sub-stat',
+            type: 'sub-goal',
+            label: 'Latest Subscriber Stat',
+            x: 35, y: 2, w: 30, h: 8,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 5, visible: true, locked: false,
             style: { borderRadius: 0, background: 'rgba(10, 10, 10, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#333333', padding: 4 },
             animation: { type: 'none', duration: 1, delay: 0, loop: false },
             content: { type: 'sub-goal', settings: { compact: true } }
           },
           {
-            id: 'dono-main',
+            id: 'dono-stat',
             type: 'dono-goal',
-            label: 'KERS Progress Goal',
-            x: 61, y: 2, w: 35, h: 10,
-            rotation: 0, opacity: 100, scale: 1.0, zIndex: 5, visible: true, locked: false,
+            label: 'Top Donation Stat',
+            x: 67, y: 2, w: 29, h: 8,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 6, visible: true, locked: false,
             style: { borderRadius: 0, background: 'rgba(10, 10, 10, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#333333', padding: 4 },
             animation: { type: 'none', duration: 1, delay: 0, loop: false },
             content: { type: 'dono-goal', settings: { compact: true } }
@@ -129,39 +139,113 @@ export const getThemeLayoutPreset = (theme: ThemeType, scene: SceneType): Partia
           {
             id: 'chat-main',
             type: 'chat',
-            label: 'Telemetry Driver Radio',
-            x: 4, y: 88, w: 45, h: 10,
-            rotation: 0, opacity: 100, scale: 1.0, zIndex: 6, visible: true, locked: false,
+            label: 'Live Chat Feed',
+            x: 78, y: 12, w: 18, h: 46,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 7, visible: true, locked: false,
             style: { borderRadius: 0, background: 'rgba(10, 10, 10, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: 'var(--panel-border)', padding: 4 },
             animation: { type: 'none', duration: 1, delay: 0, loop: false },
-            content: { type: 'chat', settings: { size: 'mini', maxMessages: 3 } }
+            content: { type: 'chat', settings: { size: 'normal', maxMessages: 5 } }
           },
           {
             id: 'music-main',
             type: 'music',
-            label: 'Engine Audio Track',
-            x: 51, y: 88, w: 45, h: 10,
-            rotation: 0, opacity: 100, scale: 1.0, zIndex: 7, visible: true, locked: false,
+            label: 'Now Playing Radio',
+            x: 78, y: 60, w: 18, h: 18,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 8, visible: true, locked: false,
             style: { borderRadius: 0, background: 'rgba(10, 10, 10, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: 'var(--panel-border)', padding: 4 },
             animation: { type: 'none', duration: 1, delay: 0, loop: false },
-            content: { type: 'music', settings: { compact: true } }
+            content: { type: 'music', settings: { compact: false } }
+          },
+          {
+            id: 'goal-bar',
+            type: 'sub-goal',
+            label: 'Stream Goal bar',
+            x: 78, y: 80, w: 18, h: 16,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 9, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(10, 10, 10, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: 'var(--panel-border)', padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'sub-goal', settings: { compact: false } }
+          }
+        ];
+      } else {
+        // starting-soon, brb, ending-stream
+        return [
+          {
+            id: 'follower-stat',
+            type: 'follower-goal',
+            label: 'Latest Follower Stat',
+            x: 4, y: 2, w: 29, h: 8,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 4, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(10, 10, 10, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#333333', padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'follower-goal', settings: { compact: true } }
+          },
+          {
+            id: 'sub-stat',
+            type: 'sub-goal',
+            label: 'Latest Subscriber Stat',
+            x: 35, y: 2, w: 30, h: 8,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 5, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(10, 10, 10, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#333333', padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'sub-goal', settings: { compact: true } }
+          },
+          {
+            id: 'dono-stat',
+            type: 'dono-goal',
+            label: 'Top Donation Stat',
+            x: 67, y: 2, w: 29, h: 8,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 6, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(10, 10, 10, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#333333', padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'dono-goal', settings: { compact: true } }
+          },
+          {
+            id: 'timer-main',
+            type: 'timer',
+            label: 'Lap Timer Panel',
+            x: 15, y: 22, w: 70, h: 32,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 3, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(10, 10, 10, 0.95)', borderSize: 2, borderStyle: 'solid', borderColor: 'var(--accent-primary)', glowBlur: 4, padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'timer', settings: { size: 'full', customLabel: scene === 'brb' ? 'BE RIGHT BACK' : scene === 'ending-stream' ? 'STREAM ENDING' : 'STREAM STARTING SOON' } }
+          },
+          {
+            id: 'music-main',
+            type: 'music',
+            label: 'Now Playing Radio',
+            x: 30, y: 62, w: 40, h: 22,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 8, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(10, 10, 10, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: 'var(--panel-border)', padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'music', settings: { compact: false } }
+          },
+          {
+            id: 'chat-main',
+            type: 'chat',
+            label: 'Live Chat Feed',
+            x: 78, y: 15, w: 18, h: 70,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 7, visible: scene === 'brb', locked: false,
+            style: { borderRadius: 0, background: 'rgba(10, 10, 10, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: 'var(--panel-border)', padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'chat', settings: { size: 'normal', maxMessages: 10 } }
           }
         ];
       }
       break;
 
     case 'gulf': // Spacious, curved shapes
-      if (scene === 'main-stream') {
+      if (scene === 'main-stream' || scene === 'chat-session') {
         return [
           {
             id: 'game-main',
             type: 'game-frame',
-            label: 'Gulf Classic Cutout',
+            label: scene === 'main-stream' ? 'Gulf Classic Cutout' : 'Webcam Frame',
             x: 8, y: 8, w: 84, h: 68,
             rotation: 0, opacity: 100, scale: 1.0, zIndex: 1, visible: true, locked: true,
             style: { borderRadius: 24, background: 'transparent', borderSize: 4, borderStyle: 'solid', borderColor: 'var(--panel-border)', padding: 0 },
             animation: { type: 'none', duration: 1, delay: 0, loop: false },
-            content: { type: 'game-frame', settings: { titleBar: true, titleText: 'CLASSIC OVERLAY FRAME' } }
+            content: { type: 'game-frame', settings: { titleBar: true, titleText: scene === 'main-stream' ? 'CLASSIC OVERLAY FRAME' : 'WEBCAM CHAT' } }
           },
           {
             id: 'timer-main',
@@ -192,6 +276,40 @@ export const getThemeLayoutPreset = (theme: ThemeType, scene: SceneType): Partia
             style: { borderRadius: 16, background: 'rgba(255, 255, 255, 0.9)', borderSize: 1, borderStyle: 'solid', borderColor: '#cccccc', padding: 4 },
             animation: { type: 'none', duration: 1, delay: 0, loop: false },
             content: { type: 'music', settings: { compact: true } }
+          }
+        ];
+      } else {
+        // starting-soon, brb, ending-stream
+        return [
+          {
+            id: 'timer-main',
+            type: 'timer',
+            label: 'Gulf Chronograph',
+            x: 30, y: 12, w: 40, h: 32,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 2, visible: true, locked: false,
+            style: { borderRadius: 20, background: 'rgba(255, 255, 255, 0.95)', borderSize: 3, borderStyle: 'solid', borderColor: 'var(--accent-secondary)', padding: 6 },
+            animation: { type: 'float', duration: 6, delay: 0, loop: true },
+            content: { type: 'timer', settings: { size: 'full', customLabel: scene === 'brb' ? 'SESSION PAUSED' : scene === 'ending-stream' ? 'FINISH LINE' : 'PRE-RACE WARMUP' } }
+          },
+          {
+            id: 'chat-main',
+            type: 'chat',
+            label: 'Cozy Gulf Board',
+            x: 8, y: 52, w: 40, h: 38,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 3, visible: true, locked: false,
+            style: { borderRadius: 20, background: 'rgba(255, 255, 255, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#cccccc', padding: 8 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'chat', settings: { size: 'normal', maxMessages: 5 } }
+          },
+          {
+            id: 'music-main',
+            type: 'music',
+            label: 'Gulf Dashboard Radio',
+            x: 52, y: 52, w: 40, h: 38,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 4, visible: true, locked: false,
+            style: { borderRadius: 20, background: 'rgba(255, 255, 255, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#cccccc', padding: 8 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'music', settings: { compact: false } }
           }
         ];
       }

@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useOverlayStore } from '../../store/overlayStore';
 import { TickerWidget } from '../../widgets/TickerWidget';
 import { WidgetRenderer } from '../../widgets/WidgetRenderer';
+import { getThemeProfile } from '../../lib/themes';
 
 export const OBSOverlay: React.FC = () => {
   const currentScene = useOverlayStore(s => s.currentScene);
@@ -29,6 +30,15 @@ export const OBSOverlay: React.FC = () => {
     };
     window.addEventListener('resize', onResize);
 
+    const profile = getThemeProfile(theme);
+
+    // Floating colorful neon nebula orbs for glassmorphism
+    const blobs = [
+      { x: width * 0.25, y: height * 0.3, r: width * 0.35, vx: 0.2, vy: 0.15, color: 'rgba(168, 85, 247, 0.15)' }, // purple
+      { x: width * 0.75, y: height * 0.7, r: width * 0.4, vx: -0.15, vy: -0.2, color: 'rgba(236, 72, 153, 0.15)' }, // pink
+      { x: width * 0.5, y: height * 0.5, r: width * 0.3, vx: 0.12, vy: 0.12, color: 'rgba(56, 189, 248, 0.15)' }   // cyan
+    ];
+
     // Build particles
     const particles: Array<{
       x: number; y: number; s: number; sx: number; sy: number;
@@ -49,6 +59,61 @@ export const OBSOverlay: React.FC = () => {
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
 
+      // A. Draw theme-specific backdrops (Nebula, grids, etc.)
+      if (theme === 'glassmorphism') {
+        for (const b of blobs) {
+          b.x += b.vx;
+          b.y += b.vy;
+          if (b.x - b.r < 0 || b.x + b.r > width) b.vx *= -1;
+          if (b.y - b.r < 0 || b.y + b.r > height) b.vy *= -1;
+
+          const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+          g.addColorStop(0, b.color);
+          g.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      if (profile === 'racing') {
+        // Draw carbon style grid mesh
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.012)';
+        ctx.lineWidth = 1;
+        const spacing = 14;
+        for (let x = 0; x < width; x += spacing) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
+        for (let y = 0; y < height; y += spacing) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+        }
+      }
+
+      if (profile === 'cozy') {
+        // Warm ambient light sources
+        const warmBlobs = [
+          { x: 0, y: 0, r: width * 0.45, color: 'rgba(251, 191, 36, 0.08)' },
+          { x: width, y: 0, r: width * 0.35, color: 'rgba(251, 191, 36, 0.06)' }
+        ];
+        for (const b of warmBlobs) {
+          const g = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, b.r);
+          g.addColorStop(0, b.color);
+          g.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // B. Draw particles
       for (const d of particles) {
         d.x += d.sx; d.y += d.sy; d.rot += d.sp;
         if (d.x < 0) d.x = width;   if (d.x > width) d.x = 0;

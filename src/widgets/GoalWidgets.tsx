@@ -50,39 +50,94 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({ type, compact = false })
   }
 
   // ──────────────────────────────────────────────────────────────
-  // 2. MOTORSPORT RPM SHIFT LIGHT INDICATORS
+  // 2. MOTORSPORT RPM SHIFT LIGHT INDICATORS / TELEMETRY LABELS
   // ──────────────────────────────────────────────────────────────
   if (profile === 'racing') {
-    const ledCount = 10;
-    const activeLeds = Math.round((pct / 100) * ledCount);
-    return (
-      <div className="flex flex-col justify-center h-full px-[1vw] py-[0.3vw] font-mono leading-none text-white">
-        <div className="flex justify-between text-[0.45vw] font-extrabold text-slate-500 uppercase tracking-widest mb-1.5">
-          <span>{cfg.label} TELEMETRY</span>
-          <span className="text-[var(--accent-primary)] font-black">{currentStr} / {targetStr} ({Math.round(pct)}%)</span>
-        </div>
-        {/* Steering Wheel Shift Lights (RPM Bar) */}
-        <div className="flex items-center justify-between bg-black/60 p-[0.3vw] border border-white/5 rounded-sm">
-          <div className="flex gap-[0.4vw]">
-            {Array.from({ length: ledCount }).map((_, i) => {
-              const active = i < activeLeds;
-              // RPM Light Color Gradient logic
-              let ledColor = 'bg-[#121212]';
-              if (active) {
-                if (i < 4) ledColor = 'bg-emerald-500 shadow-[0_0_8px_#10b981]'; // Green
-                else if (i < 8) ledColor = 'bg-amber-400 shadow-[0_0_8px_#fbbf24]'; // Yellow
-                else ledColor = 'bg-rose-600 shadow-[0_0_10px_#e11d48]'; // Red limit line
-              }
-              return (
-                <span 
-                  key={i} 
-                  className={`w-[1.2vw] h-[0.5vw] rounded-full transition-all duration-300 ${ledColor}`} 
-                />
-              );
-            })}
+    const latestFollower = useOverlayStore(s => s.latestFollower);
+    const latestSubscriber = useOverlayStore(s => s.latestSubscriber);
+    const latestDonation = useOverlayStore(s => s.latestDonation);
+
+    if (compact) {
+      // Telemetry Header Stat layout exactly matching the top widgets in the screenshot
+      let title = 'LATEST FOLLOWER';
+      let value = latestFollower || 'No one';
+      let svgIcon = (
+        <svg className="w-[1.2vw] h-[1.2vw] text-[var(--accent-primary)] filter drop-shadow-[0_0_4px_var(--accent-primary-shadow)]" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+        </svg>
+      );
+
+      if (type === 'sub') {
+        title = 'LATEST SUBSCRIBER';
+        value = latestSubscriber || 'No one';
+        svgIcon = (
+          <svg className="w-[1.2vw] h-[1.2vw] text-[var(--accent-primary)] filter drop-shadow-[0_0_4px_var(--accent-primary-shadow)]" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        );
+      } else if (type === 'donation') {
+        title = 'TOP DONATION';
+        value = latestDonation ? `${latestDonation.user} ${latestDonation.amount}` : 'None';
+        svgIcon = (
+          <svg className="w-[1.2vw] h-[1.2vw] text-[var(--accent-primary)] filter drop-shadow-[0_0_4px_var(--accent-primary-shadow)]" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+          </svg>
+        );
+      }
+
+      return (
+        <div className="flex items-center h-full w-full px-[0.8vw] py-[0.3vw] font-mono leading-none select-none">
+          <div className="flex-shrink-0 mr-[0.6vw] flex items-center justify-center bg-black/45 w-[2vw] h-[2vw] rounded-sm border border-white/5">
+            {svgIcon}
           </div>
-          <span className="text-[0.55vw] font-black text-rose-500 animate-pulse tracking-tighter pl-1">
-            {pct >= 100 ? 'RPM LIMIT' : 'REV_LIMIT'}
+          <div className="flex flex-col text-left justify-center flex-grow min-w-0">
+            <span className="text-[0.48vw] text-slate-500 font-extrabold uppercase tracking-widest">{title}</span>
+            <span className="text-[0.85vw] font-black text-white truncate mt-0.5">{value}</span>
+          </div>
+        </div>
+      );
+    }
+
+    // Goal Bar: Segmented LCD / HUD digital progress meter
+    const ticksCount = 20;
+    const filledTicks = Math.round((pct / 100) * ticksCount);
+
+    return (
+      <div className="flex flex-col justify-center h-full px-[1vw] py-[0.4vw] font-mono leading-none text-white select-none">
+        <div className="flex justify-between items-center text-[0.48vw] font-extrabold text-slate-500 uppercase tracking-widest mb-1.5">
+          <span>{cfg.label}</span>
+          <span className="text-[var(--accent-primary)] font-black">{currentStr} / {targetStr}</span>
+        </div>
+        
+        {/* Segmented meter bar */}
+        <div className="w-full h-[0.7vw] bg-black/60 border border-white/5 rounded-sm p-[1px] flex gap-[1px]">
+          {Array.from({ length: ticksCount }).map((_, i) => {
+            const filled = i < filledTicks;
+            let tickBg = 'bg-white/5';
+            if (filled) {
+              if (i < ticksCount * 0.6) {
+                tickBg = 'bg-[var(--accent-primary)] shadow-[0_0_4px_var(--accent-primary-shadow)]';
+              } else if (i < ticksCount * 0.85) {
+                tickBg = 'bg-amber-400 shadow-[0_0_4px_rgba(251,191,36,0.5)]';
+              } else {
+                tickBg = 'bg-rose-600 shadow-[0_0_6px_rgba(225,29,72,0.6)]';
+              }
+            }
+            return (
+              <div 
+                key={i} 
+                className={`flex-grow h-full rounded-[1px] transition-all duration-300 ${tickBg}`} 
+              />
+            );
+          })}
+        </div>
+        
+        <div className="flex justify-between items-center mt-1">
+          <span className="text-[0.45vw] text-slate-500 font-bold uppercase tracking-wider">
+            {pct >= 100 ? 'GOAL MET' : 'REV METER'}
+          </span>
+          <span className="text-[0.55vw] text-[var(--accent-primary)] font-black">
+            {Math.round(pct)}%
           </span>
         </div>
       </div>

@@ -49,6 +49,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
   let backdropFilter = '';
   let clipPath = '';
 
+  const isTransparentWidget = ['game', 'game-frame', 'media'].includes(widget.type);
   const isDefaultBg = !bg || bg === 'rgba(14, 8, 26, 0.8)';
   const isDefaultRadius = borderRadius === undefined || borderRadius === 8;
 
@@ -61,8 +62,10 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
         : 'repeating-linear-gradient(45deg, #020813 0px, #020813 2px, #041026 2px, #041026 4px)'; // red-bull / amg
     }
     if (isDefaultRadius) borderRadius = 0;
-    clipPath = 'polygon(0% 0%, 94% 0%, 100% 12%, 100% 100%, 6% 100%, 0% 88%)';
-    border = `1.5px solid ${theme === 'mclaren' ? '#ff8000' : theme === 'ferrari' ? '#c4151c' : theme === 'mercedes-amg' ? '#00a3a6' : '#ffcc00'}`;
+    if (!isTransparentWidget) {
+      clipPath = 'polygon(0% 0%, 94% 0%, 100% 12%, 100% 100%, 6% 100%, 0% 88%)';
+    }
+    border = 'none'; // We render vector border inside the SVG overlay instead
   } else if (profile === 'gulf') {
     if (isDefaultBg) bg = 'rgba(232, 241, 245, 0.95)'; 
     if (isDefaultRadius) borderRadius = 20;
@@ -101,7 +104,6 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
     boxShadow = '0 8px 24px rgba(0,0,0,0.6)';
   }
 
-  const isTransparentWidget = ['game', 'game-frame', 'media'].includes(widget.type);
   const finalBg = isTransparentWidget ? 'transparent' : (bg || 'rgba(14, 8, 26, 0.8)');
   const finalRadius = borderRadius !== undefined ? `${borderRadius}px` : '8px';
 
@@ -269,6 +271,33 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
       className={isEditor && !widget.visible ? 'border-dashed border-red-500/40 bg-red-950/5' : ''}
     >
       {renderContent()}
+
+      {/* 1. Custom Vector telemetry borders for Racing profile (McLaren, Ferrari, etc.) */}
+      {profile === 'racing' && !isTransparentWidget && (
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <polygon 
+            points="0.5,0.5 93.8,0.5 99.5,12.2 99.5,99.5 6.2,99.5 0.5,87.8" 
+            fill="none" 
+            stroke={theme === 'mclaren' ? '#ff8000' : theme === 'ferrari' ? '#c4151c' : theme === 'mercedes-amg' ? '#00a3a6' : '#ffcc00'} 
+            strokeWidth="1.5"
+          />
+        </svg>
+      )}
+
+      {/* 2. Custom Corner Brackets and grid markers for Racing Game Frame */}
+      {widget.type === 'game-frame' && profile === 'racing' && (
+        <div className="absolute inset-0 border border-white/5 pointer-events-none">
+          {/* Telemetry brackets */}
+          <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-[var(--accent-primary)]" />
+          <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-[var(--accent-primary)]" />
+          <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-[var(--accent-primary)]" />
+          <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-[var(--accent-primary)]" />
+          
+          {/* Center target crosshair or grid lines */}
+          <div className="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-[1px] bg-[var(--accent-primary)]/45" />
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-4 h-[1px] bg-[var(--accent-primary)]/45" />
+        </div>
+      )}
     </motion.div>
   );
 };

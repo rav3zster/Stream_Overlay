@@ -48,10 +48,31 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ label, size = 'full' }
   // 2. MOTORSPORT RACING THEME DESIGN (McLaren / Ferrari / Red Bull)
   // ──────────────────────────────────────────────────────────────
   if (profile === 'racing') {
+    if (size === 'full') {
+      return (
+        <div className="flex flex-col items-center justify-center h-full w-full font-mono text-center select-none leading-none relative py-1">
+          {/* F1 telemetry HUD horizontal rule and speed ticks */}
+          <div className="absolute inset-x-8 top-[10%] h-[1px] bg-gradient-to-r from-transparent via-[var(--accent-primary)]/30 to-transparent pointer-events-none" />
+          <span className="text-[0.6vw] text-[var(--accent-primary)] font-black uppercase tracking-[0.3em] mb-1.5 z-10">
+            {sceneLabel}
+          </span>
+          <span 
+            className="text-[4.2vw] font-black text-white tracking-widest tabular-nums z-10 filter drop-shadow-[0_0_12px_var(--accent-primary-shadow)]"
+            style={{ 
+              fontFamily: 'var(--font-display)',
+            }}
+          >
+            {mins}:{secs}
+          </span>
+          <div className="absolute inset-x-8 bottom-[10%] h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
+        </div>
+      );
+    }
+
     return (
       <div className="flex items-center justify-between h-full w-full px-[1.2vw] py-[0.5vw] font-mono select-none leading-none">
         <div className="flex flex-col text-left justify-center">
-          <span className="text-[0.5vw] text-slate-500 font-black uppercase tracking-wider">TELEMETRY SPEED</span>
+          <span className="text-[0.5vw] text-slate-500 font-black uppercase tracking-wider">TELEMETRY TIME</span>
           <span className="text-[1.8vw] font-bold text-white tracking-tight tabular-nums">
             {mins}<span className="text-[1.1vw] text-slate-400">m</span> {secs}<span className="text-[1.1vw] text-slate-400">s</span>
           </span>
