@@ -22,34 +22,34 @@ const TwitchIcon = () => (
 
 const THEMES: Array<{ key: ThemeType; label: string; bg: string }> = [
   { key: 'cyber-synth', label: 'Cyber Synth', bg: 'linear-gradient(135deg, #FF4DFF, #5CFFE2)' },
-  { key: 'galaxy-violet', label: 'Galaxy Violet', bg: 'linear-gradient(135deg, #A855F7, #FF4DFF)' },
-  { key: 'anime-bedroom', label: 'Anime Bedroom', bg: 'linear-gradient(135deg, #FBCFE8, #C084FC)' },
-  { key: 'lo-fi-cafe', label: 'Lo-fi Cafe', bg: 'linear-gradient(135deg, #d1c4e9, #ffb74d)' },
-  { key: 'sakura-night', label: 'Sakura Night', bg: 'linear-gradient(135deg, #FF80BF, #FBCFE8)' },
-  { key: 'neon-tokyo', label: 'Neon Tokyo', bg: 'linear-gradient(135deg, #FF0055, #00FFCC)' },
-  { key: 'dark-amethyst', label: 'Dark Amethyst', bg: 'linear-gradient(135deg, #8b5cf6, #c084fc)' },
-  { key: 'cosmic-nebula', label: 'Cosmic Nebula', bg: 'linear-gradient(135deg, #6366F1, #38BDF8)' },
-  { key: 'vaporwave', label: 'Vaporwave', bg: 'linear-gradient(135deg, #00F5FF, #FF77FF)' },
-  { key: 'minimal-purple', label: 'Minimal Purple', bg: 'linear-gradient(135deg, #C084FC, #94a3b8)' },
+  { key: 'cyberpunk-neon', label: 'Cyberpunk Neon', bg: 'linear-gradient(135deg, #FF0055, #00FFCC)' },
+  { key: 'synthwave', label: 'Synthwave', bg: 'linear-gradient(135deg, #f43f5e, #fbbf24)' },
+  { key: 'retro-crt', label: 'Retro CRT', bg: 'repeating-linear-gradient(0deg, #051405, #051405 2px, #0c300c 2px, #0c300c 4px)' },
   
-  // Design Languages
-  { key: 'minimal-white', label: 'Minimal White', bg: '#FFFFFF' },
+  // Lo-fi Collection
+  { key: 'lo-fi-cafe', label: 'Lo-fi Cafe', bg: 'linear-gradient(135deg, #d1c4e9, #ffb74d)' },
+  { key: 'lo-fi-bedroom', label: 'Lo-fi Bedroom', bg: 'linear-gradient(135deg, #a78bfa, #f472b6)' },
+  { key: 'anime-room', label: 'Anime Room', bg: 'linear-gradient(135deg, #fda4af, #f472b6)' },
+  { key: 'anime-sakura', label: 'Anime Sakura', bg: 'linear-gradient(135deg, #fbcfe8, #fda4af)' },
+  
+  // Minimal Languages
   { key: 'minimal-dark', label: 'Minimal Dark', bg: '#1A1A1A' },
-  { key: 'flat-ui', label: 'Flat UI', bg: 'linear-gradient(135deg, #3B82F6, #EF4444)' },
+  { key: 'minimal-white', label: 'Minimal White', bg: '#FFFFFF' },
+  { key: 'modern-white', label: 'Modern White (Apple)', bg: 'linear-gradient(135deg, #f8fafc, #e2e8f0)' },
+  { key: 'corporate-tech', label: 'Corporate Tech', bg: 'linear-gradient(135deg, #1e3a8a, #3b82f6)' },
+  { key: 'modern-clean', label: 'Modern Clean', bg: 'linear-gradient(135deg, #0f172a, #1e293b)' },
+
+  // Special Visuals
   { key: 'glassmorphism', label: 'Glassmorphism', bg: 'rgba(255,255,255,0.2)' },
   { key: 'neumorphism', label: 'Neumorphism', bg: '#E0E0E0' },
-  { key: 'retro-crt', label: 'Retro CRT', bg: 'repeating-linear-gradient(0deg, #111, #111 2px, #222 2px, #222 4px)' },
-  
+  { key: 'luxury-gold', label: 'Luxury Gold', bg: 'linear-gradient(135deg, #111, #D4AF37)' },
+  { key: 'tokyo-night', label: 'Tokyo Night', bg: 'linear-gradient(135deg, #110c24, #ff0055)' },
+
   // Seasonals
   { key: 'halloween', label: 'Halloween', bg: 'linear-gradient(135deg, #F97316, #7C2D12)' },
   { key: 'christmas', label: 'Christmas', bg: 'linear-gradient(135deg, #DC2626, #16A34A)' },
-  { key: 'snow', label: 'Snow Season', bg: 'linear-gradient(135deg, #E0F2FE, #93C5FD)' },
-  
-  // Corporate / Modern
-  { key: 'corporate', label: 'Corporate Tech', bg: 'linear-gradient(135deg, #1E3A8A, #3B82F6)' },
-  { key: 'modern', label: 'Modern Clean', bg: 'linear-gradient(135deg, #0F172A, #334155)' },
-  { key: 'luxury', label: 'Luxury Gold', bg: 'linear-gradient(135deg, #111, #D4AF37)' },
-  
+  { key: 'snow-season', label: 'Snow Season', bg: 'linear-gradient(135deg, #E0F2FE, #93C5FD)' },
+
   // Motorsports
   { key: 'mclaren', label: 'McLaren F1', bg: 'linear-gradient(135deg, #FF8000, #1A1A1A)' },
   { key: 'porsche-gulf', label: 'Porsche Gulf', bg: 'linear-gradient(135deg, #709CB8, #FF5800)' },
@@ -58,11 +58,9 @@ const THEMES: Array<{ key: ThemeType; label: string; bg: string }> = [
   { key: 'red-bull', label: 'Red Bull Racing', bg: 'linear-gradient(135deg, #001A30, #FFCC00)' },
   
   // Blanks
-  { key: 'transparent', label: 'Pure Transparent', bg: 'transparent' },
+  { key: 'pure-transparent', label: 'Pure Transparent', bg: 'transparent' },
   { key: 'pure-black', label: 'Pure Black', bg: '#000000' },
   { key: 'pure-white', label: 'Pure White', bg: '#FFFFFF' },
-  { key: 'blank-dark', label: 'Minimal Dark Blank', bg: '#090D16' },
-  { key: 'blank-light', label: 'Minimal Light Blank', bg: '#F8FAFC' },
 ];
 
 const MARKETPLACE_THEMES = [
@@ -519,11 +517,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
 
           {/* THEME TAB */}
           {activeTab === 'widgets' && (
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-4">
               <div>
                 <h2 className="text-sm font-black font-display text-white mb-1 uppercase tracking-wider">VISUAL STYLE THEMES</h2>
                 <p className="text-[11px] text-slate-400">Switch design variables, fonts, borders, and animations.</p>
               </div>
+              
+              <button
+                onClick={() => useOverlayStore.getState().applyThemeLayoutPreset()}
+                className="w-full py-2.5 bg-gradient-to-r from-purple-900 to-indigo-950 border border-purple-700/50 text-white font-extrabold text-[10px] uppercase tracking-widest rounded-xl transition-all shadow-md hover:brightness-110 flex items-center justify-center gap-1.5"
+              >
+                🔄 Apply Default Layout Template
+              </button>
+
               <div className="grid grid-cols-2 gap-2">
                 {THEMES.map(t => (
                   <button

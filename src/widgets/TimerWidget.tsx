@@ -1,5 +1,6 @@
 import React from 'react';
 import { useOverlayStore } from '../store/overlayStore';
+import { getThemeProfile } from '../lib/themes';
 
 interface TimerWidgetProps {
   label?: string;
@@ -7,10 +8,11 @@ interface TimerWidgetProps {
 }
 
 export const TimerWidget: React.FC<TimerWidgetProps> = ({ label, size = 'full' }) => {
-  // Subscribe to primitives individually — avoids "getSnapshot should be cached" loop
   const seconds = useOverlayStore(s => s.timer.seconds);
   const isPaused = useOverlayStore(s => s.timer.isPaused);
   const currentScene = useOverlayStore(s => s.currentScene);
+  const theme = useOverlayStore(s => s.theme);
+  const profile = getThemeProfile(theme);
 
   const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
   const secs = (seconds % 60).toString().padStart(2, '0');
@@ -21,26 +23,162 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ label, size = 'full' }
     currentScene === 'brb' ? 'BE RIGHT BACK' : 'TIMER'
   );
 
+  // ──────────────────────────────────────────────────────────────
+  // 1. RETRO CRT THEME DESIGN
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'retro') {
+    return (
+      <div className="flex flex-col justify-center items-center h-full font-mono text-[#33ff33] p-2 leading-none text-center">
+        <div className="text-[0.7vw] mb-1.5 uppercase tracking-widest text-[#228822]">
+          --- {sceneLabel} ---
+        </div>
+        <div className="text-[4.2vw] font-bold tabular-nums">
+          [{mins}:{secs}]
+        </div>
+        {isPaused && (
+          <div className="text-[0.6vw] text-amber-500 font-extrabold tracking-widest mt-1 blink">
+            * SYSTEM_PAUSED *
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 2. MOTORSPORT RACING THEME DESIGN (McLaren / Ferrari / Red Bull)
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'racing') {
+    return (
+      <div className="flex items-center justify-between h-full w-full px-[1.2vw] py-[0.5vw] font-mono select-none leading-none">
+        <div className="flex flex-col text-left justify-center">
+          <span className="text-[0.5vw] text-slate-500 font-black uppercase tracking-wider">TELEMETRY SPEED</span>
+          <span className="text-[1.8vw] font-bold text-white tracking-tight tabular-nums">
+            {mins}<span className="text-[1.1vw] text-slate-400">m</span> {secs}<span className="text-[1.1vw] text-slate-400">s</span>
+          </span>
+          <span className="text-[0.45vw] text-[var(--accent-primary)] font-extrabold uppercase tracking-widest mt-0.5">{sceneLabel}</span>
+        </div>
+        <div className="flex flex-col items-end justify-center border-l border-white/10 pl-[0.8vw]">
+          <span className="text-[0.5vw] text-slate-500 font-black uppercase tracking-wider">GEAR</span>
+          <span className="text-[1.8vw] font-black text-[var(--accent-primary)] glow-text-theme">
+            {isPaused ? 'N' : Math.max(1, Math.min(8, Math.floor(seconds / 75) + 1))}
+          </span>
+          <span className="text-[0.45vw] text-slate-400 font-bold tracking-wider mt-0.5">ACTIVE</span>
+        </div>
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 3. PORSCHE GULF VINTAGE THEME DESIGN
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'gulf') {
+    return (
+      <div className="flex flex-col justify-center items-center h-full text-center text-[#121e2c] p-2 leading-none">
+        <div className="w-[3.5vw] h-[3.5vw] rounded-full border-2 border-[#ff5800] bg-white flex items-center justify-center shadow-md mb-1 relative overflow-hidden flex-shrink-0">
+          {/* Vintage Chronograph clock dial indicator */}
+          <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] bg-[size:4px_4px] opacity-25" />
+          <div className="w-[1.5px] h-[1.3vw] bg-[#ff5800] rounded-full origin-bottom" style={{ transform: `rotate(${(seconds * 6) % 360}deg)` }} />
+          <div className="absolute w-1.5 h-1.5 bg-[#709cb8] rounded-full" />
+        </div>
+        <span className="text-[0.6vw] font-bold text-[#709cb8] uppercase tracking-widest mb-1 font-display">
+          {sceneLabel}
+        </span>
+        <span className="text-[2.2vw] font-black tracking-tight text-[#121e2c] tabular-nums font-serif">
+          {mins}:{secs}
+        </span>
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 4. COZY CAFE / BEDROOM THEME DESIGN
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'cozy') {
+    return (
+      <div className="flex flex-col justify-center items-center h-full text-center p-3 text-amber-100 font-display">
+        <span className="text-[0.65vw] tracking-wider text-amber-300/80 font-bold uppercase mb-1">
+          ☕ {sceneLabel}
+        </span>
+        <div className="text-[2.8vw] font-black tracking-widest font-display text-white tabular-nums flex items-center gap-1">
+          <span>{mins}</span>
+          <span className="animate-pulse text-amber-400">:</span>
+          <span>{secs}</span>
+        </div>
+        {isPaused && (
+          <span className="text-[0.55vw] font-bold text-amber-500 uppercase tracking-widest mt-1">
+            (break paused)
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 5. MINIMALIST APPLE STYLE DESIGN
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'minimal') {
+    return (
+      <div className="flex flex-col justify-center h-full px-[1vw] leading-none text-left">
+        <span className="text-[0.5vw] font-black uppercase tracking-widest text-[var(--text-secondary)] mb-1.5">
+          {sceneLabel}
+        </span>
+        <div className="text-[2.8vw] font-extrabold tracking-tighter text-[var(--text-primary)] tabular-nums">
+          {display}
+        </div>
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 6. GLASSMORPHIC SHINY DESIGN
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'glass') {
+    return (
+      <div className="flex flex-col justify-center items-center h-full text-center p-2 leading-none">
+        <span className="text-[0.55vw] font-bold uppercase tracking-widest text-pink-300 mb-1.5 font-display">
+          ✨ {sceneLabel}
+        </span>
+        <div className="text-[3.2vw] font-black text-white glow-text-theme tabular-nums font-display">
+          {display}
+        </div>
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 7. LUXURY ELEGANT GOLD DESIGN
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'luxury') {
+    return (
+      <div className="flex flex-col justify-center items-center h-full text-center p-3 leading-none font-serif">
+        <span className="text-[0.55vw] uppercase tracking-widest text-[#d4af37] font-semibold mb-2">
+          {sceneLabel}
+        </span>
+        <div className="text-[3vw] text-white tracking-widest font-serif tabular-nums border-b border-[#d4af37]/35 pb-1 mb-1">
+          {mins}:{secs}
+        </div>
+        <span className="text-[0.45vw] text-slate-400 uppercase tracking-widest">CHRONOMETRE DE LUXE</span>
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 8. STANDARD CYBERPUNK / FALLBACK DESIGN
+  // ──────────────────────────────────────────────────────────────
   if (size === 'compact') {
     return (
-      <div className="flex items-center gap-2 h-full px-3">
+      <div className="flex items-center justify-between h-full px-[1vw]">
         <span
-          className="text-[1vw] font-display font-bold tracking-widest uppercase truncate"
-          style={{ color: 'var(--accent-secondary)' }}
+          className="text-[0.8vw] font-display font-black tracking-widest uppercase truncate text-[var(--accent-secondary)]"
         >
           {sceneLabel}
         </span>
         <span
-          className="text-[2.5vw] font-black font-display leading-none tabular-nums"
-          style={{ color: 'var(--text-primary)', textShadow: 'var(--glow-text)' }}
+          className="text-[2vw] font-black font-display leading-none tabular-nums text-[var(--text-primary)]"
+          style={{ textShadow: 'var(--glow-text)' }}
         >
           {display}
         </span>
-        {isPaused && (
-          <span className="text-[0.6vw] text-amber-400 font-bold uppercase" style={{ animation: 'pulse 1s infinite' }}>
-            PAUSED
-          </span>
-        )}
       </div>
     );
   }
@@ -48,16 +186,15 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ label, size = 'full' }
   return (
     <div className="flex flex-col justify-center items-center h-full text-center p-4">
       <span
-        className="uppercase tracking-widest font-display font-bold mb-3"
-        style={{ fontSize: '1.2vw', color: 'var(--accent-secondary)', textShadow: 'var(--glow-text)' }}
+        className="uppercase tracking-widest font-display font-bold mb-2 text-[1vw] text-[var(--accent-secondary)]"
+        style={{ textShadow: 'var(--glow-text)' }}
       >
         {sceneLabel}
       </span>
       <span
-        className="font-black font-display leading-none tabular-nums"
+        className="font-black font-display leading-none tabular-nums text-[4vw]"
         style={{
-          fontSize: '5vw',
-          letterSpacing: '4px',
+          letterSpacing: '3px',
           color: 'var(--text-primary)',
           textShadow: 'var(--glow-text)',
         }}
@@ -66,22 +203,9 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ label, size = 'full' }
       </span>
       {isPaused && (
         <span
-          className="mt-2 font-bold uppercase tracking-widest text-amber-400"
-          style={{ fontSize: '0.7vw', animation: 'pulse 1s infinite' }}
+          className="mt-2 font-bold uppercase tracking-widest text-amber-400 text-[0.65vw] animate-pulse"
         >
           ⏸ PAUSED
-        </span>
-      )}
-      {seconds === 0 && (
-        <span
-          className="mt-2 font-bold uppercase tracking-widest"
-          style={{
-            fontSize: '0.8vw',
-            color: 'var(--accent-primary)',
-            animation: 'pulse 1s infinite',
-          }}
-        >
-          🎉 STARTING NOW!
         </span>
       )}
     </div>

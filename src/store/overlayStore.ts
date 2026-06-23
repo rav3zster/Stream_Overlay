@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { getThemeLayoutPreset } from '../lib/themes';
 
 // ==========================================================================
 // TYPES
@@ -12,9 +13,13 @@ export type ThemeType =
   | 'minimal-white' | 'minimal-dark' | 'flat-ui' | 'glassmorphism' | 'neumorphism' | 'retro-crt'
   | 'halloween' | 'christmas' | 'snow' | 'corporate' | 'modern' | 'luxury'
   | 'mclaren' | 'porsche-gulf' | 'ferrari' | 'mercedes-amg' | 'red-bull'
-  | 'transparent' | 'pure-black' | 'pure-white' | 'blank-dark' | 'blank-light';
+  | 'transparent' | 'pure-black' | 'pure-white' | 'blank-dark' | 'blank-light'
+  | 'cyberpunk-neon' | 'synthwave' | 'corporate-tech' | 'luxury-gold'
+  | 'anime-sakura' | 'tokyo-night' | 'snow-season' | 'modern-clean'
+  | 'pure-transparent' | 'lo-fi-bedroom' | 'anime-room' | 'modern-white';
 
 export type AlertType = 'follow' | 'subscribe' | 'donation' | 'raid' | 'host';
+
 
 export interface Alert {
   id: string;
@@ -242,8 +247,10 @@ export interface OverlayState {
   checkSchedule: (currentTime: string) => void;
   broadcastState: (slice: Partial<OverlayState>) => void;
   loadFromBroadcast: (data: Partial<OverlayState>) => void;
+  applyThemeLayoutPreset: () => void;
 
   // History stack actions
+
   pushHistoryState: () => void;
   undo: () => void;
   redo: () => void;
@@ -560,9 +567,172 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   },
 
   setTheme: (theme: ThemeType) => {
+    // 1. Save history state to allow undoing theme changes
+    get().pushHistoryState();
+
+    // 2. Set the theme
     set({ theme });
-    broadcast({ theme });
+
+    // 3. Load default layout presets for the current scene in the new theme
+    const scene = get().currentScene;
+    const presets = getThemeLayoutPreset(theme, scene);
+
+    if (presets && presets.length > 0) {
+      set(state => {
+        const currentWidgets = [...(state.sceneWidgets[scene] || [])];
+        const nextSceneWidgets = { ...state.sceneWidgets };
+
+        const updatedWidgets: Widget[] = [];
+        const templateWidgetsLeft = [...presets];
+
+        // Map template widgets onto existing widgets of the same type to prevent content loss
+        currentWidgets.forEach(w => {
+          const matchIndex = templateWidgetsLeft.findIndex(t => t.type === w.type);
+          if (matchIndex !== -1) {
+            const template = templateWidgetsLeft[matchIndex];
+            templateWidgetsLeft.splice(matchIndex, 1);
+
+            updatedWidgets.push({
+              ...w,
+              x: template.x ?? w.x,
+              y: template.y ?? w.y,
+              w: template.w ?? w.w,
+              h: template.h ?? w.h,
+              rotation: template.rotation ?? w.rotation,
+              opacity: template.opacity ?? w.opacity,
+              scale: template.scale ?? w.scale,
+              zIndex: template.zIndex ?? w.zIndex,
+              visible: template.visible ?? w.visible,
+              style: {
+                ...w.style,
+                ...template.style
+              },
+              animation: {
+                ...w.animation,
+                ...template.animation
+              },
+              content: {
+                ...w.content,
+                settings: {
+                  ...w.content?.settings,
+                  ...template.content?.settings
+                }
+              }
+            });
+          } else {
+            updatedWidgets.push(w);
+          }
+        });
+
+        // Add any missing template widgets
+        templateWidgetsLeft.forEach((template, i) => {
+          const newId = `${template.type}-${Date.now()}-${i}`;
+          updatedWidgets.push({
+            id: newId,
+            type: template.type!,
+            label: template.label || `New ${template.type!.toUpperCase()} widget`,
+            x: template.x ?? 30,
+            y: template.y ?? 30,
+            w: template.w ?? 20,
+            h: template.h ?? 15,
+            rotation: template.rotation ?? 0,
+            opacity: template.opacity ?? 100,
+            scale: template.scale ?? 1.0,
+            zIndex: template.zIndex ?? (updatedWidgets.length + 1),
+            visible: template.visible ?? true,
+            locked: template.locked ?? false,
+            style: {
+              borderRadius: 8,
+              background: 'rgba(14, 8, 26, 0.8)',
+              borderSize: 1,
+              borderStyle: 'solid',
+              borderColor: '#A855F7',
+              glowBlur: 0,
+              padding: 4,
+              ...template.style
+            },
+            animation: {
+              type: 'none',
+              duration: 1,
+              delay: 0,
+              loop: false,
+              ...template.animation
+            },
+            content: {
+              type: template.type!,
+              settings: {
+                customLabel: '',
+                customText: '',
+                ...template.content?.settings
+              }
+            }
+          });
+        });
+
+        nextSceneWidgets[scene] = updatedWidgets;
+        return { sceneWidgets: nextSceneWidgets };
+      });
+    }
+
+    broadcast({ theme, sceneWidgets: get().sceneWidgets });
   },
+
+  applyThemeLayoutPreset: () => {
+    const theme = get().theme;
+    const scene = get().currentScene;
+    const presets = getThemeLayoutPreset(theme, scene);
+    if (!presets || presets.length === 0) return;
+
+    get().pushHistoryState();
+
+    set(state => {
+      const nextSceneWidgets = { ...state.sceneWidgets };
+      nextSceneWidgets[scene] = presets.map((template, i) => ({
+        id: `${template.type}-${Date.now()}-${i}`,
+        type: template.type!,
+        label: template.label || `New ${template.type!.toUpperCase()} widget`,
+        x: template.x ?? 30,
+        y: template.y ?? 30,
+        w: template.w ?? 20,
+        h: template.h ?? 15,
+        rotation: template.rotation ?? 0,
+        opacity: template.opacity ?? 100,
+        scale: template.scale ?? 1.0,
+        zIndex: template.zIndex ?? (i + 1),
+        visible: template.visible ?? true,
+        locked: template.locked ?? false,
+        style: {
+          borderRadius: 8,
+          background: 'rgba(14, 8, 26, 0.8)',
+          borderSize: 1,
+          borderStyle: 'solid',
+          borderColor: '#A855F7',
+          glowBlur: 0,
+          padding: 4,
+          ...template.style
+        },
+        animation: {
+          type: 'none',
+          duration: 1,
+          delay: 0,
+          loop: false,
+          ...template.animation
+        },
+        content: {
+          type: template.type!,
+          settings: {
+            customLabel: '',
+            customText: '',
+            ...template.content?.settings
+          }
+        }
+      }));
+      return { sceneWidgets: nextSceneWidgets };
+    });
+
+    broadcast({ sceneWidgets: get().sceneWidgets });
+  },
+
 
   // ─── Timer ───────────────────────────────────────────────────────────────
   addTime: (seconds: number) => {

@@ -26,6 +26,8 @@ import {
   PollsWidget
 } from './NewContentWidgets';
 
+import { getThemeProfile } from '../lib/themes';
+
 interface WidgetRendererProps {
   widget: Widget;
   isEditor?: boolean;
@@ -33,9 +35,75 @@ interface WidgetRendererProps {
 
 export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor = false }) => {
   const disableAnimations = useOverlayStore(s => s.settings.disableAnimations);
+  const theme = useOverlayStore(s => s.theme);
+  const profile = getThemeProfile(theme);
 
   // If hidden on live OBS overlay, render nothing
   if (!widget.visible && !isEditor) return null;
+
+  // Load default styles based on the theme profile if the user hasn't customized them manually
+  let bg = widget.style?.background;
+  let borderRadius = widget.style?.borderRadius;
+  let border = `${widget.style?.borderSize ?? 1}px ${widget.style?.borderStyle || 'solid'} ${widget.style?.borderColor || '#A855F7'}`;
+  let boxShadow = `${widget.style?.shadowX ?? 0}px ${widget.style?.shadowY ?? 4}px ${widget.style?.shadowBlur ?? 10}px ${widget.style?.shadowColor || 'rgba(0,0,0,0.5)'}`;
+  let backdropFilter = '';
+  let clipPath = '';
+
+  const isDefaultBg = !bg || bg === 'rgba(14, 8, 26, 0.8)';
+  const isDefaultRadius = borderRadius === undefined || borderRadius === 8;
+
+  if (profile === 'racing') {
+    if (isDefaultBg) {
+      bg = theme === 'mclaren'
+        ? 'repeating-linear-gradient(45deg, #111 0px, #111 2px, #222 2px, #222 4px)'
+        : theme === 'ferrari'
+        ? 'repeating-linear-gradient(45deg, #200202 0px, #200202 2px, #350404 2px, #350404 4px)'
+        : 'repeating-linear-gradient(45deg, #020813 0px, #020813 2px, #041026 2px, #041026 4px)'; // red-bull / amg
+    }
+    if (isDefaultRadius) borderRadius = 0;
+    clipPath = 'polygon(0% 0%, 94% 0%, 100% 12%, 100% 100%, 6% 100%, 0% 88%)';
+    border = `1.5px solid ${theme === 'mclaren' ? '#ff8000' : theme === 'ferrari' ? '#c4151c' : theme === 'mercedes-amg' ? '#00a3a6' : '#ffcc00'}`;
+  } else if (profile === 'gulf') {
+    if (isDefaultBg) bg = 'rgba(232, 241, 245, 0.95)'; 
+    if (isDefaultRadius) borderRadius = 20;
+    border = '3px solid #ff5800'; 
+    boxShadow = '0 8px 16px rgba(18, 30, 44, 0.15)';
+  } else if (profile === 'retro') {
+    if (isDefaultBg) bg = '#051405';
+    if (isDefaultRadius) borderRadius = 0;
+    border = '2px solid #33ff33'; 
+    boxShadow = 'none';
+  } else if (profile === 'cozy') {
+    if (isDefaultBg) bg = 'rgba(26, 18, 33, 0.92)'; 
+    if (isDefaultRadius) borderRadius = 24;
+    border = '2.5px solid var(--panel-border)';
+    boxShadow = '0 10px 25px rgba(0, 0, 0, 0.35)';
+  } else if (profile === 'minimal') {
+    if (isDefaultBg) bg = theme.includes('white') || theme.includes('light') ? '#ffffff' : '#0f172a';
+    if (isDefaultRadius) borderRadius = 12;
+    border = `1px solid ${theme.includes('white') || theme.includes('light') ? '#e2e8f0' : '#334155'}`;
+    boxShadow = '0 4px 12px rgba(0,0,0,0.06)';
+  } else if (profile === 'glass') {
+    if (isDefaultBg) bg = 'rgba(255, 255, 255, 0.08)';
+    if (isDefaultRadius) borderRadius = 20;
+    border = '1px solid rgba(255, 255, 255, 0.15)';
+    boxShadow = '0 8px 32px 0 rgba(31, 38, 135, 0.2)';
+    backdropFilter = 'blur(16px)';
+  } else if (profile === 'neumorphic') {
+    if (isDefaultBg) bg = '#e0e0e0';
+    if (isDefaultRadius) borderRadius = 24;
+    border = 'none';
+    boxShadow = '9px 9px 18px rgba(0,0,0,0.08), -9px -9px 18px rgba(255,255,255,0.7)';
+  } else if (profile === 'luxury') {
+    if (isDefaultBg) bg = 'rgba(17, 17, 17, 0.98)';
+    if (isDefaultRadius) borderRadius = 4;
+    border = '1px solid #d4af37'; 
+    boxShadow = '0 8px 24px rgba(0,0,0,0.6)';
+  }
+
+  const isTransparentWidget = ['game', 'game-frame', 'media'].includes(widget.type);
+  const finalBg = isTransparentWidget ? 'transparent' : (bg || 'rgba(14, 8, 26, 0.8)');
+  const finalRadius = borderRadius !== undefined ? `${borderRadius}px` : '8px';
 
   const containerStyle: React.CSSProperties = {
     position: 'absolute',
@@ -48,12 +116,13 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
     zIndex: widget.zIndex || 1,
     
     // Style settings
-    borderRadius: `${widget.style?.borderRadius ?? 8}px`,
-    background: widget.style?.background || 'rgba(14, 8, 26, 0.8)',
-    border: `${widget.style?.borderSize ?? 1}px ${widget.style?.borderStyle || 'solid'} ${widget.style?.borderColor || '#A855F7'}`,
-    boxShadow: `${widget.style?.shadowX ?? 0}px ${widget.style?.shadowY ?? 4}px ${widget.style?.shadowBlur ?? 10}px ${widget.style?.shadowColor || 'rgba(0,0,0,0.5)'}` +
-      (widget.style?.glowBlur ? `, 0 0 ${widget.style.glowBlur}px ${widget.style.glowColor || 'var(--accent-primary)'}` : ''),
+    borderRadius: finalRadius,
+    background: finalBg,
+    border: isTransparentWidget ? 'none' : border,
+    boxShadow: isTransparentWidget ? 'none' : (boxShadow + (widget.style?.glowBlur ? `, 0 0 ${widget.style.glowBlur}px ${widget.style.glowColor || 'var(--accent-primary)'}` : '')),
     padding: `${widget.style?.padding ?? 4}px`,
+    backdropFilter,
+    clipPath,
     
     // Typography
     fontFamily: widget.style?.fontFamily || 'inherit',
@@ -63,6 +132,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
     textAlign: widget.style?.textAlign || 'left',
     overflow: 'hidden',
   };
+
 
   const getAnimateProps = () => {
     // Disable animations in editor mode or globally to make edit easy

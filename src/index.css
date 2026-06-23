@@ -22,8 +22,8 @@ body {
    THEME DECLARATIONS
    ========================================================================== */
 
-/* 1. Cyber Synth */
-.theme-cyber-synth {
+/* 1. Cyber Synth & Cyberpunk Neon */
+.theme-cyber-synth, .theme-cyberpunk-neon {
   --bg-color: #05020a;
   --panel-bg: rgba(14, 8, 26, 0.8);
   --panel-border: #A855F7;
@@ -54,8 +54,8 @@ body {
   --glow-text: 0 0 12px #A855F7;
 }
 
-/* 3. Anime Bedroom */
-.theme-anime-bedroom {
+/* 3. Anime Bedroom & Anime Room */
+.theme-anime-bedroom, .theme-anime-room {
   --bg-color: #1a0f2b;
   --panel-bg: rgba(43, 26, 66, 0.85);
   --panel-border: #FBCFE8;
@@ -70,8 +70,8 @@ body {
   --glow-text: 0 0 8px #FBCFE8;
 }
 
-/* 4. Lo-fi Cafe */
-.theme-lo-fi-cafe {
+/* 4. Lo-fi Cafe & Lo-fi Bedroom */
+.theme-lo-fi-cafe, .theme-lo-fi-bedroom {
   --bg-color: #120c18;
   --panel-bg: rgba(26, 18, 33, 0.8);
   --panel-border: #b085f5;
@@ -86,8 +86,8 @@ body {
   --glow-text: 0 0 5px #d1c4e9;
 }
 
-/* 5. Sakura Night */
-.theme-sakura-night {
+/* 5. Sakura Night & Anime Sakura */
+.theme-sakura-night, .theme-anime-sakura {
   --bg-color: #140b1b;
   --panel-bg: rgba(32, 16, 42, 0.75);
   --panel-border: #FF80BF;
@@ -102,8 +102,8 @@ body {
   --glow-text: 0 0 10px #FF80BF;
 }
 
-/* 6. Neon Tokyo */
-.theme-neon-tokyo {
+/* 6. Neon Tokyo & Tokyo Night */
+.theme-neon-tokyo, .theme-tokyo-night {
   --bg-color: #030206;
   --panel-bg: rgba(10, 6, 22, 0.85);
   --panel-border: #FF0055;
@@ -150,8 +150,8 @@ body {
   --glow-text: 0 0 10px #6366F1;
 }
 
-/* 9. Vaporwave */
-.theme-vaporwave {
+/* 9. Vaporwave & Synthwave */
+.theme-vaporwave, .theme-synthwave {
   --bg-color: #120e2e;
   --panel-bg: rgba(30, 21, 61, 0.7);
   --panel-border: #FF77FF;
@@ -182,8 +182,8 @@ body {
   --glow-text: none;
 }
 
-/* 11. Minimal White */
-.theme-minimal-white {
+/* 11. Minimal White & Modern White */
+.theme-minimal-white, .theme-modern-white {
   --bg-color: #f8fafc;
   --panel-bg: rgba(255, 255, 255, 0.9);
   --panel-border: #e2e8f0;
@@ -295,7 +295,7 @@ body {
 }
 
 /* 19. Snow Season */
-.theme-snow {
+.theme-snow, .theme-snow-season {
   --bg-color: #0f1e2d;
   --panel-bg: rgba(147, 197, 253, 0.15);
   --panel-border: #93c5fd;
@@ -309,7 +309,7 @@ body {
 }
 
 /* 20. Corporate Tech */
-.theme-corporate {
+.theme-corporate, .theme-corporate-tech {
   --bg-color: #0f172a;
   --panel-bg: rgba(255, 255, 255, 0.95);
   --panel-border: #cbd5e1;
@@ -323,7 +323,7 @@ body {
 }
 
 /* 21. Modern Clean */
-.theme-modern {
+.theme-modern, .theme-modern-clean {
   --bg-color: #020617;
   --panel-bg: rgba(15, 23, 42, 0.8);
   --panel-border: #334155;
@@ -337,7 +337,7 @@ body {
 }
 
 /* 22. Luxury Gold */
-.theme-luxury {
+.theme-luxury, .theme-luxury-gold {
   --bg-color: #0a0a0a;
   --panel-bg: rgba(20, 20, 20, 0.95);
   --panel-border: #d4af37;
@@ -421,7 +421,7 @@ body {
 }
 
 /* 28. Pure Transparent Blank */
-.theme-transparent {
+.theme-transparent, .theme-pure-transparent {
   --bg-color: transparent;
   --panel-bg: transparent;
   --panel-border: transparent;
