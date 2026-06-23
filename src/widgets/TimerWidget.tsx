@@ -24,7 +24,85 @@ export const TimerWidget: React.FC<TimerWidgetProps> = ({ label, size = 'full' }
   );
 
   // ──────────────────────────────────────────────────────────────
-  // 1. RETRO CRT THEME DESIGN
+  // 1. PASTEL PLANETS THEME DESIGN
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'planets') {
+    return (
+      <div className="flex flex-col justify-center items-center h-full text-center p-3 text-[#FFC6FF] leading-none relative overflow-hidden">
+        {/* Rotating Saturn planet background illustration */}
+        <div className="absolute top-2 right-2 w-[2.2vw] h-[2.2vw] opacity-20 pointer-events-none">
+          <svg viewBox="0 0 100 100" fill="none" className="w-full h-full animate-[spin_20s_linear_infinite]">
+            <circle cx="50" cy="50" r="22" fill="#FFD6A5" />
+            <ellipse cx="50" cy="50" rx="38" ry="8" fill="none" stroke="#FFC6FF" strokeWidth="4" transform="rotate(-15 50 50)" />
+          </svg>
+        </div>
+        <span className="text-[0.65vw] tracking-wider text-[#FFD6A5] font-black uppercase mb-1.5 flex items-center gap-1 font-display">
+          🪐 {sceneLabel} 🪐
+        </span>
+        <div className="text-[3.2vw] font-black tracking-widest font-display text-white tabular-nums flex items-center justify-center gap-1 drop-shadow-[0_4px_8px_rgba(0,0,0,0.3)]">
+          <span>{mins}</span>
+          <span className="animate-pulse text-[#E8AEFF]">:</span>
+          <span>{secs}</span>
+        </div>
+        {isPaused && (
+          <span className="text-[0.55vw] font-black text-[#CAFFBF] uppercase tracking-widest mt-1.5 animate-bounce">
+            • orbit locked •
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 2. CYBER HUD THEME DESIGN
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'cyberhud') {
+    return (
+      <div className="flex flex-col justify-center items-center h-full font-mono text-[#00F0FF] p-3 leading-none relative overflow-hidden bg-[#0a111a]/40">
+        {/* Technical grid scanline overlay */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,240,255,0.05)_50%,transparent_50%)] bg-[size:100%_4px] pointer-events-none" />
+        
+        <div className="w-full flex justify-between items-center text-[0.55vw] text-[#00F0FF]/60 font-mono tracking-widest uppercase border-b border-[#00F0FF]/20 pb-1 mb-1.5">
+          <span>[CLK_SRC: SYS_DEC]</span>
+          <span className="animate-pulse text-emerald-400">● SECURE</span>
+        </div>
+        
+        <div className="text-[3.8vw] font-black tracking-[0.15em] tabular-nums text-[#00F0FF] filter drop-shadow-[0_0_8px_rgba(0,240,255,0.6)]">
+          {mins}<span className="text-[#00F0FF]/40">:</span>{secs}
+        </div>
+        
+        <div className="w-full flex justify-between items-center text-[0.5vw] text-[#00F0FF]/40 font-mono uppercase mt-1">
+          <span>STATUS: {isPaused ? 'LOCKED_PAUSED' : 'COUNTDOWN_RUNNING'}</span>
+          <span>T-{seconds}S</span>
+        </div>
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 3. ESPORTS TELEMETRY THEME DESIGN
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'esports') {
+    return (
+      <div className="flex items-center justify-between h-full w-full px-[1.5vw] py-[0.8vw] font-sans select-none leading-none bg-gradient-to-r from-[#03091e] to-[#0a1b40]">
+        <div className="flex flex-col text-left justify-center">
+          <span className="text-[0.5vw] text-[#2979FF] font-black uppercase tracking-[0.2em] mb-1">MATCH TIMER</span>
+          <span className="text-[2.6vw] font-black text-white tracking-tighter tabular-nums skew-x-[-6deg]">
+            {mins}:{secs}
+          </span>
+        </div>
+        <div className="flex flex-col items-end justify-center border-l-2 border-[#2979FF]/40 pl-[1vw]">
+          <span className="text-[0.5vw] text-slate-400 font-extrabold uppercase tracking-widest mb-1">EVENT STATUS</span>
+          <span className="text-[1vw] font-black text-white uppercase bg-[#2979FF] px-2 py-0.5 rounded-sm skew-x-[-6deg]">
+            {isPaused ? 'PAUSED' : 'LIVE'}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 4. RETRO CRT THEME DESIGN
   // ──────────────────────────────────────────────────────────────
   if (profile === 'retro') {
     return (

@@ -24,7 +24,128 @@ export const MusicWidget: React.FC<MusicWidgetProps> = ({ compact = false }) => 
     `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   // ──────────────────────────────────────────────────────────────
-  // 1. RETRO CRT CASSETTE COMMAND LOG
+  // 1. PASTEL PLANETS THEME DESIGN
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'planets') {
+    return (
+      <div className="flex items-center gap-[1vw] h-full px-[1.2vw] text-white leading-none relative overflow-hidden">
+        {/* Rotating planet record disk */}
+        <div className="w-[3.5vw] h-[3.5vw] rounded-full border-2 border-[#FFC6FF] bg-[#4c3a75] overflow-hidden flex-shrink-0 flex items-center justify-center relative">
+          <img
+            src={music.albumArt}
+            alt="record"
+            className="w-[85%] h-[85%] rounded-full object-cover"
+            style={{ animation: music.isPlaying ? 'spin 12s linear infinite' : 'none' }}
+          />
+          <div className="absolute w-[0.8vw] h-[0.8vw] bg-[#BDB2FF] rounded-full border border-white" />
+        </div>
+        
+        <div className="flex-grow overflow-hidden min-w-0 flex flex-col justify-center">
+          <span className="text-[0.55vw] text-[#FFD6A5] font-black tracking-widest uppercase mb-1 font-display">SPACE RADIO</span>
+          <span className="text-[0.95vw] text-white font-black font-display truncate leading-tight">{music.title}</span>
+          <span className="text-[0.7vw] text-[#FFC6FF] truncate font-display mt-0.5">{music.artist}</span>
+        </div>
+        
+        {/* Sparkle decorative element */}
+        <div className="text-[#FFD6A5] text-[1vw] animate-pulse pr-1 select-none pointer-events-none">✦</div>
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 2. CYBER HUD THEME DESIGN
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'cyberhud') {
+    return (
+      <div className="flex flex-col justify-between h-full w-full p-[0.8vw] gap-[0.4vw] font-mono text-[#00F0FF] leading-none select-none relative bg-[#0b1016]/40">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,240,255,0.01)_50%,transparent_50%)] bg-[size:100%_4px] pointer-events-none" />
+        
+        <div className="flex justify-between items-center text-[0.45vw] font-bold tracking-widest border-b border-[#00F0FF]/25 pb-1 flex-shrink-0">
+          <span>[AUDIO_UPLINK_DECODE]</span>
+          <span className="text-emerald-400 animate-pulse">LOCK_ON</span>
+        </div>
+
+        <div className="flex items-center gap-[0.8vw] flex-grow my-0.5 overflow-hidden">
+          <div className="w-[3vw] h-[3vw] border border-[#00F0FF]/35 flex-shrink-0 flex items-center justify-center bg-black/50">
+            <img src={music.albumArt} alt="art" className="w-[85%] h-[85%] object-cover opacity-85" />
+          </div>
+          <div className="flex-grow overflow-hidden min-w-0 flex flex-col justify-center">
+            <span className="text-[0.8vw] font-bold truncate text-[#00F0FF] tracking-tight">{music.title.toUpperCase()}</span>
+            <span className="text-[0.6vw] text-[#00F0FF]/60 truncate mt-0.5">{music.artist.toUpperCase()}</span>
+          </div>
+          
+          {/* Vertical Decibel Radar Bars */}
+          <div className="flex items-end gap-[2px] h-[1.8vw] pr-1 flex-shrink-0">
+            {EQ_BARS.map((bar, i) => (
+              <span
+                key={i}
+                className="w-[2px] bg-[#00F0FF]"
+                style={{
+                  height: bar.height,
+                  animation: music.isPlaying
+                    ? `equalizerPulse ${bar.duration} ${bar.delay} ease-in-out infinite alternate`
+                    : '2px',
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-[0.4vw] text-[0.5vw] text-[#00F0FF]/40 border-t border-[#00F0FF]/10 pt-1 flex-shrink-0">
+          <span>{fmt(music.progress)}</span>
+          <div className="flex-grow h-[2.5px] bg-[#00F0FF]/10 rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-[#00F0FF] shadow-[0_0_4px_rgba(0,240,255,0.6)] transition-all duration-1000" 
+              style={{ width: `${pct}%` }} 
+            />
+          </div>
+          <span>{fmt(music.duration)}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 3. ESPORTS TELEMETRY THEME DESIGN
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'esports') {
+    return (
+      <div className="flex items-center gap-[1vw] h-full px-[1.2vw] py-[0.5vw] text-white leading-none relative bg-gradient-to-r from-[#050c20] to-[#010512]">
+        <div className="w-[3.2vw] h-[3.2vw] skew-x-[-6deg] overflow-hidden flex-shrink-0 border border-[#2979FF] bg-black/60">
+          <img
+            src={music.albumArt}
+            alt="art"
+            className="w-full h-full object-cover scale-110"
+          />
+        </div>
+        
+        <div className="flex-grow overflow-hidden min-w-0 flex flex-col justify-center">
+          <span className="text-[0.5vw] text-[#2979FF] font-black uppercase tracking-[0.2em] mb-1">ARENA NOW PLAYING</span>
+          <span className="text-[0.9vw] text-white font-black truncate leading-tight skew-x-[-4deg]">{music.title}</span>
+          <span className="text-[0.7vw] text-slate-300 truncate mt-0.5">{music.artist}</span>
+        </div>
+
+        {/* Slanted decibel indicator */}
+        <div className="flex items-end gap-[2px] h-[1.8vw] pl-2 border-l border-[#2979FF]/30 flex-shrink-0">
+          {EQ_BARS.map((bar, i) => (
+            <span
+              key={i}
+              className="w-[2.5px] bg-[#2979FF] skew-x-[-6deg] rounded-sm"
+              style={{
+                height: bar.height,
+                animation: music.isPlaying
+                  ? `equalizerPulse ${bar.duration} ${bar.delay} ease-in-out infinite alternate`
+                  : '3px',
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 4. RETRO CRT CASSETTE COMMAND LOG
   // ──────────────────────────────────────────────────────────────
   if (profile === 'retro') {
     return (

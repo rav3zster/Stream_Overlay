@@ -83,16 +83,73 @@ export const OBSOverlay: React.FC = () => {
         ctx.lineWidth = 1;
         const spacing = 14;
         for (let x = 0; x < width; x += spacing) {
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, height);
-          ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
         }
         for (let y = 0; y < height; y += spacing) {
-          ctx.beginPath();
-          ctx.moveTo(0, y);
-          ctx.lineTo(width, y);
-          ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+        }
+      }
+
+      if (profile === 'planets') {
+        // Celestial cosmic ambient planets with rings
+        const planetBlobs = [
+          { x: width * 0.82, y: height * 0.22, r: width * 0.08, color: 'rgba(232, 174, 255, 0.25)', stroke: 'rgba(189, 178, 255, 0.4)', rings: true },
+          { x: width * 0.15, y: height * 0.78, r: width * 0.05, color: 'rgba(255, 214, 165, 0.2)', stroke: 'rgba(255, 240, 245, 0.35)', rings: false }
+        ];
+
+        for (const p of planetBlobs) {
+          const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+          g.addColorStop(0, p.color);
+          g.addColorStop(1, 'rgba(28, 20, 44, 0)');
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+
+          ctx.strokeStyle = p.stroke;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.stroke();
+
+          if (p.rings) {
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(-Math.PI / 10);
+            ctx.scale(2.2, 0.4);
+            ctx.strokeStyle = p.stroke;
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(0, 0, p.r * 0.8, 0, Math.PI * 2); ctx.stroke();
+            ctx.restore();
+          }
+        }
+      }
+
+      if (profile === 'cyberhud') {
+        // Draw grid overlay lines and radar scanning lines
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.025)';
+        ctx.lineWidth = 1;
+        const cyberGridSpacing = 35;
+        for (let x = 0; x < width; x += cyberGridSpacing) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+        }
+        for (let y = 0; y < height; y += cyberGridSpacing) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+        }
+
+        // Concentric circular radar lines in top right
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.04)';
+        ctx.beginPath(); ctx.arc(width * 0.85, height * 0.25, 120, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(width * 0.85, height * 0.25, 240, 0, Math.PI * 2); ctx.stroke();
+
+        // Horizontal scanning sweep line
+        const scanY = (Date.now() * 0.05) % height;
+        ctx.fillStyle = 'rgba(0, 240, 255, 0.012)';
+        ctx.fillRect(0, scanY - 3, width, 6);
+      }
+
+      if (profile === 'esports') {
+        // Sleek diagonal background line indicators
+        ctx.strokeStyle = 'rgba(41, 121, 255, 0.02)';
+        ctx.lineWidth = 3;
+        for (let idx = 0; idx < width + height; idx += 120) {
+          ctx.beginPath(); ctx.moveTo(idx, 0); ctx.lineTo(idx - height, height); ctx.stroke();
         }
       }
 
@@ -157,7 +214,42 @@ export const OBSOverlay: React.FC = () => {
           ctx.beginPath();
           ctx.arc(d.x, d.y, d.s * 25, 0, Math.PI * 2);
           ctx.fill();
-        } else if (['cyber-synth', 'vaporwave', 'neon-tokyo'].includes(theme)) {
+        } else if (theme === 'pastel-planets') {
+          // Draw four-pointed space star (cross shape)
+          ctx.fillStyle = d.s > 2.2 ? '#FFD6A5' : '#E8AEFF';
+          ctx.save();
+          ctx.translate(d.x, d.y);
+          ctx.rotate(d.rot + Date.now() * 0.0006);
+          ctx.beginPath();
+          ctx.moveTo(0, -d.s * 2.5);
+          ctx.lineTo(d.s * 0.7, -d.s * 0.7);
+          ctx.lineTo(d.s * 2.5, 0);
+          ctx.lineTo(d.s * 0.7, d.s * 0.7);
+          ctx.lineTo(0, d.s * 2.5);
+          ctx.lineTo(-d.s * 0.7, d.s * 0.7);
+          ctx.lineTo(-d.s * 2.5, 0);
+          ctx.lineTo(-d.s * 0.7, -d.s * 0.7);
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        } else if (theme === 'cyber-hud') {
+          // Draw high tech radar target ticks
+          ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(d.x - 3, d.y); ctx.lineTo(d.x + 3, d.y);
+          ctx.moveTo(d.x, d.y - 3); ctx.lineTo(d.x, d.y + 3);
+          ctx.stroke();
+        } else if (theme === 'esports-blue') {
+          // Fast slanted speed lines
+          d.sx = -1.8; d.sy = 0.5;
+          ctx.strokeStyle = `rgba(41, 121, 255, ${d.a * 0.45})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(d.x, d.y);
+          ctx.lineTo(d.x - 10, d.y + 3);
+          ctx.stroke();
+        } else if (['cyber-synth', 'cyberpunk-neon', 'synthwave', 'vaporwave', 'neon-tokyo', 'tokyo-night'].includes(theme)) {
           ctx.fillStyle = d.s > 2.5 ? '#FF4DFF' : '#5CFFE2';
           ctx.shadowBlur = 8; ctx.shadowColor = ctx.fillStyle;
           ctx.fillRect(d.x, d.y, d.s * 1.5, d.s * 1.5);
@@ -168,7 +260,7 @@ export const OBSOverlay: React.FC = () => {
           g.addColorStop(1, 'rgba(0,0,0,0)');
           ctx.fillStyle = g;
           ctx.beginPath(); ctx.arc(d.x, d.y, d.s * 3.5, 0, Math.PI * 2); ctx.fill();
-        } else if (['sakura-night', 'anime-bedroom'].includes(theme)) {
+        } else if (['sakura-night', 'anime-sakura', 'anime-bedroom', 'anime-room'].includes(theme)) {
           ctx.translate(d.x, d.y); ctx.rotate(d.rot);
           ctx.fillStyle = 'rgba(251,207,232,0.8)';
           ctx.beginPath(); ctx.ellipse(0, 0, d.s * 2, d.s * 1.2, 0, 0, Math.PI * 2); ctx.fill();

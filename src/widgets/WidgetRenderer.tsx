@@ -66,6 +66,24 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
       clipPath = 'polygon(0% 0%, 94% 0%, 100% 12%, 100% 100%, 6% 100%, 0% 88%)';
     }
     border = 'none'; // We render vector border inside the SVG overlay instead
+  } else if (profile === 'planets') {
+    if (isDefaultBg) bg = 'rgba(58, 43, 94, 0.85)';
+    if (isDefaultRadius) borderRadius = 20;
+    border = '3.5px solid #BDB2FF';
+    boxShadow = '0 8px 24px rgba(28, 20, 44, 0.45)';
+  } else if (profile === 'cyberhud') {
+    if (isDefaultBg) bg = 'rgba(14, 22, 33, 0.92)';
+    if (isDefaultRadius) borderRadius = 0;
+    border = 'none';
+    boxShadow = '0 0 16px rgba(0, 240, 255, 0.2)';
+  } else if (profile === 'esports') {
+    if (isDefaultBg) bg = 'rgba(5, 12, 32, 0.96)';
+    if (isDefaultRadius) borderRadius = 0;
+    if (!isTransparentWidget) {
+      clipPath = 'polygon(0% 0%, 90% 0%, 100% 10%, 100% 100%, 10% 100%, 0% 90%)';
+    }
+    border = 'none';
+    boxShadow = '0 8px 24px rgba(2, 4, 12, 0.6)';
   } else if (profile === 'gulf') {
     if (isDefaultBg) bg = 'rgba(232, 241, 245, 0.95)'; 
     if (isDefaultRadius) borderRadius = 20;
@@ -296,6 +314,69 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
           {/* Center target crosshair or grid lines */}
           <div className="absolute top-2 left-1/2 -translate-x-1/2 w-4 h-[1px] bg-[var(--accent-primary)]/45" />
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-4 h-[1px] bg-[var(--accent-primary)]/45" />
+        </div>
+      )}
+
+      {/* 3. Planets Profile: Sparkle and planet decorations */}
+      {profile === 'planets' && !isTransparentWidget && (
+        <>
+          <div className="absolute -top-1 -left-1 text-xs text-[#FFD6A5] select-none pointer-events-none animate-bounce" style={{ animationDuration: '4s' }}>✦</div>
+          <div className="absolute -bottom-1 -right-1 text-xs text-[#FFD6A5] select-none pointer-events-none">✦</div>
+        </>
+      )}
+
+      {/* 4. Cyber HUD Profile: Tech borders and brackets */}
+      {profile === 'cyberhud' && !isTransparentWidget && (
+        <div className="absolute inset-0 pointer-events-none">
+          {/* Neon cyan outer box with double inside layout */}
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <rect x="0.5" y="0.5" width="99" height="99" fill="none" stroke="rgba(0, 240, 255, 0.55)" strokeWidth="1" />
+            <rect x="2.5" y="2.5" width="95" height="95" fill="none" stroke="rgba(0, 240, 255, 0.08)" strokeWidth="0.5" />
+          </svg>
+          {/* Tech ticks */}
+          <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-[#00F0FF]" />
+          <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-[#00F0FF]" />
+          <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-[#00F0FF]" />
+          <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-[#00F0FF]" />
+          
+          <span className="absolute top-[3px] left-[5px] text-[5px] text-[#00F0FF]/35 font-mono uppercase tracking-widest scale-75 origin-top-left">SYS_UPLINK_ON</span>
+        </div>
+      )}
+      {widget.type === 'game-frame' && profile === 'cyberhud' && (
+        <div className="absolute inset-0 border border-[#00F0FF]/15 pointer-events-none">
+          {/* Large Outer radar targets on gameplay capture window */}
+          <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-[#00F0FF]" />
+          <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-[#00F0FF]" />
+          <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-[#00F0FF]" />
+          <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-[#00F0FF]" />
+          
+          {/* Tech target cursor in center */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 border border-[#00F0FF]/30 rounded-full flex items-center justify-center">
+            <div className="w-1.5 h-1.5 bg-[#00F0FF]/50 rounded-full" />
+          </div>
+        </div>
+      )}
+
+      {/* 5. Esports Profile: gamer slanted telemetry borders */}
+      {profile === 'esports' && !isTransparentWidget && (
+        <div className="absolute inset-0 pointer-events-none">
+          <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <polygon 
+              points="0.5,0.5 90.5,0.5 99.5,9.5 99.5,99.5 9.5,99.5 0.5,90.5" 
+              fill="none" 
+              stroke="#2979FF" 
+              strokeWidth="2.0"
+            />
+          </svg>
+        </div>
+      )}
+      {widget.type === 'game-frame' && profile === 'esports' && (
+        <div className="absolute inset-0 border border-[#2979FF]/20 pointer-events-none">
+          {/* esports corner ticks */}
+          <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-[#2979FF]" />
+          <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-[#2979FF]" />
+          <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-[#2979FF]" />
+          <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-[#2979FF]" />
         </div>
       )}
     </motion.div>

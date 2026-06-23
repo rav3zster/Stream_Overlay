@@ -11,6 +11,9 @@ export type ThemeProfile =
   | 'gulf'
   | 'luxury'
   | 'seasonal'
+  | 'planets'
+  | 'cyberhud'
+  | 'esports'
   | 'blank';
 
 /**
@@ -19,6 +22,9 @@ export type ThemeProfile =
 export const getThemeProfile = (theme: ThemeType): ThemeProfile => {
   switch (theme) {
     case 'cyber-synth':
+    case 'cyberpunk-neon':
+    case 'synthwave':
+    case 'tokyo-night':
     case 'neon-tokyo':
     case 'vaporwave':
     case 'galaxy-violet':
@@ -58,12 +64,23 @@ export const getThemeProfile = (theme: ThemeType): ThemeProfile => {
       return 'gulf';
 
     case 'luxury':
+    case 'luxury-gold':
       return 'luxury';
 
     case 'halloween':
     case 'christmas':
     case 'snow':
+    case 'snow-season':
       return 'seasonal';
+
+    case 'pastel-planets':
+      return 'planets';
+
+    case 'cyber-hud':
+      return 'cyberhud';
+
+    case 'esports-blue':
+      return 'esports';
 
     case 'transparent':
     case 'pure-black':
@@ -559,6 +576,274 @@ export const getThemeLayoutPreset = (theme: ThemeType, scene: SceneType): Partia
         ];
       }
       break;
+
+    case 'planets': // Cute Pastel Planets theme matching reference 1
+      if (scene === 'main-stream' || scene === 'chat-session') {
+        return [
+          {
+            id: 'game-main',
+            type: 'game-frame',
+            label: scene === 'main-stream' ? 'Pastel Space Game Window' : 'Large Webcam Window',
+            x: 4, y: 8, w: 56, h: 68,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 1, visible: true, locked: true,
+            style: { borderRadius: 20, background: 'transparent', borderSize: 4, borderStyle: 'solid', borderColor: '#BDB2FF', padding: 0 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'game-frame', settings: { titleBar: true, titleText: scene === 'main-stream' ? 'GAMEPLAY CAPTURE' : 'JUST CHATTING' } }
+          },
+          {
+            id: 'dono-stat',
+            type: 'dono-goal',
+            label: 'Last Donation',
+            x: 4, y: 78, w: 18, h: 10,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 4, visible: true, locked: false,
+            style: { borderRadius: 16, background: 'rgba(58, 43, 94, 0.9)', borderSize: 2, borderStyle: 'solid', borderColor: '#E8AEFF', padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'dono-goal', settings: { compact: true } }
+          },
+          {
+            id: 'sub-stat',
+            type: 'sub-goal',
+            label: 'Last Subscriber',
+            x: 23, y: 78, w: 18, h: 10,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 5, visible: true, locked: false,
+            style: { borderRadius: 16, background: 'rgba(58, 43, 94, 0.9)', borderSize: 2, borderStyle: 'solid', borderColor: '#E8AEFF', padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'sub-goal', settings: { compact: true } }
+          },
+          {
+            id: 'follower-stat',
+            type: 'follower-goal',
+            label: 'Last Follower',
+            x: 42, y: 78, w: 18, h: 10,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 6, visible: true, locked: false,
+            style: { borderRadius: 16, background: 'rgba(58, 43, 94, 0.9)', borderSize: 2, borderStyle: 'solid', borderColor: '#E8AEFF', padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'follower-goal', settings: { compact: true } }
+          },
+          {
+            id: 'chat-main',
+            type: 'chat',
+            label: 'Planetary Chat Logs',
+            x: 62, y: 8, w: 34, h: 42,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 7, visible: true, locked: false,
+            style: { borderRadius: 20, background: 'rgba(58, 43, 94, 0.9)', borderSize: 3, borderStyle: 'solid', borderColor: '#BDB2FF', padding: 8 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'chat', settings: { size: 'normal', maxMessages: 6 } }
+          },
+          {
+            id: 'vtuber-main',
+            type: 'vtuber',
+            label: 'Webcam inset frame',
+            x: 62, y: 52, w: 34, h: 36,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 2, visible: true, locked: false,
+            style: { borderRadius: 20, background: 'rgba(58, 43, 94, 0.85)', borderSize: 3, borderStyle: 'solid', borderColor: '#BDB2FF', padding: 4 },
+            animation: { type: 'float', duration: 5, delay: 0, loop: true },
+            content: { type: 'vtuber', settings: {} }
+          }
+        ];
+      } else {
+        // starting-soon, brb, ending-stream
+        return [
+          {
+            id: 'timer-main',
+            type: 'timer',
+            label: 'Planetary countdown clock',
+            x: 15, y: 20, w: 70, h: 35,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 3, visible: true, locked: false,
+            style: { borderRadius: 24, background: 'rgba(58, 43, 94, 0.95)', borderSize: 4, borderStyle: 'solid', borderColor: '#BDB2FF', padding: 8 },
+            animation: { type: 'float', duration: 6, delay: 0, loop: true },
+            content: { type: 'timer', settings: { size: 'full', customLabel: scene === 'brb' ? 'BRB COZY TIME' : scene === 'ending-stream' ? 'SHUTTING DOWN FEED' : 'PREPARING FOR LAUNCH' } }
+          },
+          {
+            id: 'music-main',
+            type: 'music',
+            label: 'Planetary Cassette deck',
+            x: 25, y: 60, w: 50, h: 25,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 4, visible: true, locked: false,
+            style: { borderRadius: 24, background: 'rgba(58, 43, 94, 0.95)', borderSize: 3, borderStyle: 'solid', borderColor: '#E8AEFF', padding: 8 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'music', settings: { compact: false } }
+          }
+        ];
+      }
+
+    case 'cyberhud': // High Tech Cyber HUD matching reference 2
+      if (scene === 'main-stream' || scene === 'chat-session') {
+        return [
+          {
+            id: 'game-main',
+            type: 'game-frame',
+            label: 'Cyber Command Frame',
+            x: 2, y: 8, w: 50, h: 64,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 1, visible: true, locked: true,
+            style: { borderRadius: 0, background: 'transparent', borderSize: 2, borderStyle: 'solid', borderColor: '#00F0FF', padding: 0 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'game-frame', settings: { titleBar: false, titleText: '' } }
+          },
+          {
+            id: 'dono-stat',
+            type: 'dono-goal',
+            label: 'Dono Comm Feed',
+            x: 54, y: 8, w: 44, h: 12,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 4, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(14, 22, 33, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#00F0FF', padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'dono-goal', settings: { compact: true } }
+          },
+          {
+            id: 'sub-stat',
+            type: 'sub-goal',
+            label: 'Sub Comm Feed',
+            x: 54, y: 22, w: 44, h: 12,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 5, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(14, 22, 33, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#00F0FF', padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'sub-goal', settings: { compact: true } }
+          },
+          {
+            id: 'follower-stat',
+            type: 'follower-goal',
+            label: 'Follower Comm Feed',
+            x: 54, y: 36, w: 44, h: 12,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 6, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(14, 22, 33, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#00F0FF', padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'follower-goal', settings: { compact: true } }
+          },
+          {
+            id: 'chat-main',
+            type: 'chat',
+            label: 'Sci-Fi Comm logs',
+            x: 76, y: 50, w: 22, h: 42,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 7, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(14, 22, 33, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#00F0FF', padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'chat', settings: { size: 'normal', maxMessages: 6 } }
+          },
+          {
+            id: 'vtuber-main',
+            type: 'vtuber',
+            label: 'Target Webcam Feed',
+            x: 54, y: 50, w: 20, h: 42,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 2, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(14, 22, 33, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#0077ff', padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'vtuber', settings: {} }
+          },
+          {
+            id: 'timer-main',
+            type: 'timer',
+            label: 'Console Timer logs',
+            x: 2, y: 74, w: 50, h: 18,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 3, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(14, 22, 33, 0.95)', borderSize: 2, borderStyle: 'solid', borderColor: '#00F0FF', padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'timer', settings: { size: 'full', customLabel: 'SYS_COUNTDOWN_UPLINK' } }
+          }
+        ];
+      } else {
+        return [
+          {
+            id: 'timer-main',
+            type: 'timer',
+            label: 'Console Timer logs',
+            x: 15, y: 25, w: 70, h: 30,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 3, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(14, 22, 33, 0.95)', borderSize: 2, borderStyle: 'solid', borderColor: '#00F0FF', padding: 6 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'timer', settings: { size: 'full', customLabel: scene === 'brb' ? 'SIGNAL PAUSED // BE RIGHT BACK' : scene === 'ending-stream' ? 'DOWNLINK COMPLETED // SYSTEM TERMINATING' : 'UPLINK ESTABLISHED // CONNECTION STARTING' } }
+          },
+          {
+            id: 'music-main',
+            type: 'music',
+            label: 'HUD Comm player',
+            x: 30, y: 60, w: 40, h: 25,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 4, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(14, 22, 33, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#0077ff', padding: 6 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'music', settings: { compact: false } }
+          }
+        ];
+      }
+
+    case 'esports': // Slanted arena gamer overlay matching reference 3
+      if (scene === 'main-stream' || scene === 'chat-session') {
+        return [
+          {
+            id: 'ticker-top',
+            type: 'follower-goal',
+            label: 'Top Telemetry Banner',
+            x: 2, y: 1, w: 96, h: 8,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 3, visible: true, locked: true,
+            style: { borderRadius: 0, background: 'rgba(5, 12, 32, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#2979FF', padding: 2 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'follower-goal', settings: { compact: true } }
+          },
+          {
+            id: 'game-main',
+            type: 'game-frame',
+            label: 'Arena Game Window',
+            x: 2, y: 10, w: 72, h: 72,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 1, visible: true, locked: true,
+            style: { borderRadius: 0, background: 'transparent', borderSize: 2, borderStyle: 'solid', borderColor: '#2979FF', padding: 0 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'game-frame', settings: { titleBar: false, titleText: '' } }
+          },
+          {
+            id: 'chat-main',
+            type: 'chat',
+            label: 'Arena Live Chat Feed',
+            x: 76, y: 10, w: 22, h: 52,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 4, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(5, 12, 32, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#2979FF', padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'chat', settings: { size: 'normal', maxMessages: 8 } }
+          },
+          {
+            id: 'vtuber-main',
+            type: 'vtuber',
+            label: 'Arena Webcam Cutout',
+            x: 76, y: 64, w: 22, h: 26,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 2, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(5, 12, 32, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#76A9FF', padding: 4 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'vtuber', settings: {} }
+          },
+          {
+            id: 'socials-footer',
+            type: 'socials',
+            label: 'Bottom Telemetry Banner',
+            x: 2, y: 91, w: 96, h: 8,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 3, visible: true, locked: true,
+            style: { borderRadius: 0, background: 'rgba(5, 12, 32, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#2979FF', padding: 2 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'socials', settings: {} }
+          }
+        ];
+      } else {
+        return [
+          {
+            id: 'timer-main',
+            type: 'timer',
+            label: 'Arena Clock logs',
+            x: 15, y: 25, w: 70, h: 30,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 3, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(5, 12, 32, 0.98)', borderSize: 2, borderStyle: 'solid', borderColor: '#2979FF', padding: 6 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'timer', settings: { size: 'full', customLabel: scene === 'brb' ? 'MATCH PAUSED' : scene === 'ending-stream' ? 'MATCH FINISHED' : 'MATCH STARTING SOON' } }
+          },
+          {
+            id: 'music-main',
+            type: 'music',
+            label: 'Arena player',
+            x: 30, y: 60, w: 40, h: 25,
+            rotation: 0, opacity: 100, scale: 1.0, zIndex: 4, visible: true, locked: false,
+            style: { borderRadius: 0, background: 'rgba(5, 12, 32, 0.95)', borderSize: 1, borderStyle: 'solid', borderColor: '#76A9FF', padding: 6 },
+            animation: { type: 'none', duration: 1, delay: 0, loop: false },
+            content: { type: 'music', settings: { compact: false } }
+          }
+        ];
+      }
 
     case 'cyber': // Glowing futuristic frames
     default:

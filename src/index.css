@@ -490,6 +490,48 @@ body {
   --glow-text: none;
 }
 
+/* 33. Pastel Planets Theme */
+.theme-pastel-planets {
+  --bg-color: #1c142c;
+  --panel-bg: rgba(58, 43, 94, 0.85);
+  --panel-border: #BDB2FF;
+  --accent-primary: #E8AEFF;
+  --accent-secondary: #FFD6A5;
+  --text-primary: #FAF9FF;
+  --text-secondary: #D0C3EC;
+  --font-display: 'Quicksand', sans-serif;
+  --font-body: 'Outfit', sans-serif;
+  --glow-text: 0 0 6px #E8AEFF;
+}
+
+/* 34. Cyber HUD Theme */
+.theme-cyber-hud {
+  --bg-color: #080c14;
+  --panel-bg: rgba(14, 22, 33, 0.9);
+  --panel-border: #00F0FF;
+  --accent-primary: #00F0FF;
+  --accent-secondary: #0077ff;
+  --text-primary: #FFFFFF;
+  --text-secondary: #709CB8;
+  --font-display: 'Orbitron', sans-serif;
+  --font-body: 'Share Tech Mono', monospace;
+  --glow-text: 0 0 10px rgba(0, 240, 255, 0.65);
+}
+
+/* 35. Esports Telemetry Theme */
+.theme-esports-blue {
+  --bg-color: #02040c;
+  --panel-bg: rgba(5, 12, 32, 0.95);
+  --panel-border: #2979FF;
+  --accent-primary: #2979FF;
+  --accent-secondary: #76A9FF;
+  --text-primary: #F0F4FF;
+  --text-secondary: #768AA8;
+  --font-display: 'Montserrat', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --glow-text: 0 0 8px rgba(41, 121, 255, 0.5);
+}
+
 /* ==========================================================================
    SCROLLBAR STYLES
    ========================================================================== */

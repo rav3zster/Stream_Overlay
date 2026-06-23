@@ -32,7 +32,115 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ maxMessages = 12, size =
   const nameSz = size === 'mini' ? 'text-[0.7vw]' : size === 'large' ? 'text-[0.9vw]' : 'text-[0.8vw]';
 
   // ──────────────────────────────────────────────────────────────
-  // 1. RETRO CRT TERMINAL FEED LOG
+  // 1. PASTEL PLANETS THEME DESIGN
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'planets') {
+    return (
+      <div className="flex flex-col h-full text-white overflow-hidden relative">
+        <div className="flex justify-between items-center px-4 py-2 bg-[#4c3a75] border-b border-[#BDB2FF]/30 text-[0.65vw] font-black uppercase tracking-widest text-[#FFC6FF] font-display">
+          <span>✦ SPACE COMMUNICATOR ✦</span>
+          <span>{viewerCount} ASTEROIDS</span>
+        </div>
+        <div
+          ref={scrollRef}
+          className="flex-grow overflow-y-auto p-4 flex flex-col gap-3 pb-8 scrollbar-none"
+          style={{ scrollbarWidth: 'none' }}
+        >
+          {visible.map((msg) => (
+            <div key={msg.id} className="flex flex-col gap-0.5 items-start">
+              <span className="text-[0.7vw] font-black text-[#FFD6A5] font-display">{msg.username}</span>
+              <div className="text-[0.75vw] bg-[#6c559c]/55 border border-[#BDB2FF]/20 text-white rounded-2xl py-1.5 px-3 max-w-[90%] break-words leading-relaxed shadow-sm">
+                {msg.text}
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* Cute alien bug mascot peaking from the bottom right corner */}
+        <div className="absolute bottom-0 right-2 w-10 h-8 pointer-events-none select-none overflow-hidden">
+          <svg viewBox="0 0 100 80" className="w-full h-full text-[#BDB2FF] fill-current translate-y-1">
+            {/* Body */}
+            <path d="M20,80 Q20,30 50,30 Q80,30 80,80 Z" />
+            {/* Antennas */}
+            <line x1="38" y1="32" x2="30" y2="10" stroke="currentColor" strokeWidth="4" />
+            <circle cx="30" cy="10" r="6" fill="#FFC6FF" />
+            <line x1="62" y1="32" x2="70" y2="10" stroke="currentColor" strokeWidth="4" />
+            <circle cx="70" cy="10" r="6" fill="#FFC6FF" />
+            {/* Eyes */}
+            <circle cx="40" cy="50" r="8" fill="white" />
+            <circle cx="40" cy="50" r="4" fill="black" />
+            <circle cx="60" cy="50" r="8" fill="white" />
+            <circle cx="60" cy="50" r="4" fill="black" />
+          </svg>
+        </div>
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 2. CYBER HUD THEME DESIGN
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'cyberhud') {
+    return (
+      <div className="flex flex-col h-full font-mono text-[#00F0FF] overflow-hidden bg-[#0e1621]/40 relative">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,240,255,0.02)_50%,transparent_50%)] bg-[size:100%_4px] pointer-events-none" />
+        <div className="flex justify-between items-center px-3 py-1.5 border-b border-[#00F0FF]/30 bg-[#0e1621]/70 text-[0.55vw] font-bold tracking-widest">
+          <span>[NET_RECEIVE_STREAM]</span>
+          <span className="text-[#00F0FF]/60">{viewerCount} NODES_CONNECTED</span>
+        </div>
+        <div
+          ref={scrollRef}
+          className="flex-grow overflow-y-auto p-3 flex flex-col gap-2 scrollbar-none"
+          style={{ scrollbarWidth: 'none' }}
+        >
+          {visible.map((msg) => (
+            <div key={msg.id} className="text-[0.7vw] border-l-2 border-[#00F0FF]/40 pl-2 py-0.5 bg-[#00F0FF]/5">
+              <div className="flex items-center gap-1.5">
+                <span className="font-extrabold text-[#00F0FF]" style={{ color: msg.color || '#00F0FF' }}>
+                  {msg.username.toUpperCase()}
+                </span>
+                <span className="text-[0.5vw] text-[#00F0FF]/40">[LOG_IN_SEC: {(new Date(msg.timestamp).getSeconds())}]</span>
+              </div>
+              <p className="text-[#a5f3fc] mt-0.5 leading-snug break-words">{msg.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 3. ESPORTS TELEMETRY THEME DESIGN
+  // ──────────────────────────────────────────────────────────────
+  if (profile === 'esports') {
+    return (
+      <div className="flex flex-col h-full text-white font-sans overflow-hidden bg-gradient-to-b from-[#050c20] to-[#010512]">
+        <div className="flex justify-between items-center px-4 py-2 border-b-2 border-[#2979FF] bg-[#071333] text-[0.6vw] font-black uppercase tracking-widest text-[#2979FF] skew-x-[-4deg] origin-left ml-2">
+          <span>⚔️ CHAT_TELEMETRY</span>
+          <span className="text-white bg-[#2979FF] px-1.5 py-0.5 rounded-sm">{viewerCount} ONLINE</span>
+        </div>
+        <div
+          ref={scrollRef}
+          className="flex-grow overflow-y-auto p-3.5 flex flex-col gap-3.5 scrollbar-none"
+          style={{ scrollbarWidth: 'none' }}
+        >
+          {visible.map((msg) => (
+            <div key={msg.id} className="flex flex-col gap-1 items-start border-b border-[#2979FF]/10 pb-2">
+              <span 
+                className={`${nameSz} font-black uppercase tracking-tight skew-x-[-6deg]`}
+                style={{ color: msg.color || '#2979FF' }}
+              >
+                {msg.username}
+              </span>
+              <p className={`${textSize} text-[#d2dae8] leading-tight break-words font-medium`}>{msg.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // 4. RETRO CRT TERMINAL FEED LOG
   // ──────────────────────────────────────────────────────────────
   if (profile === 'retro') {
     return (

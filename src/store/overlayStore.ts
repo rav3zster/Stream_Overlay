@@ -16,7 +16,8 @@ export type ThemeType =
   | 'transparent' | 'pure-black' | 'pure-white' | 'blank-dark' | 'blank-light'
   | 'cyberpunk-neon' | 'synthwave' | 'corporate-tech' | 'luxury-gold'
   | 'anime-sakura' | 'tokyo-night' | 'snow-season' | 'modern-clean'
-  | 'pure-transparent' | 'lo-fi-bedroom' | 'anime-room' | 'modern-white';
+  | 'pure-transparent' | 'lo-fi-bedroom' | 'anime-room' | 'modern-white'
+  | 'pastel-planets' | 'cyber-hud' | 'esports-blue';
 
 export type AlertType = 'follow' | 'subscribe' | 'donation' | 'raid' | 'host';
 

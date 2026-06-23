@@ -61,6 +61,11 @@ const THEMES: Array<{ key: ThemeType; label: string; bg: string }> = [
   { key: 'pure-transparent', label: 'Pure Transparent', bg: 'transparent' },
   { key: 'pure-black', label: 'Pure Black', bg: '#000000' },
   { key: 'pure-white', label: 'Pure White', bg: '#FFFFFF' },
+
+  // Custom Reference Layouts
+  { key: 'pastel-planets', label: 'Pastel Planets', bg: 'linear-gradient(135deg, #BDB2FF, #E8AEFF)' },
+  { key: 'cyber-hud', label: 'Cyber HUD', bg: 'linear-gradient(135deg, #00F0FF, #0B0E14)' },
+  { key: 'esports-blue', label: 'Esports Telemetry', bg: 'linear-gradient(135deg, #2979FF, #00081C)' },
 ];
 
 const MARKETPLACE_THEMES = [
