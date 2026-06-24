@@ -1,6 +1,6 @@
 import React from 'react';
 import { useOverlayStore, type Widget } from '../../store/overlayStore';
-import { Copy, Trash2, Shield, Eye, EyeOff, Lock, Unlock, Layers, ArrowUp, ArrowDown, Plus } from 'lucide-react';
+import { Copy, Trash2, Eye, EyeOff, Lock, Unlock, Layers, ArrowUp, ArrowDown, Plus } from 'lucide-react';
 
 const FONTS = [
   { value: 'Inter, sans-serif', label: 'Inter' },

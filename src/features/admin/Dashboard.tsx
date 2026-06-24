@@ -76,7 +76,7 @@ const MARKETPLACE_THEMES = [
 ];
 
 interface DashboardProps {
-  activeTabInitial?: 'scenes' | 'widgets' | 'alerts' | 'goals' | 'scheduler' | 'marketplace' | 'integrations' | 'settings';
+  activeTabInitial?: 'scenes' | 'widgets' | 'alerts' | 'goals' | 'scheduler' | 'marketplace' | 'integrations' | 'settings' | 'assets';
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes' }) => {

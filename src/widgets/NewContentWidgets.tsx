@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useOverlayStore } from '../store/overlayStore';
-import { Cpu, Heart, MessageSquare, Plus } from 'lucide-react';
+import { Cpu, Heart } from 'lucide-react';
 
 // ─── CLOCK & DATE WIDGET ──────────────────────────────────────────────────
 export const ClockWidget: React.FC<{ settings?: Record<string, any> }> = ({ settings }) => {

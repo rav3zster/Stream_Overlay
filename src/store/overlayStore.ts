@@ -17,6 +17,14 @@ export type ThemeType =
   | 'cyberpunk-neon' | 'synthwave' | 'corporate-tech' | 'luxury-gold'
   | 'anime-sakura' | 'tokyo-night' | 'snow-season' | 'modern-clean'
   | 'pure-transparent' | 'lo-fi-bedroom' | 'anime-room' | 'modern-white'
+  | 'pastel-planets' | 'cyber-hud' | 'esports-blue'
+  | 'cyber-synth' | 'cyberpunk-neon' | 'synthwave' | 'retro-crt'
+  | 'lo-fi-cafe' | 'lo-fi-bedroom' | 'anime-room' | 'anime-sakura'
+  | 'minimal-dark' | 'minimal-white' | 'modern-white' | 'corporate-tech' | 'modern-clean'
+  | 'glassmorphism' | 'neumorphism' | 'luxury-gold' | 'tokyo-night'
+  | 'halloween' | 'christmas' | 'snow-season'
+  | 'mclaren' | 'porsche-gulf' | 'ferrari' | 'mercedes-amg' | 'red-bull'
+  | 'pure-transparent' | 'pure-black' | 'pure-white'
   | 'pastel-planets' | 'cyber-hud' | 'esports-blue';
 
 export type AlertType = 'follow' | 'subscribe' | 'donation' | 'raid' | 'host';

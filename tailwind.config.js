@@ -35,9 +35,13 @@ export default {
           '50%': { transform: 'translateY(-8px)' },
         },
         pulseGlow: {
-          '0%, 100%': { opacity: 1, filter: 'drop-shadow(0 0 10px var(--accent-primary-shadow))' },
-          '50%': { opacity: 0.7, filter: 'drop-shadow(0 0 4px var(--accent-primary-shadow))' },
-        }
+          '0%, 100%': { opacity: '1', filter: 'drop-shadow(0 0 10px var(--accent-primary-shadow))' },
+          '50%': { opacity: '0.7', filter: 'drop-shadow(0 0 4px var(--accent-primary-shadow))' },
+        },
+        equalizerBar: {
+          '0%': { transform: 'scaleY(0.3)' },
+          '100%': { transform: 'scaleY(1.0)' },
+        },
       }
     },
   },

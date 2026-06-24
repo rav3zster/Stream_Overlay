@@ -3,8 +3,7 @@ import { useOverlayStore, type Widget } from '../../store/overlayStore';
 import { WidgetRenderer } from '../../widgets/WidgetRenderer';
 import { 
   Lock, Unlock, Eye, EyeOff, Copy, Trash2, RotateCcw, RotateCw, 
-  Grid, HelpCircle, ZoomIn, ZoomOut, Maximize, Scissors, 
-  CopyCheck, Sliders, Layout, Save, RefreshCw
+  Grid, HelpCircle, ZoomIn, ZoomOut, Maximize, Save, RefreshCw
 } from 'lucide-react';
 
 export const SceneEditor: React.FC = () => {
