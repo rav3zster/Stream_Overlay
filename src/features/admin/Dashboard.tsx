@@ -11,7 +11,7 @@ import {
   Volume2, ShieldAlert, Users, Globe, Send, Copy, ExternalLink,
   ChevronRight, Radio, Play, Plus, Trash, Pause, RotateCcw,
   Clock, Eye, EyeOff, Youtube, MessageSquare, Timer,
-  FolderOpen, UploadCloud
+  FolderOpen, UploadCloud, Search, X
 } from 'lucide-react';
 
 // ── Twitch icon as inline SVG (not in lucide) ──────────────────────────────
@@ -145,10 +145,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
   const [assets, setAssets] = useState<Array<{
     id: string;
     name: string;
-    type: 'image' | 'gif' | 'video' | 'lottie' | 'svg';
+    type: 'image' | 'gif' | 'video' | 'lottie' | 'svg' | 'audio' | 'font';
     url: string;
     size: string;
+    rawSize?: number;
   }>>([]);
+
+  const [assetSearchQuery, setAssetSearchQuery] = useState('');
+  const [assetViewMode, setAssetViewMode] = useState<'grid' | 'list'>('grid');
+  const [assetSort, setAssetSort] = useState<'name' | 'size'>('name');
+  const [assetFilterCollection, setAssetFilterCollection] = useState<'all' | 'image' | 'gif' | 'video' | 'lottie' | 'svg' | 'audio' | 'font'>('all');
+  const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
+  const [showUnusedOnly, setShowUnusedOnly] = useState(false);
 
   // Fetch actual assets from Supabase
   useEffect(() => {
@@ -165,15 +173,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
           name: a.name,
           type: a.type as any,
           url: a.url,
-          size: a.size ? `${(a.size / 1024).toFixed(0)} KB` : '0 KB'
+          size: a.size ? `${(a.size / 1024).toFixed(0)} KB` : '0 KB',
+          rawSize: a.size || 0
         })));
       } else {
         // Seed default fallback assets for first-time use
         setAssets([
-          { id: 'asset-1', name: 'Abstract Cyber Wave', type: 'image', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80', size: '240 KB' },
-          { id: 'asset-2', name: 'Cyberpunk Grid Sunset', type: 'gif', url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZkMTNjc3B3dW16cTY0bzMzd3VjM2txNm1qam05Z2ZpZnYzdXQxOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKUM3cGE6wy4UZy/giphy.gif', size: '1.2 MB' },
-          { id: 'asset-3', name: 'Motorsport F1 Motion', type: 'video', url: 'https://assets.mixkit.co/videos/preview/mixkit-abstract-laser-lights-background-loop-41851-large.mp4', size: '4.8 MB' },
-          { id: 'asset-4', name: 'Twinkle Lottie Ring', type: 'lottie', url: 'https://assets2.lottiefiles.com/packages/lf20_aay9skwa.json', size: '12 KB' },
+          { id: 'asset-1', name: 'Abstract Cyber Wave', type: 'image', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80', size: '240 KB', rawSize: 245760 },
+          { id: 'asset-2', name: 'Cyberpunk Grid Sunset', type: 'gif', url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZkMTNjc3B3dW16cTY0bzMzd3VjM2txNm1qam05Z2ZpZnYzdXQxOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKUM3cGE6wy4UZy/giphy.gif', size: '1.2 MB', rawSize: 1258291 },
+          { id: 'asset-3', name: 'Motorsport F1 Motion', type: 'video', url: 'https://assets.mixkit.co/videos/preview/mixkit-abstract-laser-lights-background-loop-41851-large.mp4', size: '4.8 MB', rawSize: 5033164 },
+          { id: 'asset-4', name: 'Twinkle Lottie Ring', type: 'lottie', url: 'https://assets2.lottiefiles.com/packages/lf20_aay9skwa.json', size: '12 KB', rawSize: 12288 },
         ]);
       }
     };
@@ -407,19 +416,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
 
           {/* ASSETS TAB */}
           {activeTab === 'assets' && (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
               <div>
-                <h2 className="text-sm font-black font-display text-white mb-1 uppercase tracking-wider">ASSETS LIBRARY</h2>
-                <p className="text-[11px] text-slate-400">Upload and place graphics, GIFs, videos, and Lottie animations.</p>
+                <h2 className="text-sm font-black font-display text-white mb-0.5 uppercase tracking-wider">ASSETS</h2>
+                <p className="text-[10px] text-slate-400">Manage stream overlays graphic, audio, and font files.</p>
               </div>
 
               {/* Upload Drop Zone */}
               <div 
-                className="p-4 border-2 border-dashed border-purple-900/40 hover:border-purple-600/80 rounded-xl bg-black/25 flex flex-col items-center justify-center text-center cursor-pointer transition"
+                className="p-3.5 border border-dashed border-purple-900/40 hover:border-purple-600/80 rounded-xl bg-black/25 flex flex-col items-center justify-center text-center cursor-pointer transition"
                 onClick={() => {
                   const input = document.createElement('input');
                   input.type = 'file';
-                  input.accept = 'image/*,video/*,.json,image/gif';
+                  input.accept = 'image/*,video/*,audio/*,.json,.ttf,.woff,.woff2,image/gif';
                   input.onchange = async (e: any) => {
                     const file = e.target.files?.[0];
                     if (file && projectId) {
@@ -441,11 +450,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
                           .from('assets')
                           .getPublicUrl(filePath);
 
-                        let mediaType: 'image' | 'gif' | 'video' | 'lottie' | 'svg' = 'image';
+                        let mediaType: 'image' | 'gif' | 'video' | 'lottie' | 'svg' | 'audio' | 'font' = 'image';
                         if (file.type.includes('gif')) mediaType = 'gif';
                         else if (file.type.includes('video')) mediaType = 'video';
+                        else if (file.type.includes('audio')) mediaType = 'audio';
                         else if (file.name.endsWith('.json')) mediaType = 'lottie';
                         else if (file.type.includes('svg')) mediaType = 'svg';
+                        else if (file.name.endsWith('.ttf') || file.name.endsWith('.woff') || file.name.endsWith('.woff2')) mediaType = 'font';
 
                         const { data: inserted, error: insertErr } = await supabase
                           .from('assets')
@@ -467,7 +478,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
                               name: inserted.name,
                               type: inserted.type as any,
                               url: inserted.url,
-                              size: `${(inserted.size / 1024).toFixed(0)} KB`
+                              size: `${(inserted.size / 1024).toFixed(0)} KB`,
+                              rawSize: inserted.size
                             }
                           ]);
                         }
@@ -479,40 +491,233 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
                   input.click();
                 }}
               >
-                <UploadCloud className="text-purple-400 mb-1" size={24} />
-                <span className="text-[10px] font-bold text-slate-300">Select or drop media files</span>
-                <span className="text-[8px] text-white/30 mt-0.5">Supports PNG, WebP, GIF, MP4, Lottie, SVG</span>
+                <UploadCloud className="text-purple-400 mb-1" size={20} />
+                <span className="text-[10px] font-bold text-slate-300">Upload asset file</span>
+                <span className="text-[8px] text-white/30 mt-0.5">Images, Videos, Lottie, TTF, MP3</span>
               </div>
 
-              {/* Library grid list */}
-              <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto pr-1">
-                {assets.map(asset => (
-                  <div key={asset.id} className="p-2.5 bg-[#110d24] border border-purple-950 rounded-xl flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      <div className="w-8 h-8 rounded border border-white/5 bg-black/40 flex-shrink-0 flex items-center justify-center text-[14px]">
-                        {asset.type === 'video' ? '📹' : asset.type === 'gif' ? '🖼️' : asset.type === 'lottie' ? '💫' : '🎨'}
-                      </div>
-                      <div className="overflow-hidden">
-                        <span className="block text-xs font-bold text-white truncate w-[100px]">{asset.name}</span>
-                        <span className="text-[9px] text-slate-400 capitalize">{asset.type} · {asset.size}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <button
-                        onClick={() => addMediaWidget(asset.url, asset.type, asset.name)}
-                        className="px-2 py-1 bg-vibePrimary hover:bg-vibePrimary/80 text-white rounded font-bold text-[9px] transition"
-                      >
-                        + Place
-                      </button>
-                      <button
-                        onClick={() => deleteAsset(asset.id, asset.url)}
-                        className="p-1 text-red-500 hover:bg-red-500/10 rounded transition"
-                      >
-                        <Trash size={11} />
-                      </button>
-                    </div>
+              {/* Filters toolbar */}
+              <div className="flex flex-col gap-1.5 bg-black/20 p-2 border border-purple-950/40 rounded-xl text-[10px]">
+                {/* Search */}
+                <div className="flex items-center bg-black/40 border border-purple-950/60 px-2 py-0.5 rounded-lg">
+                  <Search size={11} className="text-slate-500 mr-1.5" />
+                  <input
+                    type="text"
+                    placeholder="Search asset catalog..."
+                    value={assetSearchQuery}
+                    onChange={(e) => setAssetSearchQuery(e.target.value)}
+                    className="bg-transparent text-white w-full text-[9px] focus:outline-none py-1"
+                  />
+                  {assetSearchQuery && (
+                    <button onClick={() => setAssetSearchQuery('')} className="text-slate-500 hover:text-white">
+                      <X size={11} />
+                    </button>
+                  )}
+                </div>
+
+                {/* View / Sort controls */}
+                <div className="flex justify-between items-center gap-1">
+                  <div className="flex bg-black/35 rounded-lg p-0.5 border border-purple-950/20">
+                    <button onClick={() => setAssetViewMode('grid')} className={`px-2 py-0.5 rounded text-[8px] font-bold ${assetViewMode === 'grid' ? 'bg-vibePrimary text-white' : 'text-slate-400'}`}>GRID</button>
+                    <button onClick={() => setAssetViewMode('list')} className={`px-2 py-0.5 rounded text-[8px] font-bold ${assetViewMode === 'list' ? 'bg-vibePrimary text-white' : 'text-slate-400'}`}>LIST</button>
                   </div>
-                ))}
+
+                  <select 
+                    value={assetSort} 
+                    onChange={(e: any) => setAssetSort(e.target.value)}
+                    className="bg-black/50 border border-purple-950/50 rounded-lg p-0.5 text-white text-[9px] focus:outline-none"
+                  >
+                    <option value="name">Sort by Name</option>
+                    <option value="size">Sort by Size</option>
+                  </select>
+                </div>
+
+                {/* Category filter pills */}
+                <div className="flex gap-1 overflow-x-auto py-0.5 scrollbar-none" style={{ scrollbarWidth: 'none' }}>
+                  {(['all', 'image', 'gif', 'video', 'audio', 'font', 'lottie'] as const).map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setAssetFilterCollection(cat)}
+                      className={`px-2 py-0.5 rounded-full text-[8.5px] font-bold uppercase transition flex-shrink-0 border ${
+                        assetFilterCollection === cat
+                          ? 'bg-vibeSecondary/20 border-vibeSecondary text-white'
+                          : 'bg-black/30 border-transparent text-slate-400 hover:text-slate-200'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Unused Scanner & Bulk Actions */}
+                <div className="flex justify-between items-center border-t border-purple-950/30 pt-1.5 mt-0.5">
+                  <label className="flex items-center gap-1.5 text-[8.5px] text-slate-400 font-bold cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showUnusedOnly}
+                      onChange={(e) => setShowUnusedOnly(e.target.checked)}
+                      className="rounded accent-vibePrimary"
+                    />
+                    Unused Assets Only
+                  </label>
+
+                  {selectedAssetIds.length > 0 && (
+                    <button
+                      onClick={async () => {
+                        for (const id of selectedAssetIds) {
+                          const item = assets.find(a => a.id === id);
+                          if (item) await deleteAsset(item.id, item.url);
+                        }
+                        setSelectedAssetIds([]);
+                      }}
+                      className="px-1.5 py-0.5 bg-red-950/20 hover:bg-red-800 text-[8px] font-bold text-red-400 hover:text-white rounded border border-red-500/20"
+                    >
+                      Delete Selected ({selectedAssetIds.length})
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Library feed container */}
+              <div className="overflow-y-auto max-h-[320px] pr-1.5 flex flex-col gap-1.5 scrollbar-thin">
+                {assets.length === 0 ? (
+                  <div className="text-center py-8 text-slate-500 italic text-[10px]">No assets registered.</div>
+                ) : (
+                  (() => {
+                    // Filter scanner
+                    let list = assets.filter(a => {
+                      const matchesSearch = a.name.toLowerCase().includes(assetSearchQuery.toLowerCase());
+                      const matchesCategory = assetFilterCollection === 'all' || a.type === assetFilterCollection;
+                      const matchesUnused = !showUnusedOnly || (() => {
+                        const sceneWidgets = useOverlayStore.getState().sceneWidgets;
+                        for (const scene of Object.keys(sceneWidgets)) {
+                          const wList = sceneWidgets[scene as SceneType] || [];
+                          if (wList.some((w: Widget) => w.content?.settings?.url === a.url)) return false;
+                        }
+                        return true;
+                      })();
+                      return matchesSearch && matchesCategory && matchesUnused;
+                    });
+
+                    // Sort
+                    list.sort((a, b) => {
+                      if (assetSort === 'size') {
+                        return (b.rawSize || 0) - (a.rawSize || 0);
+                      }
+                      return a.name.localeCompare(b.name);
+                    });
+
+                    if (list.length === 0) {
+                      return <div className="text-center py-6 text-slate-500 text-[9px]">No matching assets found.</div>;
+                    }
+
+                    if (assetViewMode === 'grid') {
+                      return (
+                        <div className="grid grid-cols-2 gap-2">
+                          {list.map(asset => {
+                            const isSelected = selectedAssetIds.includes(asset.id);
+                            return (
+                              <div 
+                                key={asset.id} 
+                                className={`p-2 bg-[#110d24]/60 border rounded-xl flex flex-col justify-between gap-1.5 relative overflow-hidden ${
+                                  isSelected ? 'border-vibeAccent bg-purple-950/20 shadow-glow' : 'border-purple-950 hover:border-purple-800'
+                                }`}
+                              >
+                                <div className="absolute top-1 right-1 flex gap-1 z-10">
+                                  <input 
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={(e) => {
+                                      if (e.target.checked) setSelectedAssetIds(prev => [...prev, asset.id]);
+                                      else setSelectedAssetIds(prev => prev.filter(x => x !== asset.id));
+                                    }}
+                                    className="rounded accent-vibePrimary cursor-pointer w-3 h-3 border-purple-950"
+                                  />
+                                </div>
+                                <div className="w-full h-14 bg-black/40 rounded border border-white/5 flex items-center justify-center text-[16px] flex-shrink-0 relative overflow-hidden">
+                                  {['image', 'gif'].includes(asset.type) ? (
+                                    <img src={asset.url} alt={asset.name} className="object-cover w-full h-full" />
+                                  ) : asset.type === 'video' ? (
+                                    <video src={asset.url} className="object-cover w-full h-full" muted loop playsInline />
+                                  ) : asset.type === 'audio' ? (
+                                    '🎵'
+                                  ) : asset.type === 'font' ? (
+                                    '🔤'
+                                  ) : (
+                                    '💫'
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex flex-col gap-0.5">
+                                  <span className="block text-[9.5px] font-bold text-white truncate" title={asset.name}>{asset.name}</span>
+                                  <span className="text-[8px] text-slate-500 capitalize">{asset.type} · {asset.size}</span>
+                                </div>
+                                <div className="flex gap-1 border-t border-purple-950/30 pt-1.5">
+                                  <button
+                                    onClick={() => addMediaWidget(asset.url, asset.type, asset.name)}
+                                    className="flex-grow py-0.5 bg-vibePrimary hover:bg-vibePrimary/80 text-white rounded text-[8px] font-black uppercase tracking-wider"
+                                  >
+                                    Place
+                                  </button>
+                                  <button
+                                    onClick={() => deleteAsset(asset.id, asset.url)}
+                                    className="p-0.5 text-red-500 hover:bg-red-500/10 rounded"
+                                  >
+                                    <Trash size={10} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    }
+
+                    return list.map(asset => {
+                      const isSelected = selectedAssetIds.includes(asset.id);
+                      return (
+                        <div 
+                          key={asset.id} 
+                          className={`p-2 bg-[#110d24]/60 border rounded-xl flex items-center justify-between gap-2 ${
+                            isSelected ? 'border-vibeAccent bg-purple-950/20' : 'border-purple-950 hover:border-purple-800'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 overflow-hidden flex-1">
+                            <input 
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                if (e.target.checked) setSelectedAssetIds(prev => [...prev, asset.id]);
+                                else setSelectedAssetIds(prev => prev.filter(x => x !== asset.id));
+                              }}
+                              className="rounded accent-vibePrimary cursor-pointer w-3.5 h-3.5 border-purple-950"
+                            />
+                            <div className="w-7 h-7 rounded border border-white/5 bg-black/45 flex-shrink-0 flex items-center justify-center text-[12px]">
+                              {asset.type === 'video' ? '📹' : asset.type === 'audio' ? '🎵' : asset.type === 'font' ? '🔤' : '🖼️'}
+                            </div>
+                            <div className="overflow-hidden">
+                              <span className="block text-[10px] font-bold text-white truncate w-[90px]">{asset.name}</span>
+                              <span className="text-[8px] text-slate-500 capitalize">{asset.type} · {asset.size}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => addMediaWidget(asset.url, asset.type, asset.name)}
+                              className="px-1.5 py-0.5 bg-vibePrimary hover:bg-vibePrimary/80 text-white rounded text-[8px] font-bold"
+                            >
+                              Place
+                            </button>
+                            <button
+                              onClick={() => deleteAsset(asset.id, asset.url)}
+                              className="p-1 text-red-500 hover:bg-red-500/10 rounded"
+                            >
+                              <Trash size={10} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    });
+                  })()
+                )}
               </div>
             </div>
           )}

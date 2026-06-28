@@ -46,7 +46,7 @@ export const SceneEditor: React.FC = () => {
   // Snapping & Guides
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [showSafeZones, setShowSafeZones] = useState(true);
-  const [snapLines, setSnapLines] = useState<Array<{ type: 'v' | 'h'; pos: number }>>([]);
+  const [snapLines, setSnapLines] = useState<Array<{ type: 'v' | 'h'; pos: number; edge?: string }>>([]);
   
   // Grid snapping step
   const GRID_SIZE = 2; // snap to 2% steps if grid is on
@@ -67,6 +67,9 @@ export const SceneEditor: React.FC = () => {
   const [resizeStart, setResizeStart] = useState({ w: 0, h: 0, x: 0, y: 0, clientX: 0, clientY: 0 });
   const [rotateStart, setRotateStart] = useState({ rotation: 0, centerX: 0, centerY: 0, startAngle: 0 });
 
+  // Double Click Rename state
+  const [editingWidgetId, setEditingWidgetId] = useState<string | null>(null);
+
   // Template Form State
   const [newTemplateName, setNewTemplateName] = useState('');
   const [showTemplateModal, setShowTemplateModal] = useState(false);
@@ -76,6 +79,27 @@ export const SceneEditor: React.FC = () => {
   const [marqueeEnd, setMarqueeEnd] = useState<{ x: number; y: number } | null>(null);
 
   const widgets = useOverlayStore(s => s.sceneWidgets[activeScene] || []);
+
+  // Calculate bounding box bounds for multiple selections
+  const getSelectedBoundingBox = () => {
+    if (selectedWidgetIds.length <= 1) return null;
+    const selectedWidgets = widgets.filter(w => selectedWidgetIds.includes(w.id));
+    if (selectedWidgets.length === 0) return null;
+
+    const minX = Math.min(...selectedWidgets.map(w => w.x));
+    const maxX = Math.max(...selectedWidgets.map(w => w.x + w.w));
+    const minY = Math.min(...selectedWidgets.map(w => w.y));
+    const maxY = Math.max(...selectedWidgets.map(w => w.y + w.h));
+
+    return {
+      x: minX,
+      y: minY,
+      w: maxX - minX,
+      h: maxY - minY
+    };
+  };
+
+  const selectionBounds = getSelectedBoundingBox();
 
   // Handle canvas clicks (marquee select or pan or deselect)
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
@@ -101,12 +125,13 @@ export const SceneEditor: React.FC = () => {
       setMarqueeStart({ x, y });
       setMarqueeEnd({ x, y });
       selectWidgets([]); // Clear select
+      setEditingWidgetId(null);
     }
   };
 
   // Start dragging a widget
   const handleDragStart = (e: React.MouseEvent, widget: Widget) => {
-    if (widget.locked || isResizing || isRotating) return;
+    if (widget.locked || isResizing || isRotating || editingWidgetId === widget.id) return;
     e.stopPropagation();
 
     // Setup selection
@@ -274,6 +299,8 @@ export const SceneEditor: React.FC = () => {
         let snappedY = targetY;
         let verticalGuide: number | null = null;
         let horizontalGuide: number | null = null;
+        let verticalEdgeLabel = '';
+        let horizontalEdgeLabel = '';
 
         // Snapping boundaries
         const dragLeft = targetX;
@@ -288,10 +315,12 @@ export const SceneEditor: React.FC = () => {
           if (Math.abs(dragCenterX - 50) < SNAP_THRESHOLD) {
             snappedX = 50 - wWidth / 2;
             verticalGuide = 50;
+            verticalEdgeLabel = 'Center X';
           }
           if (Math.abs(dragCenterY - 50) < SNAP_THRESHOLD) {
             snappedY = 50 - wHeight / 2;
             horizontalGuide = 50;
+            horizontalEdgeLabel = 'Center Y';
           }
 
           // Align with other widgets
@@ -309,36 +338,46 @@ export const SceneEditor: React.FC = () => {
             if (Math.abs(dragLeft - otherLeft) < SNAP_THRESHOLD) {
               snappedX = otherLeft;
               verticalGuide = otherLeft;
+              verticalEdgeLabel = 'Left Edge';
             } else if (Math.abs(dragRight - otherRight) < SNAP_THRESHOLD) {
               snappedX = otherRight - wWidth;
               verticalGuide = otherRight;
+              verticalEdgeLabel = 'Right Edge';
             } else if (Math.abs(dragLeft - otherRight) < SNAP_THRESHOLD) {
               snappedX = otherRight;
               verticalGuide = otherRight;
+              verticalEdgeLabel = 'Edge Snap';
             } else if (Math.abs(dragRight - otherLeft) < SNAP_THRESHOLD) {
               snappedX = otherLeft - wWidth;
               verticalGuide = otherLeft;
+              verticalEdgeLabel = 'Edge Snap';
             } else if (Math.abs(dragCenterX - otherCenterX) < SNAP_THRESHOLD) {
               snappedX = otherCenterX - wWidth / 2;
               verticalGuide = otherCenterX;
+              verticalEdgeLabel = 'Center X';
             }
 
             // Y-alignment (Top to Top, Bottom to Bottom, Top to Bottom, Center Y)
             if (Math.abs(dragTop - otherTop) < SNAP_THRESHOLD) {
               snappedY = otherTop;
               horizontalGuide = otherTop;
+              horizontalEdgeLabel = 'Top Edge';
             } else if (Math.abs(dragBottom - otherBottom) < SNAP_THRESHOLD) {
               snappedY = otherBottom - wHeight;
               horizontalGuide = otherBottom;
+              horizontalEdgeLabel = 'Bottom Edge';
             } else if (Math.abs(dragTop - otherBottom) < SNAP_THRESHOLD) {
               snappedY = otherBottom;
               horizontalGuide = otherBottom;
+              horizontalEdgeLabel = 'Edge Snap';
             } else if (Math.abs(dragBottom - otherTop) < SNAP_THRESHOLD) {
               snappedY = otherTop - wHeight;
               horizontalGuide = otherTop;
+              horizontalEdgeLabel = 'Edge Snap';
             } else if (Math.abs(dragCenterY - otherCenterY) < SNAP_THRESHOLD) {
               snappedY = otherCenterY - wHeight / 2;
               horizontalGuide = otherCenterY;
+              horizontalEdgeLabel = 'Center Y';
             }
           });
         }
@@ -356,9 +395,9 @@ export const SceneEditor: React.FC = () => {
         snappedY = Math.max(0, Math.min(snappedY, 96 - wHeight)); // Leave Ticker space
 
         // Setup snap helper lines
-        const lines: Array<{ type: 'v' | 'h'; pos: number }> = [];
-        if (verticalGuide !== null) lines.push({ type: 'v', pos: verticalGuide });
-        if (horizontalGuide !== null) lines.push({ type: 'h', pos: horizontalGuide });
+        const lines: Array<{ type: 'v' | 'h'; pos: number; edge?: string }> = [];
+        if (verticalGuide !== null) lines.push({ type: 'v', pos: verticalGuide, edge: verticalEdgeLabel });
+        if (horizontalGuide !== null) lines.push({ type: 'h', pos: horizontalGuide, edge: horizontalEdgeLabel });
         setSnapLines(lines);
 
         // Apply position shifts to all non-locked selected widgets
@@ -587,16 +626,114 @@ export const SceneEditor: React.FC = () => {
         {/* Alignment distribution & safe-zones */}
         <div className="flex items-center gap-1.5 flex-wrap">
           {selectedWidgetIds.length > 1 && (
-            <div className="flex items-center gap-1 bg-[#120e24] border border-purple-900/30 rounded-lg p-0.5">
-              <button onClick={() => alignSelected('left')} className="px-1.5 py-0.5 rounded hover:bg-white/5 text-[9px] font-bold text-white/70" title="Align Left">Align L</button>
-              <button onClick={() => alignSelected('center')} className="px-1.5 py-0.5 rounded hover:bg-white/5 text-[9px] font-bold text-white/70" title="Align Center">Align C</button>
-              <button onClick={() => alignSelected('right')} className="px-1.5 py-0.5 rounded hover:bg-white/5 text-[9px] font-bold text-white/70" title="Align Right">Align R</button>
-              <button onClick={() => alignSelected('top')} className="px-1.5 py-0.5 rounded hover:bg-white/5 text-[9px] font-bold text-white/70" title="Align Top">Align T</button>
-              <button onClick={() => alignSelected('middle')} className="px-1.5 py-0.5 rounded hover:bg-white/5 text-[9px] font-bold text-white/70" title="Align Middle">Align M</button>
-              <button onClick={() => alignSelected('bottom')} className="px-1.5 py-0.5 rounded hover:bg-white/5 text-[9px] font-bold text-white/70" title="Align Bottom">Align B</button>
-              <div className="w-[1px] h-3 bg-white/10 mx-0.5" />
-              <button onClick={() => distributeSelected('horizontal')} className="px-1.5 py-0.5 rounded hover:bg-white/5 text-[9px] font-bold text-vibeCyan" title="Distribute Horizontally">Dist H</button>
-              <button onClick={() => distributeSelected('vertical')} className="px-1.5 py-0.5 rounded hover:bg-white/5 text-[9px] font-bold text-vibeCyan" title="Distribute Vertically">Dist V</button>
+            <div className="flex items-center gap-1 bg-[#120e24] border border-purple-900/30 rounded-lg p-1.5 shadow-lg">
+              {/* Align Left */}
+              <button 
+                onClick={() => alignSelected('left')} 
+                className="p-1 rounded hover:bg-white/10 text-slate-300 hover:text-white transition" 
+                title="Align Left"
+              >
+                <svg viewBox="0 0 100 100" className="w-3.5 h-3.5 fill-current">
+                  <rect x="10" y="10" width="8" height="80" />
+                  <rect x="28" y="25" width="55" height="15" />
+                  <rect x="28" y="55" width="35" height="15" />
+                </svg>
+              </button>
+
+              {/* Align Center Horizontal */}
+              <button 
+                onClick={() => alignSelected('center')} 
+                className="p-1 rounded hover:bg-white/10 text-slate-300 hover:text-white transition" 
+                title="Align Horizontally Centered"
+              >
+                <svg viewBox="0 0 100 100" className="w-3.5 h-3.5 fill-current">
+                  <rect x="46" y="10" width="8" height="80" />
+                  <rect x="20" y="25" width="60" height="15" />
+                  <rect x="30" y="55" width="40" height="15" />
+                </svg>
+              </button>
+
+              {/* Align Right */}
+              <button 
+                onClick={() => alignSelected('right')} 
+                className="p-1 rounded hover:bg-white/10 text-slate-300 hover:text-white transition" 
+                title="Align Right"
+              >
+                <svg viewBox="0 0 100 100" className="w-3.5 h-3.5 fill-current">
+                  <rect x="82" y="10" width="8" height="80" />
+                  <rect x="17" y="25" width="55" height="15" />
+                  <rect x="37" y="55" width="35" height="15" />
+                </svg>
+              </button>
+
+              <div className="w-[1px] h-4 bg-purple-950 mx-0.5" />
+
+              {/* Align Top */}
+              <button 
+                onClick={() => alignSelected('top')} 
+                className="p-1 rounded hover:bg-white/10 text-slate-300 hover:text-white transition" 
+                title="Align Top"
+              >
+                <svg viewBox="0 0 100 100" className="w-3.5 h-3.5 fill-current">
+                  <rect x="10" y="10" width="80" height="8" />
+                  <rect x="25" y="28" width="15" height="55" />
+                  <rect x="55" y="28" width="15" height="35" />
+                </svg>
+              </button>
+
+              {/* Align Center Vertical */}
+              <button 
+                onClick={() => alignSelected('middle')} 
+                className="p-1 rounded hover:bg-white/10 text-slate-300 hover:text-white transition" 
+                title="Align Vertically Centered"
+              >
+                <svg viewBox="0 0 100 100" className="w-3.5 h-3.5 fill-current">
+                  <rect x="10" y="46" width="80" height="8" />
+                  <rect x="25" y="20" width="15" height="60" />
+                  <rect x="55" y="30" width="15" height="40" />
+                </svg>
+              </button>
+
+              {/* Align Bottom */}
+              <button 
+                onClick={() => alignSelected('bottom')} 
+                className="p-1 rounded hover:bg-white/10 text-slate-300 hover:text-white transition" 
+                title="Align Bottom"
+              >
+                <svg viewBox="0 0 100 100" className="w-3.5 h-3.5 fill-current">
+                  <rect x="10" y="82" width="80" height="8" />
+                  <rect x="25" y="17" width="15" height="55" />
+                  <rect x="55" y="37" width="15" height="35" />
+                </svg>
+              </button>
+
+              <div className="w-[1px] h-4 bg-purple-950 mx-0.5" />
+
+              {/* Distribute Horizontally */}
+              <button 
+                onClick={() => distributeSelected('horizontal')} 
+                className="p-1 rounded hover:bg-white/10 text-vibeCyan hover:text-vibeCyan/80 transition" 
+                title="Distribute Horizontally"
+              >
+                <svg viewBox="0 0 100 100" className="w-3.5 h-3.5 fill-current">
+                  <rect x="10" y="15" width="8" height="70" />
+                  <rect x="82" y="15" width="8" height="70" />
+                  <rect x="46" y="25" width="8" height="50" />
+                </svg>
+              </button>
+
+              {/* Distribute Vertically */}
+              <button 
+                onClick={() => distributeSelected('vertical')} 
+                className="p-1 rounded hover:bg-white/10 text-vibeCyan hover:text-vibeCyan/80 transition" 
+                title="Distribute Vertically"
+              >
+                <svg viewBox="0 0 100 100" className="w-3.5 h-3.5 fill-current">
+                  <rect x="15" y="10" width="70" height="8" />
+                  <rect x="15" y="82" width="70" height="8" />
+                  <rect x="25" y="46" width="50" height="8" />
+                </svg>
+              </button>
             </div>
           )}
 
@@ -703,6 +840,8 @@ export const SceneEditor: React.FC = () => {
           {/* Render scene element boxes */}
           {widgets.map(widget => {
             const isSelected = selectedWidgetIds.includes(widget.id);
+            const isEditing = editingWidgetId === widget.id;
+
             return (
               <div
                 key={widget.id}
@@ -724,12 +863,39 @@ export const SceneEditor: React.FC = () => {
                 }}
               >
                 {/* Visual Label header of widget */}
-                <div className="flex justify-between items-center bg-black/75 px-2 py-0.5 text-[0.85vw] text-white/80 font-semibold border-b border-white/5 truncate pointer-events-none">
-                  <span className="flex items-center gap-1 truncate">
-                    {widget.locked && <Lock size={9} className="text-amber-500 flex-shrink-0" />}
-                    {widget.label}
-                  </span>
-                  <span className="text-[0.7vw] text-purple-400 flex-shrink-0">{widget.type}</span>
+                <div 
+                  className="flex justify-between items-center bg-black/75 px-2 py-0.5 text-[0.85vw] text-white/80 font-semibold border-b border-white/5 truncate cursor-text"
+                  onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    if (!widget.locked) setEditingWidgetId(widget.id);
+                  }}
+                >
+                  {isEditing ? (
+                    <input 
+                      type="text" 
+                      defaultValue={widget.label} 
+                      onBlur={(e) => {
+                        updateWidget(widget.id, { label: e.target.value.trim() || widget.label });
+                        setEditingWidgetId(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          updateWidget(widget.id, { label: (e.target as HTMLInputElement).value.trim() || widget.label });
+                          setEditingWidgetId(null);
+                        }
+                      }}
+                      className="bg-black/90 text-white text-[0.8vw] font-bold border border-vibeAccent rounded px-1 w-28 focus:outline-none"
+                      onClick={(e) => e.stopPropagation()}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      autoFocus
+                    />
+                  ) : (
+                    <span className="flex items-center gap-1 truncate pointer-events-none">
+                      {widget.locked && <Lock size={9} className="text-amber-500 flex-shrink-0" />}
+                      {widget.label}
+                    </span>
+                  )}
+                  <span className="text-[0.7vw] text-purple-400 flex-shrink-0 pointer-events-none">{widget.type}</span>
                 </div>
 
                 {/* Inner component demo view */}
@@ -799,20 +965,45 @@ export const SceneEditor: React.FC = () => {
             );
           })}
 
+          {/* Aggregate multi-selection bounding box visual border */}
+          {selectionBounds && (
+            <div 
+              className="absolute border-2 border-dashed border-vibeSecondary pointer-events-none z-20 shadow-[0_0_12px_rgba(255,77,255,0.25)]"
+              style={{
+                left: `${selectionBounds.x}%`,
+                top: `${selectionBounds.y}%`,
+                width: `${selectionBounds.w}%`,
+                height: `${selectionBounds.h}%`
+              }}
+            />
+          )}
+
           {/* Snapping purple guidelines */}
           {snapLines.map((line, i) => (
             <div
               key={i}
-              className="absolute pointer-events-none z-50"
+              className="absolute pointer-events-none z-50 flex items-center justify-center"
               style={{
                 background: '#FF4DFF',
-                boxShadow: '0 0 4px #FF4DFF',
+                boxShadow: '0 0 6px #FF4DFF',
                 left: line.type === 'v' ? `${line.pos}%` : 0,
                 top: line.type === 'h' ? `${line.pos}%` : 0,
                 width: line.type === 'v' ? '1.5px' : '100%',
                 height: line.type === 'h' ? '1.5px' : '100%',
               }}
-            />
+            >
+              {line.edge && (
+                <div 
+                  className="bg-purple-900 border border-purple-500 text-white font-mono text-[7px] px-1 rounded absolute -translate-x-1/2 -translate-y-1/2 pointer-events-none font-bold uppercase tracking-wider whitespace-nowrap"
+                  style={{
+                    left: line.type === 'v' ? '50%' : '20px',
+                    top: line.type === 'h' ? '50%' : '10px'
+                  }}
+                >
+                  {line.edge}
+                </div>
+              )}
+            </div>
           ))}
 
           {/* Marquee select visual drag box */}

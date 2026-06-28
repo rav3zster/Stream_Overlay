@@ -96,6 +96,45 @@ export interface Widget {
     fontColor?: string;
     textAlign?: 'left' | 'center' | 'right';
     padding?: number;
+
+    // Advanced appearance properties
+    gradient?: string;
+    outlineColor?: string;
+    outlineSize?: number;
+    blur?: number;
+    glassEffect?: boolean;
+    blendMode?: string;
+    maskShape?: string;
+    clipPath?: string;
+    cornerStyle?: 'round' | 'bevel' | 'cut' | 'none';
+
+    // Advanced Typography properties
+    fontStyle?: 'normal' | 'italic' | 'oblique';
+    letterSpacing?: number;
+    lineHeight?: number;
+    textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+    gradientText?: string;
+    textStrokeColor?: string;
+    textStrokeSize?: number;
+    textShadowX?: number;
+    textShadowY?: number;
+    textShadowBlur?: number;
+    textShadowColor?: string;
+    textWrap?: 'wrap' | 'nowrap' | 'balance';
+    textOverflow?: 'clip' | 'ellipsis' | 'truncate';
+    textAnimation?: string;
+
+    // Advanced Layout properties
+    margin?: number;
+    minWidth?: number;
+    minHeight?: number;
+    maxWidth?: number;
+    maxHeight?: number;
+    aspectRatioLock?: boolean;
+    anchorPoint?: string;
+
+    // Custom CSS input
+    customCss?: string;
   };
   animation: {
     type: 'none' | 'fade' | 'scale' | 'slide' | 'bounce' | 'glow' | 'pulse' | 'float' | 'shake';

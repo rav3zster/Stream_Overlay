@@ -1,0 +1,121 @@
+-- Supabase Migration Schema Expansion v2
+-- Transitions VibeOverlay Studio to Canva/Figma-like Database Structure
+
+-- 1. EDITOR PREFERENCES
+create table if not exists editor_preferences (
+  id uuid primary key default uuid_generate_v4(),
+  project_id uuid references projects(id) on delete cascade unique,
+  grid_size integer not null default 8,
+  snap_strength double precision not null default 1.5,
+  show_guides boolean not null default true,
+  show_safe_area boolean not null default true,
+  theme text not null default 'dark',
+  zoom double precision not null default 100.0,
+  pan_x double precision not null default 0.0,
+  pan_y double precision not null default 0.0,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table editor_preferences enable row level security;
+create policy "Users can CRUD editor preferences of their projects" on editor_preferences for all
+  using (exists (select 1 from projects where projects.id = editor_preferences.project_id and projects.user_id = auth.uid()));
+
+-- 2. ASSET COLLECTIONS (Folders)
+create table if not exists asset_collections (
+  id uuid primary key default uuid_generate_v4(),
+  project_id uuid references projects(id) on delete cascade,
+  name text not null,
+  color text,
+  icon text,
+  parent_id uuid references asset_collections(id) on delete cascade,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table asset_collections enable row level security;
+create policy "Users can CRUD asset collections of their projects" on asset_collections for all
+  using (exists (select 1 from projects where projects.id = asset_collections.project_id and projects.user_id = auth.uid()));
+
+-- Add collection folder reference to assets
+alter table assets add column if not exists collection_id uuid references asset_collections(id) on delete set null;
+
+-- 3. ASSET TAGS
+create table if not exists asset_tags (
+  id uuid primary key default uuid_generate_v4(),
+  project_id uuid references projects(id) on delete cascade,
+  name text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique(project_id, name)
+);
+
+alter table asset_tags enable row level security;
+create policy "Users can CRUD asset tags of their projects" on asset_tags for all
+  using (exists (select 1 from projects where projects.id = asset_tags.project_id and projects.user_id = auth.uid()));
+
+-- 4. ASSET TAG MAP
+create table if not exists asset_tag_map (
+  asset_id uuid references assets(id) on delete cascade,
+  tag_id uuid references asset_tags(id) on delete cascade,
+  primary key (asset_id, tag_id)
+);
+
+alter table asset_tag_map enable row level security;
+create policy "Users can CRUD asset tag associations" on asset_tag_map for all
+  using (exists (
+    select 1 from assets 
+    join projects on projects.id = assets.project_id 
+    where assets.id = asset_tag_map.asset_id and projects.user_id = auth.uid()
+  ));
+
+-- 5. THEME PRESETS
+create table if not exists theme_presets (
+  id uuid primary key default uuid_generate_v4(),
+  project_id uuid references projects(id) on delete cascade,
+  name text not null,
+  category text,
+  description text,
+  preview_image text,
+  config jsonb not null default '{}'::jsonb,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table theme_presets enable row level security;
+create policy "Users can CRUD theme presets of their projects" on theme_presets for all
+  using (exists (select 1 from projects where projects.id = theme_presets.project_id and projects.user_id = auth.uid()));
+
+-- 6. ANIMATION PRESETS
+create table if not exists animation_presets (
+  id uuid primary key default uuid_generate_v4(),
+  project_id uuid references projects(id) on delete cascade,
+  name text not null,
+  category text,
+  preview text,
+  config jsonb not null default '{}'::jsonb,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table animation_presets enable row level security;
+create policy "Users can CRUD animation presets of their projects" on animation_presets for all
+  using (exists (select 1 from projects where projects.id = animation_presets.project_id and projects.user_id = auth.uid()));
+
+-- 7. WIDGET GROUPS (For nested groups in Layer Panel)
+create table if not exists widget_groups (
+  id uuid primary key default uuid_generate_v4(),
+  project_id uuid references projects(id) on delete cascade,
+  scene_id uuid references scenes(id) on delete cascade,
+  name text not null,
+  locked boolean not null default false,
+  collapsed boolean not null default false,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table widget_groups enable row level security;
+create policy "Users can CRUD widget groups of their projects" on widget_groups for all
+  using (exists (select 1 from projects where projects.id = widget_groups.project_id and projects.user_id = auth.uid()));
+
+-- 8. Enable Realtime Replication for the new tables
+alter publication supabase_realtime add table editor_preferences;
+alter publication supabase_realtime add table asset_collections;
+alter publication supabase_realtime add table asset_tags;
+alter publication supabase_realtime add table theme_presets;
+alter publication supabase_realtime add table animation_presets;
+alter publication supabase_realtime add table widget_groups;
