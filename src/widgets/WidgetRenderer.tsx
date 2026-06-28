@@ -122,8 +122,56 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
     boxShadow = '0 8px 24px rgba(0,0,0,0.6)';
   }
 
-  const finalBg = isTransparentWidget ? 'transparent' : (bg || 'rgba(14, 8, 26, 0.8)');
-  const finalRadius = borderRadius !== undefined ? `${borderRadius}px` : '8px';
+  // Support custom gradient backgrounds
+  const customGradient = widget.content?.settings?.gradient;
+  let finalBg = isTransparentWidget ? 'transparent' : (customGradient || bg || 'rgba(14, 8, 26, 0.8)');
+  let finalRadius = borderRadius !== undefined ? `${borderRadius}px` : '8px';
+
+  // Support glassmorphism effect override
+  if (widget.content?.settings?.glassEffect) {
+    backdropFilter = `blur(${widget.content?.settings?.blur ?? 8}px)`;
+    if (isDefaultBg) finalBg = 'rgba(255, 255, 255, 0.08)';
+    border = '1px solid rgba(255, 255, 255, 0.15)';
+  }
+
+  // Support blend modes
+  const mixBlendMode = (widget.content?.settings?.blendMode || 'normal') as any;
+
+  // Support custom vector shape clip paths
+  let customClipPath = clipPath;
+  if (widget.content?.settings?.maskShape && widget.content.settings.maskShape !== 'none') {
+    const shape = widget.content.settings.maskShape;
+    if (shape === 'circle') customClipPath = 'circle(50% at 50% 50%)';
+    else if (shape === 'triangle') customClipPath = 'polygon(50% 0%, 0% 100%, 100% 100%)';
+    else if (shape === 'rhombus') customClipPath = 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
+    else if (shape === 'hexagon') customClipPath = 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)';
+  }
+
+  // Support text shadow offsets
+  let textShadow = '';
+  if (widget.content?.settings?.textShadowColor) {
+    const sx = widget.content.settings.textShadowX ?? 0;
+    const sy = widget.content.settings.textShadowY ?? 2;
+    const sb = widget.content.settings.textShadowBlur ?? 4;
+    const sc = widget.content.settings.textShadowColor;
+    textShadow = `${sx}px ${sy}px ${sb}px ${sc}`;
+  }
+
+  // Support text stroke outline
+  let webkitTextStroke = '';
+  if (widget.content?.settings?.textStrokeSize) {
+    webkitTextStroke = `${widget.content.settings.textStrokeSize}px ${widget.content.settings.textStrokeColor || '#000000'}`;
+  }
+
+  const letterSpacing = widget.content?.settings?.letterSpacing !== undefined ? `${widget.content.settings.letterSpacing}px` : 'normal';
+  const lineHeight = widget.content?.settings?.lineHeight !== undefined ? widget.content.settings.lineHeight : 'normal';
+  const textTransform = (widget.content?.settings?.textTransform || 'none') as any;
+
+  // Support text gradient fills
+  let textGradBg = '';
+  if (widget.content?.settings?.gradientText) {
+    textGradBg = widget.content.settings.gradientText;
+  }
 
   const containerStyle: React.CSSProperties = {
     position: 'absolute',
@@ -142,7 +190,8 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
     boxShadow: isTransparentWidget ? 'none' : (boxShadow + (widget.style?.glowBlur ? `, 0 0 ${widget.style.glowBlur}px ${widget.style.glowColor || 'var(--accent-primary)'}` : '')),
     padding: `${widget.style?.padding ?? 4}px`,
     backdropFilter,
-    clipPath,
+    clipPath: customClipPath,
+    mixBlendMode,
     
     // Typography
     fontFamily: widget.style?.fontFamily || 'inherit',
@@ -150,6 +199,16 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
     fontWeight: widget.style?.fontWeight || 'normal',
     color: widget.style?.fontColor || 'inherit',
     textAlign: widget.style?.textAlign || 'left',
+    letterSpacing,
+    lineHeight,
+    textTransform,
+    textShadow,
+    WebkitTextStroke: webkitTextStroke,
+    ...(textGradBg ? {
+      backgroundImage: textGradBg,
+      WebkitBackgroundClip: 'text' as any,
+      WebkitTextFillColor: 'transparent' as any
+    } : {}),
     overflow: 'hidden',
   };
 
@@ -284,10 +343,18 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
 
   return (
     <motion.div
+      id={`w-${widget.id}`}
       style={containerStyle}
       {...getAnimateProps()}
       className={isEditor && !widget.visible ? 'border-dashed border-red-500/40 bg-red-950/5' : ''}
     >
+      {widget.content?.settings?.customCss && (
+        <style dangerouslySetInnerHTML={{ __html: `
+          #w-${widget.id} {
+            ${widget.content.settings.customCss}
+          }
+        `}} />
+      )}
       {renderContent()}
 
       {/* 1. Custom Vector telemetry borders for Racing profile (McLaren, Ferrari, etc.) */}

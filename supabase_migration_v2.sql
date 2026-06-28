@@ -1,5 +1,6 @@
 -- Supabase Migration Schema Expansion v2
 -- Transitions VibeOverlay Studio to Canva/Figma-like Database Structure
+-- Safe, Idempotent, and Repeatedly Executable Migration Script
 
 -- 1. EDITOR PREFERENCES
 create table if not exists editor_preferences (
@@ -17,6 +18,7 @@ create table if not exists editor_preferences (
 );
 
 alter table editor_preferences enable row level security;
+drop policy if exists "Users can CRUD editor preferences of their projects" on editor_preferences;
 create policy "Users can CRUD editor preferences of their projects" on editor_preferences for all
   using (exists (select 1 from projects where projects.id = editor_preferences.project_id and projects.user_id = auth.uid()));
 
@@ -32,11 +34,20 @@ create table if not exists asset_collections (
 );
 
 alter table asset_collections enable row level security;
+drop policy if exists "Users can CRUD asset collections of their projects" on asset_collections;
 create policy "Users can CRUD asset collections of their projects" on asset_collections for all
   using (exists (select 1 from projects where projects.id = asset_collections.project_id and projects.user_id = auth.uid()));
 
--- Add collection folder reference to assets
-alter table assets add column if not exists collection_id uuid references asset_collections(id) on delete set null;
+-- Add collection folder reference to assets safely
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns 
+    where table_name = 'assets' and column_name = 'collection_id'
+  ) then
+    alter table assets add column collection_id uuid references asset_collections(id) on delete set null;
+  end if;
+end $$;
 
 -- 3. ASSET TAGS
 create table if not exists asset_tags (
@@ -48,6 +59,7 @@ create table if not exists asset_tags (
 );
 
 alter table asset_tags enable row level security;
+drop policy if exists "Users can CRUD asset tags of their projects" on asset_tags;
 create policy "Users can CRUD asset tags of their projects" on asset_tags for all
   using (exists (select 1 from projects where projects.id = asset_tags.project_id and projects.user_id = auth.uid()));
 
@@ -59,6 +71,7 @@ create table if not exists asset_tag_map (
 );
 
 alter table asset_tag_map enable row level security;
+drop policy if exists "Users can CRUD asset tag associations" on asset_tag_map;
 create policy "Users can CRUD asset tag associations" on asset_tag_map for all
   using (exists (
     select 1 from assets 
@@ -79,6 +92,7 @@ create table if not exists theme_presets (
 );
 
 alter table theme_presets enable row level security;
+drop policy if exists "Users can CRUD theme presets of their projects" on theme_presets;
 create policy "Users can CRUD theme presets of their projects" on theme_presets for all
   using (exists (select 1 from projects where projects.id = theme_presets.project_id and projects.user_id = auth.uid()));
 
@@ -94,6 +108,7 @@ create table if not exists animation_presets (
 );
 
 alter table animation_presets enable row level security;
+drop policy if exists "Users can CRUD animation presets of their projects" on animation_presets;
 create policy "Users can CRUD animation presets of their projects" on animation_presets for all
   using (exists (select 1 from projects where projects.id = animation_presets.project_id and projects.user_id = auth.uid()));
 
@@ -109,13 +124,43 @@ create table if not exists widget_groups (
 );
 
 alter table widget_groups enable row level security;
+drop policy if exists "Users can CRUD widget groups of their projects" on widget_groups;
 create policy "Users can CRUD widget groups of their projects" on widget_groups for all
   using (exists (select 1 from projects where projects.id = widget_groups.project_id and projects.user_id = auth.uid()));
 
--- 8. Enable Realtime Replication for the new tables
-alter publication supabase_realtime add table editor_preferences;
-alter publication supabase_realtime add table asset_collections;
-alter publication supabase_realtime add table asset_tags;
-alter publication supabase_realtime add table theme_presets;
-alter publication supabase_realtime add table animation_presets;
-alter publication supabase_realtime add table widget_groups;
+-- 8. Enable Realtime Replication for the new and core tables safely (checks pg catalogs to prevent duplicate errors)
+do $$
+declare
+  t_name text;
+  tables_to_add text[] := array[
+    'editor_preferences', 'asset_collections', 'asset_tags', 
+    'theme_presets', 'animation_presets', 'widget_groups',
+    'settings', 'goals', 'widgets', 'scene_widgets', 'scenes'
+  ];
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    foreach t_name in array tables_to_add loop
+      if not exists (
+        select 1 from pg_publication_rel pr
+        join pg_class c on c.oid = pr.prrelid
+        join pg_publication p on p.oid = pr.prpubid
+        where p.pubname = 'supabase_realtime' and c.relname = t_name
+      ) then
+        execute format('alter publication supabase_realtime add table %I', t_name);
+      end if;
+    end loop;
+  end if;
+end $$;
+
+-- 9. Fix grouping support by dropping UUID foreign key constraint and altering parent_id column type to text
+alter table scene_widgets drop constraint if exists scene_widgets_parent_id_fkey;
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_name = 'scene_widgets' and column_name = 'parent_id' and data_type = 'uuid'
+  ) then
+    alter table scene_widgets alter column parent_id type text;
+  end if;
+end $$;

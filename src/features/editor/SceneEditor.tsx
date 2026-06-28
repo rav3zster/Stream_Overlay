@@ -273,7 +273,7 @@ export const SceneEditor: React.FC = () => {
 
         // Clamp to [0, 360)
         newRotation = (newRotation % 360 + 360) % 360;
-        updateWidget(selectedWidgetId, { rotation: newRotation });
+        updateWidget(selectedWidgetId, { rotation: newRotation }, true);
         return;
       }
 
@@ -414,7 +414,7 @@ export const SceneEditor: React.FC = () => {
             };
           }
         });
-        updateWidgets(batchUpdates);
+        updateWidgets(batchUpdates, true);
         return;
       }
 
@@ -471,7 +471,7 @@ export const SceneEditor: React.FC = () => {
           y: Math.max(0, Math.min(newY, 96 - MIN_SIZE)),
           w: Math.min(newW, 100 - newX),
           h: Math.min(newH, 96 - newY)
-        });
+        }, true);
       }
     };
 

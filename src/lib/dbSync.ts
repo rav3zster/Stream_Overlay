@@ -431,31 +431,30 @@ export async function initializeDefaultProject(userId: string, defaultState: any
 
 // ─── CRUD updates to Supabase ──────────────────────────────────────────────
 
-export async function updateDbSettings(projectId: string, fields: Partial<OverlaySettings>, currentScene: SceneType, theme: ThemeType) {
+export async function updateDbSettings(projectId: string, fields: OverlaySettings, currentScene: SceneType, theme: ThemeType) {
   try {
-    const payload: any = {};
-    if (fields.streamerName !== undefined) payload.streamer_name = fields.streamerName;
-    if (fields.streamTitle !== undefined) payload.stream_title = fields.streamTitle;
-    if (fields.activeGame !== undefined) payload.active_game = fields.activeGame;
-    if (fields.tickerText !== undefined) payload.ticker_text = fields.tickerText;
-    if (fields.borderRadius !== undefined) payload.border_radius = fields.borderRadius;
-    if (fields.animationSpeed !== undefined) payload.animation_speed = fields.animationSpeed;
-    if (fields.overlayOpacity !== undefined) payload.overlay_opacity = fields.overlayOpacity;
-    if (fields.particleDensity !== undefined) payload.particle_density = fields.particleDensity;
-    if (fields.tickerSpeed !== undefined) payload.ticker_speed = fields.tickerSpeed;
-    
-    payload.current_scene = currentScene;
-    payload.theme = theme;
-
-    payload.socials = {
-      twitch: fields.socials?.twitch,
-      twitter: fields.socials?.twitter,
-      youtube: fields.socials?.youtube,
-      discord: fields.socials?.discord,
-      avatarPosition: fields.avatarPosition,
-      chatSize: fields.chatSize,
-      disableAnimations: fields.disableAnimations,
-      activeAnimationPack: fields.activeAnimationPack
+    const payload: any = {
+      streamer_name: fields.streamerName,
+      stream_title: fields.streamTitle,
+      active_game: fields.activeGame,
+      ticker_text: fields.tickerText,
+      border_radius: fields.borderRadius,
+      animation_speed: fields.animationSpeed,
+      overlay_opacity: fields.overlayOpacity,
+      particle_density: fields.particleDensity,
+      ticker_speed: fields.tickerSpeed,
+      current_scene: currentScene,
+      theme: theme,
+      socials: {
+        twitch: fields.socials?.twitch || '',
+        twitter: fields.socials?.twitter || '',
+        youtube: fields.socials?.youtube || '',
+        discord: fields.socials?.discord || '',
+        avatarPosition: fields.avatarPosition || 'bottom-right',
+        chatSize: fields.chatSize || 'medium',
+        disableAnimations: fields.disableAnimations || false,
+        activeAnimationPack: fields.activeAnimationPack || 'float'
+      }
     };
 
     await supabase

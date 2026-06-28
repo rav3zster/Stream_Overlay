@@ -206,41 +206,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
     }
   };
 
-  const addMediaWidget = (assetUrl: string, assetType: string, assetName: string) => {
-    const currentWidgets = useOverlayStore.getState().sceneWidgets[currentScene];
-    const newId = `media-${Date.now()}`;
-    const newWidget: Widget = {
-      id: newId,
-      type: 'media',
-      label: assetName,
-      x: 30, y: 30, w: 25, h: 20,
-      rotation: 0, opacity: 100, scale: 1.0, zIndex: currentWidgets.length + 1,
-      visible: true, locked: false,
-      style: { borderRadius: 8, background: 'transparent', borderSize: 0, borderStyle: 'none', borderColor: '', glowBlur: 0, padding: 0 },
-      animation: { type: 'none', duration: 1, delay: 0, loop: false },
-      content: {
-        type: 'media',
-        settings: {
-          url: assetUrl,
-          mediaMode: assetType as any,
-          loop: true,
-          blendMode: 'normal',
-          masking: 'none',
-          hoverEffect: 'none',
-          crop: { top: 0, right: 0, bottom: 0, left: 0 }
-        }
-      }
-    };
-    useOverlayStore.setState(state => ({
-      sceneWidgets: {
-        ...state.sceneWidgets,
-        [currentScene]: [...currentWidgets, newWidget]
-      },
-      selectedWidgetIds: [newId],
-      selectedWidgetId: newId
-    }));
-    useOverlayStore.getState().pushHistoryState();
-  };
+  const addMediaWidget = useOverlayStore(s => s.addMediaWidget);
 
   // Chat sim
   const [chatInput, setChatInput] = useState('');

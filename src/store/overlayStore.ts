@@ -272,9 +272,10 @@ export interface OverlayState {
   historyIndex: Record<SceneType, number>;
 
   // Widget placement actions
-  updateWidget: (widgetId: string, fields: Partial<Widget>) => void;
-  updateWidgets: (updates: Record<string, Partial<Widget>>) => void;
+  updateWidget: (widgetId: string, fields: Partial<Widget>, skipDbSync?: boolean) => void;
+  updateWidgets: (updates: Record<string, Partial<Widget>>, skipDbSync?: boolean) => void;
   addWidget: (type: string) => void;
+  addMediaWidget: (url: string, type: string, name: string) => void;
   removeWidget: (widgetId: string) => void;
   duplicateWidget: (widgetId: string) => void;
   selectWidget: (widgetId: string | null) => void; // Keep for compatibility
@@ -686,7 +687,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     
     const { projectId, theme } = get();
     if (projectId) {
-      updateDbSettings(projectId, {}, scene, theme);
+      updateDbSettings(projectId, get().settings, scene, theme);
     }
   },
 
@@ -807,7 +808,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
 
     const { projectId, currentScene } = get();
     if (projectId) {
-      updateDbSettings(projectId, {}, currentScene, theme);
+      updateDbSettings(projectId, get().settings, currentScene, theme);
     }
   },
 
@@ -1020,7 +1021,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     
     const { projectId, currentScene, theme } = get();
     if (projectId) {
-      updateDbSettings(projectId, partial, currentScene, theme);
+      updateDbSettings(projectId, { ...get().settings, ...partial }, currentScene, theme);
     }
 
     get().broadcastState({ settings: get().settings });
@@ -1144,7 +1145,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   },
 
   // ─── Widget Placement Actions ─────────────────────────────────────────────
-  updateWidget: (widgetId, fields) => {
+  updateWidget: (widgetId, fields, skipDbSync = false) => {
     const currentScene = get().currentScene;
     
     // Split fields into global and local
@@ -1178,9 +1179,14 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
       
       return { sceneWidgets: nextSceneWidgets };
     });
+
+    const { projectId } = get();
+    if (projectId && !skipDbSync) {
+      updateDbWidgetPlacementBatch([{ id: widgetId, fields }]);
+    }
   },
 
-  updateWidgets: (updates) => {
+  updateWidgets: (updates, skipDbSync = false) => {
     const currentScene = get().currentScene;
     const localKeys = ['x', 'y', 'w', 'h', 'rotation', 'opacity', 'scale', 'zIndex', 'visible', 'locked', 'parentId'];
 
@@ -1215,6 +1221,12 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
       
       return { sceneWidgets: nextSceneWidgets };
     });
+
+    const { projectId } = get();
+    if (projectId && !skipDbSync) {
+      const batchUpdates = Object.entries(updates).map(([id, fields]) => ({ id, fields }));
+      updateDbWidgetPlacementBatch(batchUpdates);
+    }
   },
 
   addWidget: (type) => {
@@ -1256,6 +1268,50 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
         settings: {
           customLabel: '',
           customText: ''
+        }
+      }
+    };
+
+    set(state => ({
+      sceneWidgets: {
+        ...state.sceneWidgets,
+        [scene]: [...currentWidgets, newWidget]
+      },
+      selectedWidgetIds: [newId],
+      selectedWidgetId: newId
+    }));
+
+    const { projectId } = get();
+    if (projectId) {
+      addDbWidget(projectId, scene, newWidget);
+    }
+
+    get().pushHistoryState();
+  },
+
+  addMediaWidget: (url, type, name) => {
+    const scene = get().currentScene;
+    const currentWidgets = get().sceneWidgets[scene] || [];
+    const newId = `media-${Date.now()}`;
+    const newWidget: Widget = {
+      id: newId,
+      type: 'media',
+      label: name,
+      x: 30, y: 30, w: 25, h: 20,
+      rotation: 0, opacity: 100, scale: 1.0, zIndex: currentWidgets.length + 1,
+      visible: true, locked: false,
+      style: { borderRadius: 8, background: 'transparent', borderSize: 0, borderStyle: 'none', borderColor: '', glowBlur: 0, padding: 0 },
+      animation: { type: 'none', duration: 1, delay: 0, loop: false },
+      content: {
+        type: 'media',
+        settings: {
+          url,
+          mediaMode: type as any,
+          loop: true,
+          blendMode: 'normal',
+          masking: 'none',
+          hoverEffect: 'none',
+          crop: { top: 0, right: 0, bottom: 0, left: 0 }
         }
       }
     };
