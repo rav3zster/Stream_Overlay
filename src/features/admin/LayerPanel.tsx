@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useOverlayStore, type Widget } from '../../store/overlayStore';
 import { 
   Eye, EyeOff, Lock, Unlock, Trash2, Copy, 
-  Layers, FolderOpen, FolderClosed, Group, ArrowUp, ArrowDown, Edit3 
+  Layers, Edit3, Group
 } from 'lucide-react';
 
 export const LayerPanel: React.FC = () => {

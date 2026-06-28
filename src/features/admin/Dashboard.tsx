@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 import { useOverlayStore, type SceneType, type ThemeType, type Widget } from '../../store/overlayStore';
 import { OBSOverlay } from '../overlay/OBSOverlay';
 import { SceneEditor } from '../editor/SceneEditor';
@@ -140,18 +141,61 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
   const [editDisableAnimations, setEditDisableAnimations] = useState(settings.disableAnimations || false);
   const [editAnimationPack, setEditAnimationPack] = useState(settings.activeAnimationPack || 'float');
 
+  const projectId = useOverlayStore(s => s.projectId);
   const [assets, setAssets] = useState<Array<{
     id: string;
     name: string;
     type: 'image' | 'gif' | 'video' | 'lottie' | 'svg';
     url: string;
     size: string;
-  }>>([
-    { id: 'asset-1', name: 'Abstract Cyber Wave', type: 'image', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80', size: '240 KB' },
-    { id: 'asset-2', name: 'Cyberpunk Grid Sunset', type: 'gif', url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZkMTNjc3B3dW16cTY0bzMzd3VjM2txNm1qam05Z2ZpZnYzdXQxOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKUM3cGE6wy4UZy/giphy.gif', size: '1.2 MB' },
-    { id: 'asset-3', name: 'Motorsport F1 Motion', type: 'video', url: 'https://assets.mixkit.co/videos/preview/mixkit-abstract-laser-lights-background-loop-41851-large.mp4', size: '4.8 MB' },
-    { id: 'asset-4', name: 'Twinkle Lottie Ring', type: 'lottie', url: 'https://assets2.lottiefiles.com/packages/lf20_aay9skwa.json', size: '12 KB' },
-  ]);
+  }>>([]);
+
+  // Fetch actual assets from Supabase
+  useEffect(() => {
+    const fetchAssets = async () => {
+      if (!projectId) return;
+      const { data, error } = await supabase
+        .from('assets')
+        .select('*')
+        .eq('project_id', projectId);
+      
+      if (data && data.length > 0) {
+        setAssets(data.map(a => ({
+          id: a.id,
+          name: a.name,
+          type: a.type as any,
+          url: a.url,
+          size: a.size ? `${(a.size / 1024).toFixed(0)} KB` : '0 KB'
+        })));
+      } else {
+        // Seed default fallback assets for first-time use
+        setAssets([
+          { id: 'asset-1', name: 'Abstract Cyber Wave', type: 'image', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80', size: '240 KB' },
+          { id: 'asset-2', name: 'Cyberpunk Grid Sunset', type: 'gif', url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3ZkMTNjc3B3dW16cTY0bzMzd3VjM2txNm1qam05Z2ZpZnYzdXQxOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKUM3cGE6wy4UZy/giphy.gif', size: '1.2 MB' },
+          { id: 'asset-3', name: 'Motorsport F1 Motion', type: 'video', url: 'https://assets.mixkit.co/videos/preview/mixkit-abstract-laser-lights-background-loop-41851-large.mp4', size: '4.8 MB' },
+          { id: 'asset-4', name: 'Twinkle Lottie Ring', type: 'lottie', url: 'https://assets2.lottiefiles.com/packages/lf20_aay9skwa.json', size: '12 KB' },
+        ]);
+      }
+    };
+    fetchAssets();
+  }, [projectId]);
+
+  const deleteAsset = async (assetId: string, assetUrl: string) => {
+    try {
+      await supabase.from('assets').delete().eq('id', assetId);
+
+      if (assetUrl.includes('/storage/v1/object/public/assets/')) {
+        const pathPart = assetUrl.split('/public/assets/')[1];
+        if (pathPart) {
+          await supabase.storage.from('assets').remove([pathPart]);
+        }
+      }
+
+      setAssets(prev => prev.filter(a => a.id !== assetId));
+    } catch (e) {
+      console.error('Failed to delete asset:', e);
+    }
+  };
 
   const addMediaWidget = (assetUrl: string, assetType: string, assetName: string) => {
     const currentWidgets = useOverlayStore.getState().sceneWidgets[currentScene];
@@ -376,26 +420,60 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
                   const input = document.createElement('input');
                   input.type = 'file';
                   input.accept = 'image/*,video/*,.json,image/gif';
-                  input.onchange = (e: any) => {
+                  input.onchange = async (e: any) => {
                     const file = e.target.files?.[0];
-                    if (file) {
-                      const url = URL.createObjectURL(file);
-                      let mediaType: 'image' | 'gif' | 'video' | 'lottie' | 'svg' = 'image';
-                      if (file.type.includes('gif')) mediaType = 'gif';
-                      else if (file.type.includes('video')) mediaType = 'video';
-                      else if (file.name.endsWith('.json')) mediaType = 'lottie';
-                      else if (file.type.includes('svg')) mediaType = 'svg';
+                    if (file && projectId) {
+                      try {
+                        const fileExt = file.name.split('.').pop();
+                        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+                        const filePath = `${projectId}/${fileName}`;
 
-                      setAssets(prev => [
-                        ...prev,
-                        {
-                          id: `asset-${Date.now()}`,
-                          name: file.name,
-                          type: mediaType,
-                          url: url,
-                          size: `${(file.size / 1024).toFixed(0)} KB`
+                        const { data: uploadData, error: uploadErr } = await supabase.storage
+                          .from('assets')
+                          .upload(filePath, file);
+
+                        if (uploadErr) {
+                          console.error('Failed to upload file to Supabase storage:', uploadErr);
+                          return;
                         }
-                      ]);
+
+                        const { data: { publicUrl } } = supabase.storage
+                          .from('assets')
+                          .getPublicUrl(filePath);
+
+                        let mediaType: 'image' | 'gif' | 'video' | 'lottie' | 'svg' = 'image';
+                        if (file.type.includes('gif')) mediaType = 'gif';
+                        else if (file.type.includes('video')) mediaType = 'video';
+                        else if (file.name.endsWith('.json')) mediaType = 'lottie';
+                        else if (file.type.includes('svg')) mediaType = 'svg';
+
+                        const { data: inserted, error: insertErr } = await supabase
+                          .from('assets')
+                          .insert({
+                            project_id: projectId,
+                            name: file.name,
+                            type: mediaType,
+                            url: publicUrl,
+                            size: file.size
+                          })
+                          .select()
+                          .single();
+
+                        if (inserted) {
+                          setAssets(prev => [
+                            ...prev,
+                            {
+                              id: inserted.id,
+                              name: inserted.name,
+                              type: inserted.type as any,
+                              url: inserted.url,
+                              size: `${(inserted.size / 1024).toFixed(0)} KB`
+                            }
+                          ]);
+                        }
+                      } catch (err) {
+                        console.error('Upload process failed:', err);
+                      }
                     }
                   };
                   input.click();
@@ -415,16 +493,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
                         {asset.type === 'video' ? '📹' : asset.type === 'gif' ? '🖼️' : asset.type === 'lottie' ? '💫' : '🎨'}
                       </div>
                       <div className="overflow-hidden">
-                        <span className="block text-xs font-bold text-white truncate w-[110px]">{asset.name}</span>
+                        <span className="block text-xs font-bold text-white truncate w-[100px]">{asset.name}</span>
                         <span className="text-[9px] text-slate-400 capitalize">{asset.type} · {asset.size}</span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => addMediaWidget(asset.url, asset.type, asset.name)}
-                      className="px-2 py-1 bg-vibePrimary hover:bg-vibePrimary/80 text-white rounded font-bold text-[9px] transition flex-shrink-0"
-                    >
-                      + Place
-                    </button>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => addMediaWidget(asset.url, asset.type, asset.name)}
+                        className="px-2 py-1 bg-vibePrimary hover:bg-vibePrimary/80 text-white rounded font-bold text-[9px] transition"
+                      >
+                        + Place
+                      </button>
+                      <button
+                        onClick={() => deleteAsset(asset.id, asset.url)}
+                        className="p-1 text-red-500 hover:bg-red-500/10 rounded transition"
+                      >
+                        <Trash size={11} />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>

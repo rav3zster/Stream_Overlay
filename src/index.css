@@ -705,3 +705,43 @@ body {
   50%       { opacity: 0.6; transform: scale(1.08); }
 }
 
+/* Theme engine visual language utilities */
+@keyframes scanlineMove {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.animate-scanline {
+  animation: scanlineMove 6s linear infinite;
+}
+
+@keyframes crtFlickerAnim {
+  0%, 100% { opacity: 0.99; }
+  50% { opacity: 0.96; }
+  23% { opacity: 0.95; }
+  25% { opacity: 0.99; }
+  70% { opacity: 0.97; }
+  72% { opacity: 0.99; }
+}
+
+.animate-crt-flicker {
+  animation: crtFlickerAnim 0.15s infinite;
+}
+
+.bg-scanlines {
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(51, 255, 51, 0.08),
+    rgba(51, 255, 51, 0.08) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+.bg-grid-matrix {
+  background-size: 8px 8px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 77, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 77, 255, 0.04) 1px, transparent 1px);
+}
+

@@ -372,11 +372,46 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
       )}
       {widget.type === 'game-frame' && profile === 'esports' && (
         <div className="absolute inset-0 border border-[#2979FF]/20 pointer-events-none">
-          {/* esports corner ticks */}
           <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-[#2979FF]" />
           <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-[#2979FF]" />
           <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-[#2979FF]" />
           <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-[#2979FF]" />
+        </div>
+      )}
+
+      {/* 6. Retro CRT Profile: Monospace terminal scanlines & screen flicker */}
+      {profile === 'retro' && !isTransparentWidget && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-none border-2 border-[#33ff33]">
+          <div className="absolute inset-0 bg-scanlines opacity-15 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#33ff33]/5 to-transparent animate-scanline pointer-events-none" />
+          <div className="absolute inset-0 animate-crt-flicker bg-transparent opacity-[0.98] pointer-events-none" />
+        </div>
+      )}
+
+      {/* 7. Cozy Profile: Soft warm accents, rounded elements, organic shapes */}
+      {profile === 'cozy' && !isTransparentWidget && (
+        <div className="absolute inset-0 pointer-events-none rounded-3xl border-2 border-amber-900/10 shadow-inner">
+          <div className="absolute top-2 right-4 text-[10px] text-amber-300 animate-pulse pointer-events-none">✨</div>
+          <div className="absolute bottom-2 left-4 text-[9px] text-amber-200 animate-pulse pointer-events-none" style={{ animationDelay: '1.5s' }}>🌸</div>
+        </div>
+      )}
+
+      {/* 8. Neumorphic Profile: Smooth outset bevel borders */}
+      {profile === 'neumorphic' && !isTransparentWidget && (
+        <div className="absolute inset-0 pointer-events-none rounded-3xl border border-white/40 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.5),_inset_-1px_-1px_2px_rgba(0,0,0,0.05)]" />
+      )}
+
+      {/* 9. Glass Profile: Frosted glare lines */}
+      {profile === 'glass' && !isTransparentWidget && (
+        <div className="absolute inset-0 pointer-events-none rounded-2xl bg-gradient-to-tr from-white/0 via-white/5 to-white/10" />
+      )}
+
+      {/* 10. Cyber Profile: Neon outlines and matrix corner decorations */}
+      {profile === 'cyber' && !isTransparentWidget && (
+        <div className="absolute inset-0 pointer-events-none border border-[var(--accent-primary)]/20">
+          <div className="absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 border-[var(--accent-primary)]" />
+          <div className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 border-[var(--accent-primary)]" />
+          <div className="absolute inset-0 bg-[var(--accent-primary)]/[0.02] pointer-events-none" />
         </div>
       )}
     </motion.div>

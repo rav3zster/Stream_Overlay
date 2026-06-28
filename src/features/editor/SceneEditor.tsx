@@ -3,8 +3,7 @@ import { useOverlayStore, type Widget } from '../../store/overlayStore';
 import { WidgetRenderer } from '../../widgets/WidgetRenderer';
 import { 
   Lock, Unlock, Eye, EyeOff, Copy, Trash2, RotateCcw, RotateCw, 
-  Grid, HelpCircle, ZoomIn, ZoomOut, Maximize, Scissors, 
-  CopyCheck, Sliders, Layout, Save, RefreshCw
+  Grid, HelpCircle, ZoomIn, ZoomOut, Maximize, Save, RefreshCw
 } from 'lucide-react';
 
 export const SceneEditor: React.FC = () => {
@@ -33,6 +32,8 @@ export const SceneEditor: React.FC = () => {
   const redo = useOverlayStore(s => s.redo);
   const copyWidgetStyle = useOverlayStore(s => s.copyWidgetStyle);
   const pasteWidgetStyle = useOverlayStore(s => s.pasteWidgetStyle);
+  const copyWidget = useOverlayStore(s => s.copyWidget);
+  const pasteWidget = useOverlayStore(s => s.pasteWidget);
   const alignSelected = useOverlayStore(s => s.alignSelected);
   const distributeSelected = useOverlayStore(s => s.distributeSelected);
   const saveTemplate = useOverlayStore(s => s.saveTemplate);
@@ -110,15 +111,20 @@ export const SceneEditor: React.FC = () => {
 
     // Setup selection
     let nextSelection = [...selectedWidgetIds];
+    const siblings = widget.parentId 
+      ? widgets.filter(w => w.parentId === widget.parentId).map(w => w.id) 
+      : [widget.id];
+
     if (e.shiftKey || e.ctrlKey) {
-      if (nextSelection.includes(widget.id)) {
-        nextSelection = nextSelection.filter(id => id !== widget.id);
+      const hasAnySelected = siblings.some(id => nextSelection.includes(id));
+      if (hasAnySelected) {
+        nextSelection = nextSelection.filter(id => !siblings.includes(id));
       } else {
-        nextSelection.push(widget.id);
+        nextSelection = [...nextSelection, ...siblings];
       }
     } else {
       if (!selectedWidgetIds.includes(widget.id)) {
-        nextSelection = [widget.id];
+        nextSelection = siblings;
       }
     }
     selectWidgets(nextSelection);
@@ -521,11 +527,12 @@ export const SceneEditor: React.FC = () => {
 
       // Copy/Paste (Ctrl+C / Ctrl+V)
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && selectedWidgetId) {
+        copyWidget(selectedWidgetId);
         copyWidgetStyle(selectedWidgetId);
         e.preventDefault();
       }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v' && selectedWidgetId) {
-        pasteWidgetStyle(selectedWidgetId);
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+        pasteWidget();
         e.preventDefault();
       }
 
@@ -538,7 +545,10 @@ export const SceneEditor: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedWidgetIds, selectedWidgetId, widgets, updateWidget, removeWidget, duplicateWidget, undo, redo, copyWidgetStyle, pasteWidgetStyle]);
+  }, [
+    selectedWidgetIds, selectedWidgetId, widgets, updateWidget, removeWidget, 
+    duplicateWidget, undo, redo, copyWidgetStyle, pasteWidgetStyle, copyWidget, pasteWidget
+  ]);
 
   const handleSaveTemplateSubmit = (e: React.FormEvent) => {
     e.preventDefault();

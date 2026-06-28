@@ -312,16 +312,13 @@ export const OBSOverlay: React.FC = () => {
         {/* Background color */}
         <div 
           className="absolute inset-0"
-          style={{ background: theme === 'transparent' ? 'transparent' : 'var(--bg-color, #07050F)' }}
+          style={{ background: 'transparent' }}
         />
 
         {/* Particle canvas */}
         {!settings.disableAnimations && (
           <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
         )}
-
-        {/* Grid overlay */}
-        <div className="bg-grid-overlay absolute inset-0" />
 
         {/* Transparent game frame cutouts */}
         {cutoutWidgets.map(w => (

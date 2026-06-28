@@ -1,5 +1,19 @@
 import { create } from 'zustand';
 import { getThemeLayoutPreset } from '../lib/themes';
+import {
+  getSessionUserId,
+  fetchProjectData,
+  initializeDefaultProject,
+  updateDbSettings,
+  updateDbGoal,
+  addDbWidget,
+  deleteDbWidget,
+  updateDbWidgetPlacementBatch,
+  addDbScheduleEvent,
+  deleteDbScheduleEvent,
+  replaceDbSceneWidgets
+} from '../lib/dbSync';
+
 
 // ==========================================================================
 // TYPES
@@ -17,6 +31,14 @@ export type ThemeType =
   | 'cyberpunk-neon' | 'synthwave' | 'corporate-tech' | 'luxury-gold'
   | 'anime-sakura' | 'tokyo-night' | 'snow-season' | 'modern-clean'
   | 'pure-transparent' | 'lo-fi-bedroom' | 'anime-room' | 'modern-white'
+  | 'pastel-planets' | 'cyber-hud' | 'esports-blue'
+  | 'cyber-synth' | 'cyberpunk-neon' | 'synthwave' | 'retro-crt'
+  | 'lo-fi-cafe' | 'lo-fi-bedroom' | 'anime-room' | 'anime-sakura'
+  | 'minimal-dark' | 'minimal-white' | 'modern-white' | 'corporate-tech' | 'modern-clean'
+  | 'glassmorphism' | 'neumorphism' | 'luxury-gold' | 'tokyo-night'
+  | 'halloween' | 'christmas' | 'snow-season'
+  | 'mclaren' | 'porsche-gulf' | 'ferrari' | 'mercedes-amg' | 'red-bull'
+  | 'pure-transparent' | 'pure-black' | 'pure-white'
   | 'pastel-planets' | 'cyber-hud' | 'esports-blue';
 
 export type AlertType = 'follow' | 'subscribe' | 'donation' | 'raid' | 'host';
@@ -139,6 +161,11 @@ export interface GoalState {
 }
 
 export interface OverlayState {
+  // Database sync state
+  projectId: string | null;
+  loading: boolean;
+  initializeDbSession: () => Promise<void>;
+
   // Scene
   currentScene: SceneType;
   theme: ThemeType;
@@ -200,6 +227,7 @@ export interface OverlayState {
   canvasZoom: number;
   canvasPan: { x: number; y: number };
   clipboardStyle: { style: Widget['style']; animation: Widget['animation'] } | null;
+  copiedWidget: Widget | null; // Full widget copy/paste support
   templates: Record<string, Widget[]>;
   historyStack: Record<SceneType, Widget[][]>;
   historyIndex: Record<SceneType, number>;
@@ -216,6 +244,8 @@ export interface OverlayState {
   setCanvasPan: (pan: { x: number; y: number }) => void;
   copyWidgetStyle: (widgetId: string) => void;
   pasteWidgetStyle: (widgetId: string) => void;
+  copyWidget: (widgetId: string) => void; // Full widget copy/paste support
+  pasteWidget: () => void; // Full widget copy/paste support
   alignSelected: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
   distributeSelected: (direction: 'horizontal' | 'vertical') => void;
   groupSelectedWidgets: () => void;
@@ -255,7 +285,6 @@ export interface OverlayState {
   nextMusicTrack: () => void;
 
   // History stack actions
-
   pushHistoryState: () => void;
   undo: () => void;
   redo: () => void;
@@ -462,7 +491,10 @@ const DEFAULT_WIDGETS: Record<SceneType, Widget[]> = {
 // STORE INITIALIZER
 // ==========================================================================
 const getInitialState = () => {
-  const defaultState = {
+  return {
+    projectId: null as string | null,
+    loading: true,
+    copiedWidget: null as Widget | null,
     currentScene: 'starting-soon' as SceneType,
     theme: 'cyber-synth' as ThemeType,
     timer: { seconds: 600, isRunning: true, isPaused: false },
@@ -540,25 +572,6 @@ const getInitialState = () => {
       'ending-stream': 0
     } as Record<SceneType, number>,
   };
-
-  try {
-    const saved = localStorage.getItem('vibe_overlay_state');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return {
-        ...defaultState,
-        ...parsed,
-        chatMessages: defaultState.chatMessages, // Keep fresh mock chat messages
-        alertQueue: [],
-        activeAlert: null,
-        historyStack: parsed.historyStack || defaultState.historyStack,
-        historyIndex: parsed.historyIndex || defaultState.historyIndex,
-      };
-    }
-  } catch (e) {
-    console.error('Failed to load state from localStorage', e);
-  }
-  return defaultState;
 };
 
 // ==========================================================================
@@ -566,6 +579,53 @@ const getInitialState = () => {
 // ==========================================================================
 export const useOverlayStore = create<OverlayState>((set, get) => ({
   ...getInitialState(),
+
+  // ─── Database Sync Session Initializer ──────────────────────────────────
+  initializeDbSession: async () => {
+    set({ loading: true });
+    try {
+      const userId = await getSessionUserId();
+      let data = await fetchProjectData(userId);
+      if (!data) {
+        const defaultState = getInitialState();
+        data = await initializeDefaultProject(userId, defaultState);
+      }
+      
+      set({
+        projectId: data.projectId,
+        theme: data.theme,
+        currentScene: data.currentScene,
+        settings: data.settings,
+        subGoal: data.subGoal,
+        donationGoal: data.donationGoal,
+        followerGoal: data.followerGoal,
+        sceneWidgets: data.sceneWidgets,
+        schedule: data.schedule,
+        loading: false
+      });
+      
+      // Hydrate history stack with loaded state
+      set(state => ({
+        historyStack: {
+          'starting-soon': [[...(state.sceneWidgets['starting-soon'] || [])]],
+          'main-stream': [[...(state.sceneWidgets['main-stream'] || [])]],
+          'chat-session': [[...(state.sceneWidgets['chat-session'] || [])]],
+          'brb': [[...(state.sceneWidgets['brb'] || [])]],
+          'ending-stream': [[...(state.sceneWidgets['ending-stream'] || [])]]
+        },
+        historyIndex: {
+          'starting-soon': 0,
+          'main-stream': 0,
+          'chat-session': 0,
+          'brb': 0,
+          'ending-stream': 0
+        }
+      }));
+    } catch (e) {
+      console.error('Failed to initialize Supabase session, using fallback local settings:', e);
+      set({ loading: false });
+    }
+  },
 
   // ─── Scene & Theme ───────────────────────────────────────────────────────
   setScene: (scene: SceneType) => {
@@ -584,7 +644,11 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     }
     
     set({ currentScene: scene, timer: updatedTimer });
-    broadcast({ currentScene: scene, timer: updatedTimer });
+    
+    const { projectId, theme } = get();
+    if (projectId) {
+      updateDbSettings(projectId, {}, scene, theme);
+    }
   },
 
   setTheme: (theme: ThemeType) => {
@@ -630,7 +694,8 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
               },
               animation: {
                 ...w.animation,
-                ...template.animation
+                ...template.animation,
+                type: (template.animation?.type || w.animation?.type || 'none') as any
               },
               content: {
                 ...w.content,
@@ -673,11 +738,10 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
               ...template.style
             },
             animation: {
-              type: 'none',
-              duration: 1,
-              delay: 0,
-              loop: false,
-              ...template.animation
+              type: (template.animation?.type || 'none') as any,
+              duration: template.animation?.duration || 1,
+              delay: template.animation?.delay || 0,
+              loop: template.animation?.loop || false
             },
             content: {
               type: template.type!,
@@ -691,11 +755,21 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
         });
 
         nextSceneWidgets[scene] = updatedWidgets;
+
+        // Sync replacements to DB
+        const { projectId } = get();
+        if (projectId) {
+          replaceDbSceneWidgets(projectId, scene, updatedWidgets);
+        }
+
         return { sceneWidgets: nextSceneWidgets };
       });
     }
 
-    broadcast({ theme, sceneWidgets: get().sceneWidgets });
+    const { projectId, currentScene } = get();
+    if (projectId) {
+      updateDbSettings(projectId, {}, currentScene, theme);
+    }
   },
 
   applyThemeLayoutPreset: () => {
@@ -708,7 +782,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
 
     set(state => {
       const nextSceneWidgets = { ...state.sceneWidgets };
-      nextSceneWidgets[scene] = presets.map((template, i) => ({
+      const newWidgets = presets.map((template, i) => ({
         id: `${template.type}-${Date.now()}-${i}`,
         type: template.type!,
         label: template.label || `New ${template.type!.toUpperCase()} widget`,
@@ -733,11 +807,10 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
           ...template.style
         },
         animation: {
-          type: 'none',
-          duration: 1,
-          delay: 0,
-          loop: false,
-          ...template.animation
+          type: (template.animation?.type || 'none') as any,
+          duration: template.animation?.duration || 1,
+          delay: template.animation?.delay || 0,
+          loop: template.animation?.loop || false
         },
         content: {
           type: template.type!,
@@ -748,32 +821,38 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
           }
         }
       }));
+
+      nextSceneWidgets[scene] = newWidgets;
+
+      const { projectId } = get();
+      if (projectId) {
+        replaceDbSceneWidgets(projectId, scene, newWidgets);
+      }
+
       return { sceneWidgets: nextSceneWidgets };
     });
-
-    broadcast({ sceneWidgets: get().sceneWidgets });
   },
 
 
   // ─── Timer ───────────────────────────────────────────────────────────────
   addTime: (seconds: number) => {
     set(s => ({ timer: { ...s.timer, seconds: s.timer.seconds + seconds } }));
-    broadcast({ timer: get().timer });
+    get().broadcastState({ timer: get().timer });
   },
 
   pauseTimer: () => {
     set(s => ({ timer: { ...s.timer, isRunning: false, isPaused: true } }));
-    broadcast({ timer: get().timer });
+    get().broadcastState({ timer: get().timer });
   },
 
   resumeTimer: () => {
     set(s => ({ timer: { ...s.timer, isRunning: true, isPaused: false } }));
-    broadcast({ timer: get().timer });
+    get().broadcastState({ timer: get().timer });
   },
 
   resetTimer: (seconds: number = 600) => {
     set({ timer: { seconds, isRunning: true, isPaused: false } });
-    broadcast({ timer: get().timer });
+    get().broadcastState({ timer: get().timer });
   },
 
   tickTimer: () => {
@@ -794,25 +873,25 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
       timestamp: Date.now(),
     };
     set(s => ({ chatMessages: [...s.chatMessages.slice(-30), msg] }));
-    broadcast({ chatMessages: get().chatMessages });
+    get().broadcastState({ chatMessages: get().chatMessages });
   },
 
   clearChat: () => { set({ chatMessages: [] }); },
 
   setShowChat: (show: boolean) => {
     set({ showChat: show });
-    broadcast({ showChat: show });
+    get().broadcastState({ showChat: show });
   },
 
   // ─── Avatar & Ticker ──────────────────────────────────────────────────────
   setShowAvatar: (show: boolean) => {
     set({ showAvatar: show });
-    broadcast({ showAvatar: show });
+    get().broadcastState({ showAvatar: show });
   },
 
   setShowTicker: (show: boolean) => {
     set({ showTicker: show });
-    broadcast({ showTicker: show });
+    get().broadcastState({ showTicker: show });
   },
 
   // ─── Alerts ───────────────────────────────────────────────────────────────
@@ -856,7 +935,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
 
       return updates as Partial<OverlayState>;
     });
-    broadcast({ alertHistory: get().alertHistory, activeAlert: get().activeAlert });
+    get().broadcastState({ alertHistory: get().alertHistory, activeAlert: get().activeAlert });
   },
 
   dismissAlert: () => {
@@ -875,13 +954,37 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     } else {
       set(s => ({ followerGoal: { ...s.followerGoal, [field]: value } }));
     }
-    broadcast({ subGoal: get().subGoal, donationGoal: get().donationGoal, followerGoal: get().followerGoal });
+    
+    const { projectId, subGoal, donationGoal, followerGoal } = get();
+    if (projectId) {
+      if (type === 'sub') {
+        const nextCur = field === 'current' ? value : subGoal.current;
+        const nextTarg = field === 'target' ? value : subGoal.target;
+        updateDbGoal(projectId, 'sub', nextCur, nextTarg);
+      } else if (type === 'donation') {
+        const nextCur = field === 'current' ? value : donationGoal.current;
+        const nextTarg = field === 'target' ? value : donationGoal.target;
+        updateDbGoal(projectId, 'donation', nextCur, nextTarg);
+      } else {
+        const nextCur = field === 'current' ? value : followerGoal.current;
+        const nextTarg = field === 'target' ? value : followerGoal.target;
+        updateDbGoal(projectId, 'follower', nextCur, nextTarg);
+      }
+    }
+    
+    get().broadcastState({ subGoal: get().subGoal, donationGoal: get().donationGoal, followerGoal: get().followerGoal });
   },
 
   // ─── Settings ─────────────────────────────────────────────────────────────
   updateSettings: (partial: Partial<OverlaySettings>) => {
     set(s => ({ settings: { ...s.settings, ...partial } }));
-    broadcast({ settings: get().settings });
+    
+    const { projectId, currentScene, theme } = get();
+    if (projectId) {
+      updateDbSettings(projectId, partial, currentScene, theme);
+    }
+
+    get().broadcastState({ settings: get().settings });
   },
 
   // ─── AI Companion ─────────────────────────────────────────────────────────
@@ -964,8 +1067,14 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   },
 
   // ─── Scheduler ────────────────────────────────────────────────────────────
-  addScheduleEvent: (time: string, scene: SceneType, label: string) => {
-    const event = { id: `sch-${Date.now()}`, time, scene, label, isActive: true };
+  addScheduleEvent: async (time: string, scene: SceneType, label: string) => {
+    const { projectId } = get();
+    let dbId = `sch-${Date.now()}`;
+    if (projectId) {
+      const addedId = await addDbScheduleEvent(projectId, time, scene, label);
+      if (addedId) dbId = addedId;
+    }
+    const event = { id: dbId, time, scene, label, isActive: true };
     set(s => ({
       schedule: [...s.schedule, event].sort((a, b) => a.time.localeCompare(b.time))
     }));
@@ -973,6 +1082,10 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
 
   removeScheduleEvent: (id: string) => {
     set(s => ({ schedule: s.schedule.filter(e => e.id !== id) }));
+    const { projectId } = get();
+    if (projectId && !id.startsWith('sch-')) {
+      deleteDbScheduleEvent(id);
+    }
   },
 
   checkSchedule: (currentTime: string) => {
@@ -984,7 +1097,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
 
   // ─── Realtime ─────────────────────────────────────────────────────────────
   broadcastState: (slice: Partial<OverlayState>) => {
-    broadcast(slice as Record<string, unknown>);
+    // Real-time synchronization is handled via Supabase Realtime subscriptions
   },
 
   loadFromBroadcast: (data: Partial<OverlayState>) => {
@@ -998,7 +1111,6 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     // Split fields into global and local
     const globalFields: Partial<Widget> = {};
     const localFields: Partial<Widget> = {};
-    
     const localKeys = ['x', 'y', 'w', 'h', 'rotation', 'opacity', 'scale', 'zIndex', 'visible', 'locked', 'parentId'];
     
     Object.entries(fields).forEach(([key, val]) => {
@@ -1012,7 +1124,6 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     set(state => {
       const nextSceneWidgets = { ...state.sceneWidgets };
       
-      // Update all scenes for global fields, and only current scene for local fields
       Object.keys(nextSceneWidgets).forEach(s => {
         const sceneKey = s as SceneType;
         nextSceneWidgets[sceneKey] = nextSceneWidgets[sceneKey].map(w => {
@@ -1028,8 +1139,6 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
       
       return { sceneWidgets: nextSceneWidgets };
     });
-
-    broadcast({ sceneWidgets: get().sceneWidgets });
   },
 
   updateWidgets: (updates) => {
@@ -1067,14 +1176,12 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
       
       return { sceneWidgets: nextSceneWidgets };
     });
-
-    broadcast({ sceneWidgets: get().sceneWidgets });
   },
 
   addWidget: (type) => {
     const scene = get().currentScene;
     const currentWidgets = get().sceneWidgets[scene];
-    const newId = `${type}-${Date.now()}`;
+    const newId = `widget-${type}-${Date.now()}`;
     const newWidget: Widget = {
       id: newId,
       type,
@@ -1123,8 +1230,12 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
       selectedWidgetId: newId
     }));
 
+    const { projectId } = get();
+    if (projectId) {
+      addDbWidget(projectId, scene, newWidget);
+    }
+
     get().pushHistoryState();
-    broadcast({ sceneWidgets: get().sceneWidgets });
   },
 
   removeWidget: (widgetId) => {
@@ -1143,8 +1254,12 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
       };
     });
 
+    const { projectId } = get();
+    if (projectId) {
+      deleteDbWidget(widgetId);
+    }
+
     get().pushHistoryState();
-    broadcast({ sceneWidgets: get().sceneWidgets });
   },
 
   duplicateWidget: (widgetId) => {
@@ -1153,7 +1268,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     const target = currentWidgets.find(w => w.id === widgetId);
     if (!target) return;
 
-    const dupId = `${target.type}-${Date.now()}`;
+    const dupId = `widget-${target.type}-${Date.now()}`;
     const duplicate: Widget = {
       ...JSON.parse(JSON.stringify(target)),
       id: dupId,
@@ -1173,8 +1288,12 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
       selectedWidgetId: dupId
     }));
 
+    const { projectId } = get();
+    if (projectId) {
+      addDbWidget(projectId, scene, duplicate);
+    }
+
     get().pushHistoryState();
-    broadcast({ sceneWidgets: get().sceneWidgets });
   },
 
   selectWidget: (widgetId) => {
@@ -1235,7 +1354,49 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     });
 
     get().pushHistoryState();
-    broadcast({ sceneWidgets: get().sceneWidgets });
+  },
+
+  copyWidget: (widgetId) => {
+    const scene = get().currentScene;
+    const target = get().sceneWidgets[scene]?.find(w => w.id === widgetId);
+    if (target) {
+      set({ copiedWidget: JSON.parse(JSON.stringify(target)) });
+    }
+  },
+
+  pasteWidget: () => {
+    const copied = get().copiedWidget;
+    if (!copied) return;
+
+    const scene = get().currentScene;
+    const currentWidgets = get().sceneWidgets[scene] || [];
+    const newId = `widget-${copied.type}-${Date.now()}`;
+    
+    const pastedWidget: Widget = {
+      ...JSON.parse(JSON.stringify(copied)),
+      id: newId,
+      label: `${copied.label} (Pasted)`,
+      x: Math.min(copied.x + 4, 80),
+      y: Math.min(copied.y + 4, 80),
+      locked: false,
+      zIndex: currentWidgets.length + 1
+    };
+
+    set(state => ({
+      sceneWidgets: {
+        ...state.sceneWidgets,
+        [scene]: [...currentWidgets, pastedWidget]
+      },
+      selectedWidgetIds: [newId],
+      selectedWidgetId: newId
+    }));
+
+    const { projectId } = get();
+    if (projectId) {
+      addDbWidget(projectId, scene, pastedWidget);
+    }
+
+    get().pushHistoryState();
   },
 
   alignSelected: (alignment) => {
@@ -1378,8 +1539,12 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
       selectedWidgetId: null
     }));
 
+    const { projectId } = get();
+    if (projectId) {
+      replaceDbSceneWidgets(projectId, scene, templateWidgets);
+    }
+
     get().pushHistoryState();
-    broadcast({ sceneWidgets: get().sceneWidgets });
   },
 
   bringToFront: (widgetId) => {
@@ -1405,7 +1570,6 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     const stack = get().historyStack[scene] || [];
     const index = get().historyIndex[scene] ?? -1;
 
-    // Prune standard futures if we made modifications on a historical node
     const activeStack = stack.slice(0, index + 1);
     
     set(state => ({
@@ -1418,6 +1582,13 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
         [scene]: index + 1
       }
     }));
+
+    // Sync current widgets state to Supabase on history push (e.g. mouse dragup / align completed)
+    const { projectId } = get();
+    if (projectId) {
+      const updates = widgets.map(w => ({ id: w.id, fields: w }));
+      updateDbWidgetPlacementBatch(updates);
+    }
   },
 
   undo: () => {
@@ -1437,7 +1608,12 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
           [scene]: index - 1
         }
       }));
-      broadcast({ sceneWidgets: get().sceneWidgets });
+
+      const { projectId } = get();
+      if (projectId) {
+        replaceDbSceneWidgets(projectId, scene, prevWidgets);
+      }
+      get().broadcastState({ sceneWidgets: get().sceneWidgets });
     }
   },
 
@@ -1458,7 +1634,12 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
           [scene]: index + 1
         }
       }));
-      broadcast({ sceneWidgets: get().sceneWidgets });
+
+      const { projectId } = get();
+      if (projectId) {
+        replaceDbSceneWidgets(projectId, scene, nextWidgets);
+      }
+      get().broadcastState({ sceneWidgets: get().sceneWidgets });
     }
   },
 
@@ -1466,7 +1647,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     set(s => {
       const nextPlaying = !s.music.isPlaying;
       const updated = { music: { ...s.music, isPlaying: nextPlaying } };
-      broadcast(updated);
+      get().broadcastState(updated);
       return updated;
     });
   },
@@ -1493,38 +1674,11 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
           isPlaying: true
         }
       };
-      broadcast(updated);
+      get().broadcastState(updated);
       return updated;
     });
   }
 }));
-
-// Persist store changes to localStorage
-if (typeof window !== 'undefined') {
-  useOverlayStore.subscribe((state) => {
-    try {
-      const persistedState = {
-        theme: state.theme,
-        currentScene: state.currentScene,
-        settings: state.settings,
-        subGoal: state.subGoal,
-        donationGoal: state.donationGoal,
-        followerGoal: state.followerGoal,
-        schedule: state.schedule,
-        sceneWidgets: state.sceneWidgets,
-        timer: state.timer,
-        recentEvents: state.recentEvents,
-        alertHistory: state.alertHistory,
-        templates: state.templates,
-        historyStack: state.historyStack,
-        historyIndex: state.historyIndex,
-      };
-      localStorage.setItem('vibe_overlay_state', JSON.stringify(persistedState));
-    } catch (e) {
-      console.error('Failed to save state to localStorage', e);
-    }
-  });
-}
 
 // ==========================================================================
 // TIMER TICK ENGINE — runs globally outside components
