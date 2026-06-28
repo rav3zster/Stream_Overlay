@@ -5,6 +5,7 @@ import {
   fetchProjectData,
   initializeDefaultProject,
   updateDbSettings,
+  updateDbTimer,
   updateDbGoal,
   addDbWidget,
   deleteDbWidget,
@@ -635,6 +636,7 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
         projectId: data.projectId,
         theme: data.theme,
         currentScene: data.currentScene,
+        timer: data.timer,
         settings: data.settings,
         subGoal: data.subGoal,
         donationGoal: data.donationGoal,
@@ -877,22 +879,26 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
   // ─── Timer ───────────────────────────────────────────────────────────────
   addTime: (seconds: number) => {
     set(s => ({ timer: { ...s.timer, seconds: s.timer.seconds + seconds } }));
-    get().broadcastState({ timer: get().timer });
+    const { projectId, timer } = get();
+    if (projectId) updateDbTimer(projectId, timer);
   },
 
   pauseTimer: () => {
     set(s => ({ timer: { ...s.timer, isRunning: false, isPaused: true } }));
-    get().broadcastState({ timer: get().timer });
+    const { projectId, timer } = get();
+    if (projectId) updateDbTimer(projectId, timer);
   },
 
   resumeTimer: () => {
     set(s => ({ timer: { ...s.timer, isRunning: true, isPaused: false } }));
-    get().broadcastState({ timer: get().timer });
+    const { projectId, timer } = get();
+    if (projectId) updateDbTimer(projectId, timer);
   },
 
   resetTimer: (seconds: number = 600) => {
     set({ timer: { seconds, isRunning: true, isPaused: false } });
-    get().broadcastState({ timer: get().timer });
+    const { projectId, timer } = get();
+    if (projectId) updateDbTimer(projectId, timer);
   },
 
   tickTimer: () => {

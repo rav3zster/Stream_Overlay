@@ -36,9 +36,18 @@ function App() {
         (payload) => {
           const newSettings = payload.new as any;
           if (!newSettings) return;
+
+          // ── Timer sync: admin changes propagate to OBS via settings row ──
+          const timerUpdate = {
+            seconds: newSettings.timer_seconds ?? useOverlayStore.getState().timer.seconds,
+            isRunning: newSettings.timer_is_running ?? useOverlayStore.getState().timer.isRunning,
+            isPaused: newSettings.timer_is_paused ?? useOverlayStore.getState().timer.isPaused,
+          };
+
           useOverlayStore.setState({
             theme: newSettings.theme,
             currentScene: newSettings.current_scene,
+            timer: timerUpdate,
             settings: {
               ...useOverlayStore.getState().settings,
               streamTitle: newSettings.stream_title,

@@ -164,3 +164,35 @@ begin
     alter table scene_widgets alter column parent_id type text;
   end if;
 end $$;
+
+-- 10. Add timer state columns to settings (so OBS can sync timer via realtime)
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_name = 'settings' and column_name = 'timer_seconds'
+  ) then
+    alter table settings add column timer_seconds integer not null default 600;
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_name = 'settings' and column_name = 'timer_is_running'
+  ) then
+    alter table settings add column timer_is_running boolean not null default true;
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_name = 'settings' and column_name = 'timer_is_paused'
+  ) then
+    alter table settings add column timer_is_paused boolean not null default false;
+  end if;
+end $$;
+

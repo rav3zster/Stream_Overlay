@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { type Widget, type SceneType, type ThemeType, type OverlaySettings, type GoalState } from '../store/overlayStore';
+import { type Widget, type SceneType, type ThemeType, type OverlaySettings, type GoalState, type OverlayTimer } from '../store/overlayStore';
 
 export async function getSessionUserId(): Promise<string> {
   try {
@@ -25,6 +25,7 @@ export interface DbProjectData {
   projectId: string;
   theme: ThemeType;
   currentScene: SceneType;
+  timer: OverlayTimer;
   settings: OverlaySettings;
   subGoal: GoalState;
   donationGoal: GoalState;
@@ -236,6 +237,11 @@ export async function fetchProjectData(userId: string): Promise<DbProjectData | 
       projectId,
       theme: (settingsData.theme as ThemeType) || 'cyber-synth',
       currentScene: (settingsData.current_scene as SceneType) || 'starting-soon',
+      timer: {
+        seconds: settingsData.timer_seconds ?? 600,
+        isRunning: settingsData.timer_is_running ?? true,
+        isPaused: settingsData.timer_is_paused ?? false,
+      },
       settings: {
         streamTitle: settingsData.stream_title,
         streamerName: settingsData.streamer_name,
@@ -463,6 +469,22 @@ export async function updateDbSettings(projectId: string, fields: OverlaySetting
       .eq('project_id', projectId);
   } catch (err) {
     console.error('Error updating settings in DB:', err);
+  }
+}
+
+// Write timer state to DB so OBS receives it via realtime subscription on settings table
+export async function updateDbTimer(projectId: string, timer: OverlayTimer) {
+  try {
+    await supabase
+      .from('settings')
+      .update({
+        timer_seconds: timer.seconds,
+        timer_is_running: timer.isRunning,
+        timer_is_paused: timer.isPaused,
+      })
+      .eq('project_id', projectId);
+  } catch (err) {
+    console.error('Error updating timer in DB:', err);
   }
 }
 
