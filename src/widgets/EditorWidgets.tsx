@@ -5,25 +5,52 @@
  * All data is read from `settings` passed in as props (from widget.content.settings).
  * No dependency on useOverlayStore — works in both editor canvas and OBS /obs route.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLiveStore } from '../store/liveStore';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type S = Record<string, any>;
 
+// ─── Shared formatter ─────────────────────────────────────────────────────────
+function fmtSecs(s: number, showHours?: boolean): string {
+  const hrs = Math.floor(s / 3600);
+  const mins = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
+  const secs = (s % 60).toString().padStart(2, '0');
+  if (showHours) return `${hrs.toString().padStart(2, '0')}:${mins}:${secs}`;
+  return `${mins}:${secs}`;
+}
+
 // ─── 1. COUNTDOWN TIMER ───────────────────────────────────────────────────────
-// Reads live countdown from liveStore (same source as OBS renderer)
+// In the editor: runs a self-managed local countdown from settings.duration.
+// On /obs route: reads from liveStore (the real shared timer).
+// We detect if we're on the /obs route by checking the pathname.
 export const EditorCountdownTimer: React.FC<{ settings: S }> = ({ settings }) => {
   const { timer } = useLiveStore();
   const label = settings.label ?? 'STARTING IN';
   const showHours = settings.showHours ?? false;
+  const isObsRoute = typeof window !== 'undefined' && window.location.pathname === '/obs';
 
-  const s = timer.seconds;
-  const hrs = Math.floor(s / 3600).toString().padStart(2, '0');
-  const mins = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
-  const secs = (s % 60).toString().padStart(2, '0');
-  const display = showHours ? `${hrs}:${mins}:${secs}` : `${mins}:${secs}`;
+  // Self-managed local timer for the editor canvas preview
+  const initialSeconds = settings.duration ?? 600;
+  const [localSecs, setLocalSecs] = useState(initialSeconds);
+  const prevDurationRef = useRef(initialSeconds);
+
+  // Reset when duration changes
+  if (prevDurationRef.current !== initialSeconds) {
+    prevDurationRef.current = initialSeconds;
+    setLocalSecs(initialSeconds);
+  }
+
+  useEffect(() => {
+    if (isObsRoute) return; // OBS uses liveStore, no local tick
+    const t = setInterval(() => setLocalSecs(s => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(t);
+  }, [isObsRoute]);
+
+  const seconds = isObsRoute ? timer.seconds : localSecs;
+  const isPaused = isObsRoute ? timer.isPaused : false;
+  const display = fmtSecs(seconds, showHours);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center', padding: 8 }}>
@@ -33,7 +60,7 @@ export const EditorCountdownTimer: React.FC<{ settings: S }> = ({ settings }) =>
       <span style={{ fontSize: '2em', fontWeight: 900, fontFamily: 'inherit', letterSpacing: '4px', lineHeight: 1 }}>
         {display}
       </span>
-      {timer.isPaused && (
+      {isPaused && (
         <span style={{ fontSize: '0.45em', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', marginTop: 6, opacity: 0.6 }}>
           ⏸ PAUSED
         </span>
@@ -47,6 +74,7 @@ export const EditorClockWidget: React.FC<{ settings: S }> = ({ settings }) => {
   const [time, setTime] = useState(new Date());
   const use24Hour = settings.use24Hour ?? false;
   const showSeconds = settings.showSeconds ?? true;
+  const showDate = settings.showDate ?? true;
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date()), 1000);
@@ -67,16 +95,16 @@ export const EditorClockWidget: React.FC<{ settings: S }> = ({ settings }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', textAlign: 'center' }}>
       <span style={{ fontSize: '1.5em', fontWeight: 900, letterSpacing: '2px' }}>{timeStr}</span>
-      <span style={{ fontSize: '0.5em', opacity: 0.6, marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{dateStr}</span>
+      {showDate && <span style={{ fontSize: '0.5em', opacity: 0.6, marginTop: 4, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{dateStr}</span>}
     </div>
   );
 };
 
 // ─── 3. TEXT WIDGET ───────────────────────────────────────────────────────────
 export const EditorTextWidget: React.FC<{ settings: S }> = ({ settings }) => {
-  const text = settings.text ?? 'Double-click to edit text…';
+  const text = settings.text ?? 'Click to edit text…';
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 8, wordBreak: 'break-word' }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', padding: 8, wordBreak: 'break-word', whiteSpace: 'pre-wrap', textAlign: 'center' }}>
       {text}
     </div>
   );
@@ -86,16 +114,18 @@ export const EditorTextWidget: React.FC<{ settings: S }> = ({ settings }) => {
 export const EditorScrollingText: React.FC<{ settings: S }> = ({ settings }) => {
   const text = settings.text ?? '⚡ Welcome to the stream! • Follow for updates ⚡';
   const speed = settings.scrollSpeed === 'slow' ? 40 : settings.scrollSpeed === 'fast' ? 12 : 22;
+  const dir = settings.scrollDir ?? 'left';
 
   return (
     <div style={{ overflow: 'hidden', height: '100%', display: 'flex', alignItems: 'center' }}>
       <style>{`
-        @keyframes _ticker { from { transform: translateX(100%) } to { transform: translateX(-100%) } }
+        @keyframes _ticker_l { from { transform: translateX(100%) } to { transform: translateX(-100%) } }
+        @keyframes _ticker_r { from { transform: translateX(-100%) } to { transform: translateX(100%) } }
       `}</style>
       <span style={{
         whiteSpace: 'nowrap',
         display: 'inline-block',
-        animation: `_ticker ${speed}s linear infinite`,
+        animation: `${dir === 'right' ? '_ticker_r' : '_ticker_l'} ${speed}s linear infinite`,
       }}>
         {text}
       </span>
@@ -127,8 +157,8 @@ export const EditorMusicWidget: React.FC<{ settings: S }> = ({ settings }) => {
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, height: '100%', padding: '0 12px' }}>
-      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(30,215,96,0.15)', border: '2px solid rgba(30,215,96,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <span style={{ fontSize: 18 }}>{dot ? '♪' : '♫'}</span>
+      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(30,215,96,0.15)', border: '2px solid rgba(30,215,96,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 18 }}>
+        {dot ? '♪' : '♫'}
       </div>
       <div style={{ flex: 1, overflow: 'hidden', minWidth: 0 }}>
         <div style={{ fontSize: '0.6em', color: 'rgba(30,215,96,0.8)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>♪ NOW PLAYING</div>
@@ -162,11 +192,7 @@ export const EditorGoalWidget: React.FC<{ settings: S }> = ({ settings }) => {
           boxShadow: '0 0 8px rgba(168,85,247,0.5)',
         }} />
       </div>
-      {pct >= 100 && (
-        <span style={{ textAlign: 'center', fontSize: '0.55em', fontWeight: 800, color: '#5cffe2', animation: 'pulse 1s infinite' }}>
-          🎉 GOAL REACHED!
-        </span>
-      )}
+      <div style={{ textAlign: 'right', fontSize: '0.5em', opacity: 0.6 }}>{Math.round(pct)}%{pct >= 100 ? ' 🎉 GOAL!' : ''}</div>
     </div>
   );
 };
@@ -177,7 +203,7 @@ const SAMPLE_CHAT = [
   { id: 2, user: 'CyberViewer', msg: 'Love the overlay design 🔥', color: '#5cffe2' },
   { id: 3, user: 'CozyWatcher', msg: 'Hi everyone!! ✨', color: '#fbbf24' },
   { id: 4, user: 'GamerDude', msg: 'HYPED for today\'s stream!', color: '#60a5fa' },
-  { id: 5, user: 'ChatMod_X', msg: 'Welcome to the stream! Follow the rules!', color: '#34d399' },
+  { id: 5, user: 'ChatMod_X', msg: 'Welcome! Follow the rules 👍', color: '#34d399' },
 ];
 
 export const EditorChatWidget: React.FC<{ settings: S }> = ({ settings }) => {
@@ -213,20 +239,26 @@ export const EditorChatWidget: React.FC<{ settings: S }> = ({ settings }) => {
 
 // ─── 8. SOCIAL LINKS WIDGET ───────────────────────────────────────────────────
 export const EditorSocialWidget: React.FC<{ settings: S }> = ({ settings }) => {
-  const twitch = settings.twitch ?? 'YourChannel';
-  const twitter = settings.twitter ?? '@YourHandle';
-  const discord = settings.discord ?? 'discord.gg/invite';
-
-  const links = [
-    { icon: '🟣', label: 'Twitch', value: twitch },
-    { icon: '🐦', label: 'Twitter', value: twitter },
-    { icon: '💬', label: 'Discord', value: discord },
+  const platforms = [
+    { icon: '🟣', value: settings.twitch },
+    { icon: '🐦', value: settings.twitter },
+    { icon: '💬', value: settings.discord },
+    { icon: '▶️', value: settings.youtube },
+    { icon: '📸', value: settings.instagram },
   ].filter(l => l.value);
+
+  if (platforms.length === 0) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', opacity: 0.4, fontSize: '0.55em', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+        🔗 Set handles in Inspector →
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, height: '100%', flexWrap: 'wrap', padding: '0 8px' }}>
-      {links.map(l => (
-        <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      {platforms.map((l, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontSize: '1em' }}>{l.icon}</span>
           <span style={{ fontSize: '0.55em', fontWeight: 700 }}>{l.value}</span>
         </div>
@@ -237,6 +269,7 @@ export const EditorSocialWidget: React.FC<{ settings: S }> = ({ settings }) => {
 
 // ─── 9. CAMERA / WEBCAM / GAME FRAME PLACEHOLDER ─────────────────────────────
 export const EditorFrameWidget: React.FC<{ settings: S; label?: string }> = ({ settings, label = 'Webcam' }) => {
+  const frameLabel = settings.frameLabel || label;
   const aspectRatio = settings.aspectRatio ?? '16:9';
   return (
     <div style={{
@@ -245,7 +278,7 @@ export const EditorFrameWidget: React.FC<{ settings: S; label?: string }> = ({ s
       border: '2px dashed rgba(255,255,255,0.2)', borderRadius: 4,
     }}>
       <span style={{ fontSize: '2em' }}>🎥</span>
-      <span style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</span>
+      <span style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{frameLabel}</span>
       <span style={{ fontSize: '0.45em', opacity: 0.6 }}>{aspectRatio}</span>
     </div>
   );
@@ -275,10 +308,134 @@ export const EditorMediaWidget: React.FC<{ settings: S }> = ({ settings }) => {
   );
 };
 
-// ─── 11. GENERIC FALLBACK ─────────────────────────────────────────────────────
+// ─── 11. LAYOUT CONTAINER (header, footer, sidebar, etc.) ─────────────────────
+export const EditorContainerWidget: React.FC<{ settings: S; type: string }> = ({ settings, type }) => {
+  const titleText = settings.titleText ?? '';
+  const subText = settings.subText ?? '';
+  const showText = settings.showText ?? true;
+  const textAlign = settings.textAlign ?? 'center';
+  const icon = settings.icon ?? '';
+
+  // Provide helpful placeholder if nothing set
+  const defaultTitles: Record<string, string> = {
+    header: 'STREAM HEADER',
+    footer: 'Stream Footer · Channel Name',
+    sidebar: 'Sidebar Panel',
+    container: 'Container',
+    background: '',
+    'glass-panel': 'Panel',
+  };
+
+  const displayTitle = titleText || defaultTitles[type] || '';
+  const hasContent = displayTitle || subText || icon;
+
+  if (!showText || !hasContent) return null;
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: textAlign === 'left' ? 'flex-start' : textAlign === 'right' ? 'flex-end' : 'center',
+      height: '100%',
+      padding: '0 16px',
+      gap: 8,
+    }}>
+      {icon && <span style={{ fontSize: '1.2em', flexShrink: 0 }}>{icon}</span>}
+      <div style={{ textAlign: textAlign as React.CSSProperties['textAlign'] }}>
+        {displayTitle && (
+          <div style={{ fontWeight: 800, fontSize: '0.75em', letterSpacing: '0.08em', textTransform: 'uppercase', lineHeight: 1.2 }}>
+            {displayTitle}
+          </div>
+        )}
+        {subText && (
+          <div style={{ fontSize: '0.55em', opacity: 0.6, marginTop: 2, lineHeight: 1.3 }}>
+            {subText}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ─── 12. BADGE WIDGET ─────────────────────────────────────────────────────────
+export const EditorBadgeWidget: React.FC<{ settings: S }> = ({ settings }) => {
+  const text = settings.badgeText ?? '🔴 LIVE';
+  const pulse = settings.pulse ?? true;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+      <span style={{
+        fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em',
+        animation: pulse ? 'pulse 1.5s ease-in-out infinite' : 'none',
+      }}>
+        {text}
+      </span>
+    </div>
+  );
+};
+
+// ─── 13. VIEWER COUNT / LATEST FOLLOWER / SUBSCRIBER / DONATION ──────────────
+export const EditorStatWidget: React.FC<{ settings: S; type: string }> = ({ settings, type }) => {
+  const icons: Record<string, string> = {
+    'viewer-count': '👁',
+    'latest-follower': '❤️',
+    'latest-subscriber': '⭐',
+    'latest-donation': '💰',
+  };
+  const defaultLabels: Record<string, string> = {
+    'viewer-count': 'Viewers',
+    'latest-follower': 'Latest Follower',
+    'latest-subscriber': 'Latest Sub',
+    'latest-donation': 'Latest Donation',
+  };
+  const icon = icons[type] ?? '📊';
+  const label = settings.label ?? defaultLabels[type] ?? 'Stat';
+  const value = settings.demoValue ?? (type === 'viewer-count' ? '1,337' : 'Rave_VT');
+  const showIcon = settings.showIcon ?? true;
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: '100%', padding: '0 10px' }}>
+      {showIcon && <span style={{ fontSize: '1.1em', flexShrink: 0 }}>{icon}</span>}
+      <div style={{ flex: 1, overflow: 'hidden', minWidth: 0 }}>
+        <div style={{ fontSize: '0.5em', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.6, marginBottom: 1 }}>{label}</div>
+        <div style={{ fontWeight: 900, fontSize: '0.85em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{value}</div>
+      </div>
+    </div>
+  );
+};
+
+// ─── 14. EVENT LIST / FEED WIDGET ─────────────────────────────────────────────
+const SAMPLE_EVENTS = [
+  { icon: '⭐', text: 'Rave_VT subscribed!' },
+  { icon: '❤️', text: 'CyberFan followed' },
+  { icon: '💰', text: 'StreamerX donated $5' },
+  { icon: '⭐', text: 'Pixel_Bunny subscribed!' },
+  { icon: '🎉', text: 'GamerDude cheered 100 bits' },
+];
+
+export const EditorEventList: React.FC<{ settings: S }> = ({ settings }) => {
+  const maxItems = settings.maxItems ?? 5;
+  const showAmounts = settings.showAmounts ?? true;
+  const items = SAMPLE_EVENTS.slice(0, maxItems);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '8px 12px', gap: 6 }}>
+      <div style={{ fontSize: '0.55em', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.5, borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: 6, marginBottom: 2 }}>
+        📋 Recent Events
+      </div>
+      {items.map((ev, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+          <span style={{ fontSize: '0.8em' }}>{ev.icon}</span>
+          <span style={{ fontSize: '0.55em', opacity: 0.8 }}>{showAmounts ? ev.text : ev.text.replace(/\$[\d.]+/, '').replace(/\d+ bits/, '')}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ─── 15. GENERIC FALLBACK ─────────────────────────────────────────────────────
 export const EditorGenericWidget: React.FC<{ type: string }> = ({ type }) => (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 6, opacity: 0.4 }}>
     <span style={{ fontSize: '1.5em' }}>🧩</span>
-    <span style={{ fontSize: '0.5em', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>{type}</span>
+    <span style={{ fontSize: '0.5em', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700 }}>{type.replace(/-/g, ' ')}</span>
   </div>
 );

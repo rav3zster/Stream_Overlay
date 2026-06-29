@@ -245,6 +245,40 @@ const ContentSection: React.FC<{ widget: DraftWidget; update: (u: Partial<DraftW
 
   const cType = widget.content?.type || widget.type;
 
+  // 0. Layout containers (header, footer, sidebar, container, background, glass-panel)
+  const LAYOUT_TYPES = ['header', 'footer', 'sidebar', 'container', 'background', 'glass-panel'];
+  if (LAYOUT_TYPES.includes(cType)) {
+    return (
+      <Section title="Container Content" icon={<Settings size={12} />} defaultOpen>
+        <Row label="Title Text">
+          <input className="input" value={content.settings.titleText ?? ''} onChange={e => updateContent({ titleText: e.target.value })} placeholder="Enter title…" />
+        </Row>
+        <Row label="Sub Text">
+          <input className="input" value={content.settings.subText ?? ''} onChange={e => updateContent({ subText: e.target.value })} placeholder="Subtitle or channel name…" />
+        </Row>
+        <Row label="Show Text">
+          <label className="toggle">
+            <input type="checkbox" checked={content.settings.showText ?? true} onChange={e => updateContent({ showText: e.target.checked })} />
+            <span className="toggle-track" />
+          </label>
+        </Row>
+        <Row label="Align">
+          <div style={{ display: 'flex', gap: 4 }}>
+            {(['left', 'center', 'right'] as const).map(a => (
+              <button key={a} className={`btn-icon${(content.settings.textAlign ?? 'center') === a ? ' active' : ''}`}
+                style={{ flex: 1 }} onClick={() => updateContent({ textAlign: a })}>
+                {a === 'left' ? '⬅' : a === 'center' ? '↔' : '➡'}
+              </button>
+            ))}
+          </div>
+        </Row>
+        <Row label="Icon Emoji">
+          <input className="input" value={content.settings.icon ?? ''} onChange={e => updateContent({ icon: e.target.value })} placeholder="🎮 ⚡ 🔴 …" style={{ fontSize: 14 }} />
+        </Row>
+      </Section>
+    );
+  }
+
   // 1. Countdown Timer Widget
   if (cType === 'countdown-timer' || cType === 'timer') {
     return (
@@ -258,6 +292,12 @@ const ContentSection: React.FC<{ widget: DraftWidget; update: (u: Partial<DraftW
         <Row label="Show hrs">
           <label className="toggle">
             <input type="checkbox" checked={content.settings.showHours ?? false} onChange={e => updateContent({ showHours: e.target.checked })} />
+            <span className="toggle-track" />
+          </label>
+        </Row>
+        <Row label="Auto-start">
+          <label className="toggle">
+            <input type="checkbox" checked={content.settings.autoStart ?? true} onChange={e => updateContent({ autoStart: e.target.checked })} />
             <span className="toggle-track" />
           </label>
         </Row>
@@ -419,6 +459,12 @@ const ContentSection: React.FC<{ widget: DraftWidget; update: (u: Partial<DraftW
         <Row label="Discord">
           <input className="input" value={content.settings.discord ?? 'rave-vt-lounge'} onChange={e => updateContent({ discord: e.target.value })} />
         </Row>
+        <Row label="YouTube">
+          <input className="input" value={content.settings.youtube ?? ''} onChange={e => updateContent({ youtube: e.target.value })} placeholder="@YourChannel" />
+        </Row>
+        <Row label="Instagram">
+          <input className="input" value={content.settings.instagram ?? ''} onChange={e => updateContent({ instagram: e.target.value })} placeholder="@handle" />
+        </Row>
       </Section>
     );
   }
@@ -438,6 +484,24 @@ const ContentSection: React.FC<{ widget: DraftWidget; update: (u: Partial<DraftW
             <input type="checkbox" checked={content.settings.use24Hour ?? false} onChange={e => updateContent({ use24Hour: e.target.checked })} />
             <span className="toggle-track" />
           </label>
+        </Row>
+        <Row label="Show Date">
+          <label className="toggle">
+            <input type="checkbox" checked={content.settings.showDate ?? true} onChange={e => updateContent({ showDate: e.target.checked })} />
+            <span className="toggle-track" />
+          </label>
+        </Row>
+        <Row label="Timezone">
+          <select className="select" value={content.settings.timezone ?? 'local'} onChange={e => updateContent({ timezone: e.target.value })}>
+            <option value="local">Local Time</option>
+            <option value="UTC">UTC</option>
+            <option value="America/New_York">New York (ET)</option>
+            <option value="America/Los_Angeles">Los Angeles (PT)</option>
+            <option value="Europe/London">London (GMT)</option>
+            <option value="Europe/Paris">Paris (CET)</option>
+            <option value="Asia/Tokyo">Tokyo (JST)</option>
+            <option value="Asia/Kolkata">India (IST)</option>
+          </select>
         </Row>
       </Section>
     );
@@ -483,6 +547,9 @@ const ContentSection: React.FC<{ widget: DraftWidget; update: (u: Partial<DraftW
             <option value="fast">Rapid Sparkle</option>
           </select>
         </Row>
+        <Row label="Label">
+          <input className="input" value={content.settings.frameLabel ?? ''} onChange={e => updateContent({ frameLabel: e.target.value })} placeholder="Webcam / Game…" />
+        </Row>
       </Section>
     );
   }
@@ -500,6 +567,90 @@ const ContentSection: React.FC<{ widget: DraftWidget; update: (u: Partial<DraftW
             <option value="contain">Contain (Fit Box)</option>
             <option value="fill">Stretch to Box</option>
           </select>
+        </Row>
+      </Section>
+    );
+  }
+
+  // 11. Badge Widget
+  if (cType === 'badge') {
+    return (
+      <Section title="Badge Content" icon={<Settings size={12} />} defaultOpen>
+        <Row label="Badge Text">
+          <input className="input" value={content.settings.badgeText ?? '🔴 LIVE'} onChange={e => updateContent({ badgeText: e.target.value })} />
+        </Row>
+        <Row label="Pulse Anim">
+          <label className="toggle">
+            <input type="checkbox" checked={content.settings.pulse ?? true} onChange={e => updateContent({ pulse: e.target.checked })} />
+            <span className="toggle-track" />
+          </label>
+        </Row>
+      </Section>
+    );
+  }
+
+  // 12. Viewer Count / Latest Follower / Subscriber / Donation text widgets
+  if (['viewer-count', 'latest-follower', 'latest-subscriber', 'latest-donation'].includes(cType)) {
+    const labels: Record<string, string> = {
+      'viewer-count': 'Viewers',
+      'latest-follower': 'Follower',
+      'latest-subscriber': 'Subscriber',
+      'latest-donation': 'Donation',
+    };
+    const fieldLabel = labels[cType] ?? 'Value';
+    return (
+      <Section title={`${fieldLabel} Widget`} icon={<Settings size={12} />} defaultOpen>
+        <Row label="Label">
+          <input className="input" value={content.settings.label ?? fieldLabel} onChange={e => updateContent({ label: e.target.value })} />
+        </Row>
+        <Row label="Demo Value">
+          <input className="input" value={content.settings.demoValue ?? 'Rave_VT'} onChange={e => updateContent({ demoValue: e.target.value })} placeholder="Preview display value…" />
+        </Row>
+        <Row label="Show Icon">
+          <label className="toggle">
+            <input type="checkbox" checked={content.settings.showIcon ?? true} onChange={e => updateContent({ showIcon: e.target.checked })} />
+            <span className="toggle-track" />
+          </label>
+        </Row>
+      </Section>
+    );
+  }
+
+  // 13. Event List / Donation Feed / Follower Feed
+  if (['event-list', 'donation-feed', 'follower-feed', 'subscriber-feed'].includes(cType)) {
+    return (
+      <Section title="Feed Settings" icon={<Settings size={12} />} defaultOpen>
+        <Row label="Max Items">
+          <NumInput value={content.settings.maxItems ?? 5} onChange={v => updateContent({ maxItems: Math.max(1, v) })} min={1} max={20} />
+        </Row>
+        <Row label="Show Amounts">
+          <label className="toggle">
+            <input type="checkbox" checked={content.settings.showAmounts ?? true} onChange={e => updateContent({ showAmounts: e.target.checked })} />
+            <span className="toggle-track" />
+          </label>
+        </Row>
+        <Row label="Show Avatars">
+          <label className="toggle">
+            <input type="checkbox" checked={content.settings.showAvatars ?? false} onChange={e => updateContent({ showAvatars: e.target.checked })} />
+            <span className="toggle-track" />
+          </label>
+        </Row>
+      </Section>
+    );
+  }
+
+  // 14. Poll widget
+  if (cType === 'poll') {
+    return (
+      <Section title="Poll Settings" icon={<Settings size={12} />} defaultOpen>
+        <Row label="Question">
+          <input className="input" value={content.settings.question ?? 'What game next?'} onChange={e => updateContent({ question: e.target.value })} />
+        </Row>
+        <Row label="Option A">
+          <input className="input" value={content.settings.optionA ?? 'Hollow Knight'} onChange={e => updateContent({ optionA: e.target.value })} />
+        </Row>
+        <Row label="Option B">
+          <input className="input" value={content.settings.optionB ?? 'Minecraft'} onChange={e => updateContent({ optionB: e.target.value })} />
         </Row>
       </Section>
     );

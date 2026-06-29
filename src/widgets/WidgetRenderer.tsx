@@ -25,6 +25,10 @@ import {
   EditorSocialWidget,
   EditorFrameWidget,
   EditorMediaWidget,
+  EditorContainerWidget,
+  EditorBadgeWidget,
+  EditorStatWidget,
+  EditorEventList,
   EditorGenericWidget,
 } from './EditorWidgets';
 
@@ -340,22 +344,35 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
       case 'logo':
       case 'media':
         return <EditorMediaWidget settings={settings} />;
-      // Structural / decorative widgets
-      case 'background':
-      case 'glass-panel':
-      case 'container':
+      // Structural / decorative widgets — render their text content overlay
       case 'header':
       case 'footer':
       case 'sidebar':
-      case 'divider':
-      case 'spacer':
+      case 'container':
+      case 'background':
+      case 'glass-panel':
+        return <EditorContainerWidget settings={settings} type={cType} />;
+      case 'badge':
+        return <EditorBadgeWidget settings={settings} />;
       case 'neon-card':
       case 'glass-card':
       case 'glow-effect':
-      case 'line':
-      case 'badge':
       case 'shape':
-        return null; // These are pure CSS containers — their style does the rendering
+      case 'line':
+      case 'divider':
+      case 'spacer':
+      case 'particles':
+        return null; // Pure CSS decoration — no content overlay
+      case 'viewer-count':
+      case 'latest-follower':
+      case 'latest-subscriber':
+      case 'latest-donation':
+        return <EditorStatWidget settings={settings} type={cType} />;
+      case 'event-list':
+      case 'donation-feed':
+      case 'follower-feed':
+      case 'subscriber-feed':
+        return <EditorEventList settings={settings} />;
     }
 
     // ── Legacy overlay renderers (fallback for old widget types) ─────────

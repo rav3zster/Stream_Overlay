@@ -491,13 +491,16 @@ const ScenesTabContent: React.FC<ScenesTabProps> = ({ scenes, editingSceneId, se
 // ─── Sub-Tab: Layers List ──────────────────────────────────────────────────────
 
 const LayersTabContent: React.FC = () => {
-  const { getDraftWidgets, selectedIds, selectWidget, updateWidget, removeWidget } = useEditorStore();
+  // Subscribe directly to scenes+editingSceneId so any widget prop change (visible, locked)
+  // triggers a re-render of the layers list.
+  const { scenes, editingSceneId, selectedIds, selectWidget, updateWidget, removeWidget } = useEditorStore();
   const [search, setSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
 
   const widgets = useMemo(() => {
-    return [...getDraftWidgets()].sort((a, b) => b.zIndex - a.zIndex);
-  }, [getDraftWidgets]);
+    const scene = scenes.find(s => s.id === editingSceneId);
+    return [...(scene?.widgets ?? [])].sort((a, b) => b.zIndex - a.zIndex);
+  }, [scenes, editingSceneId]);
 
   const filtered = useMemo(() => {
     return widgets.filter(w => w.label.toLowerCase().includes(search.toLowerCase()));
