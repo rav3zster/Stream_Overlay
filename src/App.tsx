@@ -1,222 +1,143 @@
-import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Dashboard } from './features/admin/Dashboard';
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  Layers, Image, Layout, Palette, Settings, Zap, Tv,
+} from 'lucide-react';
+import { EditorPage } from './pages/EditorPage';
+import { AssetsPage } from './pages/AssetsPage';
+import { PresetsPage } from './pages/PresetsPage';
+import { ThemesPage } from './pages/ThemesPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { OBSOverlay } from './features/overlay/OBSOverlay';
-import { StreamDeck } from './features/streamdeck/StreamDeck';
-import { startTimerEngine, startChatDrip, startMusicEngine, useOverlayStore, _timerLocalWriteTs } from './store/overlayStore';
-import { supabase } from './lib/supabase';
-import { fetchProjectData, getSessionUserId } from './lib/dbSync';
+import { useSessionStore } from './store/sessionStore';
+import { useLiveStore } from './store/liveStore';
 
-// Note: _timerLocalWriteTs is a module-level let in overlayStore.ts.
-// We read it via the named export below in the realtime callback.
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: 1, staleTime: 30000 } },
+});
 
-// Start global engines once on app boot
-startTimerEngine();
-startChatDrip();
-startMusicEngine();
+// ─── Loading Screen ────────────────────────────────────────────────────────────
+const LoadingScreen: React.FC = () => (
+  <div className="loading-screen">
+    <div className="loading-logo">⚡ VibeOverlay Studio</div>
+    <div className="loading-spinner" />
+    <div className="loading-text">Loading your project...</div>
+  </div>
+);
 
-function App() {
-  const projectId = useOverlayStore(s => s.projectId);
-  const loading = useOverlayStore(s => s.loading);
-  const initializeDbSession = useOverlayStore(s => s.initializeDbSession);
-  const loadFromBroadcast = useOverlayStore(s => s.loadFromBroadcast);
-  const checkSchedule = useOverlayStore(s => s.checkSchedule);
+// ─── Sidebar Nav ──────────────────────────────────────────────────────────────
+interface NavItem { icon: React.ReactNode; label: string; path: string; }
 
-  // Initialize DB on boot
+const NAV_ITEMS: NavItem[] = [
+  { icon: <Layers size={18} />, label: 'Editor', path: '/editor' },
+  { icon: <Image size={18} />, label: 'Assets', path: '/assets' },
+  { icon: <Layout size={18} />, label: 'Presets', path: '/presets' },
+  { icon: <Palette size={18} />, label: 'Themes', path: '/themes' },
+  { icon: <Settings size={18} />, label: 'Settings', path: '/settings' },
+];
+
+const AppSidebar: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  return (
+    <div className="sidebar">
+      {/* Logo */}
+      <div className="sidebar-logo" onClick={() => navigate('/editor')}>
+        <Zap size={20} color="white" />
+      </div>
+
+      <nav className="sidebar-nav">
+        {NAV_ITEMS.map(item => {
+          const active = location.pathname.startsWith(item.path) ||
+            (item.path === '/editor' && location.pathname === '/');
+          return (
+            <button
+              key={item.path}
+              className={`sidebar-btn${active ? ' active' : ''}`}
+              onClick={() => navigate(item.path)}
+              data-tooltip={item.label}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* OBS indicator at bottom */}
+      <div style={{ marginTop: 'auto', paddingBottom: 8 }}>
+        <button
+          className="sidebar-btn"
+          onClick={() => window.open('/obs', '_blank')}
+          data-tooltip="Open OBS Overlay"
+          style={{ color: 'var(--color-text-muted)' }}
+        >
+          <Tv size={18} />
+          <span>OBS</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// ─── App Shell with Session ────────────────────────────────────────────────────
+const AppShell: React.FC = () => {
+  const { isLoading, initSession } = useSessionStore();
+  const { subscribeToRealtime } = useLiveStore();
+  const location = useLocation();
+
+  // Initialize session on boot
   useEffect(() => {
-    initializeDbSession();
-  }, [initializeDbSession]);
-
-  // Realtime Supabase Subscription
-  useEffect(() => {
-    if (!projectId) return;
-
-    const channel = supabase
-      .channel(`project-sync:${projectId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'settings', filter: `project_id=eq.${projectId}` },
-        (payload) => {
-          const newSettings = payload.new as any;
-          if (!newSettings) return;
-
-          // ── INSTRUMENTATION: Log every realtime settings event ──────────────────────
-          console.log('%c[TIMER DEBUG] Supabase realtime settings event received', 'color:orange', payload.new);
-
-          // ── Timer sync: admin changes propagate to OBS via settings row ──
-          const msSinceLocalWrite = Date.now() - _timerLocalWriteTs;
-          console.log(`%c[TIMER DEBUG] ms since last local write: ${msSinceLocalWrite}ms (guard=3000ms)`, 'color:orange');
-          const timerUpdate = {
-            seconds: newSettings.timer_seconds ?? useOverlayStore.getState().timer.seconds,
-            isRunning: newSettings.timer_is_running ?? useOverlayStore.getState().timer.isRunning,
-            isPaused: newSettings.timer_is_paused ?? useOverlayStore.getState().timer.isPaused,
-          };
-
-          if (msSinceLocalWrite < 3000) {
-            // Within 3 seconds of a local write — skip timer overwrite to avoid echo
-            console.warn('%c[TIMER DEBUG] ⚠️ Supabase echo blocked (within 3s of local write). Skipping timer overwrite.', 'color:orange;font-weight:bold');
-            useOverlayStore.setState({
-              theme: newSettings.theme,
-              currentScene: newSettings.current_scene,
-              // timer intentionally omitted
-              settings: {
-                ...useOverlayStore.getState().settings,
-                streamTitle: newSettings.stream_title,
-                streamerName: newSettings.streamer_name,
-                activeGame: newSettings.active_game,
-                tickerText: newSettings.ticker_text || '',
-                borderRadius: newSettings.border_radius,
-                animationSpeed: newSettings.animation_speed,
-                overlayOpacity: newSettings.overlay_opacity,
-                particleDensity: newSettings.particle_density,
-                tickerSpeed: newSettings.ticker_speed,
-                disableAnimations: newSettings.socials?.disableAnimations || false,
-                activeAnimationPack: newSettings.socials?.activeAnimationPack || 'float',
-                socials: {
-                  twitch: newSettings.socials?.twitch || '',
-                  twitter: newSettings.socials?.twitter || '',
-                  youtube: newSettings.socials?.youtube || '',
-                  discord: newSettings.socials?.discord || '',
-                }
-              }
-            });
-            return;
-          }
-
-          console.log('%c[TIMER DEBUG] Supabase applying timer update:', 'color:orange', timerUpdate);
-
-          useOverlayStore.setState({
-            theme: newSettings.theme,
-            currentScene: newSettings.current_scene,
-            timer: timerUpdate,
-            settings: {
-              ...useOverlayStore.getState().settings,
-              streamTitle: newSettings.stream_title,
-              streamerName: newSettings.streamer_name,
-              activeGame: newSettings.active_game,
-              tickerText: newSettings.ticker_text || '',
-              borderRadius: newSettings.border_radius,
-              animationSpeed: newSettings.animation_speed,
-              overlayOpacity: newSettings.overlay_opacity,
-              particleDensity: newSettings.particle_density,
-              tickerSpeed: newSettings.ticker_speed,
-              disableAnimations: newSettings.socials?.disableAnimations || false,
-              activeAnimationPack: newSettings.socials?.activeAnimationPack || 'float',
-              socials: {
-                twitch: newSettings.socials?.twitch || '',
-                twitter: newSettings.socials?.twitter || '',
-                youtube: newSettings.socials?.youtube || '',
-                discord: newSettings.socials?.discord || '',
-              }
-            }
-          });
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'goals', filter: `project_id=eq.${projectId}` },
-        (payload) => {
-          const newGoal = payload.new as any;
-          if (!newGoal) return;
-          const type = newGoal.goal_type;
-          if (type === 'sub') {
-            useOverlayStore.setState({ subGoal: { current: newGoal.current_value, target: newGoal.target_value } });
-          } else if (type === 'donation') {
-            useOverlayStore.setState({ donationGoal: { current: newGoal.current_value, target: newGoal.target_value } });
-          } else if (type === 'follower') {
-            useOverlayStore.setState({ followerGoal: { current: newGoal.current_value, target: newGoal.target_value } });
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'scene_widgets' },
-        async () => {
-          const userId = await getSessionUserId();
-          const data = await fetchProjectData(userId);
-          if (data) {
-            useOverlayStore.setState({ sceneWidgets: data.sceneWidgets });
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'widgets' },
-        async () => {
-          const userId = await getSessionUserId();
-          const data = await fetchProjectData(userId);
-          if (data) {
-            useOverlayStore.setState({ sceneWidgets: data.sceneWidgets });
-          }
-        }
-      )
-      .on('broadcast', { event: 'state-sync' }, ({ payload }) => {
-        loadFromBroadcast(payload);
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [projectId, loadFromBroadcast]);
-
-  // Scheduler tick: check every 30 seconds
-  useEffect(() => {
-    const tick = () => {
-      const now = new Date();
-      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-      checkSchedule(timeStr);
-    };
-    const t = setInterval(tick, 30000);
-    return () => clearInterval(t);
-  }, [checkSchedule]);
-
-  // Viewer count drift simulation (±5 every 15s for realism)
-  useEffect(() => {
-    const t = setInterval(() => {
-      useOverlayStore.setState(s => ({
-        viewerCount: Math.max(1, s.viewerCount + Math.floor((Math.random() - 0.4) * 11))
-      }));
-    }, 15000);
-    return () => clearInterval(t);
+    initSession();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#07050F] flex flex-col items-center justify-center font-sans text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-radial-gradient from-purple-900/20 to-transparent pointer-events-none" />
-        <div className="z-10 text-center space-y-4">
-          <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <h2 className="text-xl font-bold tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 uppercase">
-            VibeOverlay Studio
-          </h2>
-          <p className="text-gray-400 text-sm animate-pulse">Initializing Supabase Realtime Engine...</p>
-        </div>
-      </div>
-    );
+  // Subscribe to Supabase realtime after session is ready
+  useEffect(() => {
+    const unsubscribe = subscribeToRealtime();
+    return unsubscribe;
+  }, [subscribeToRealtime]);
+
+  // OBS route is fullscreen, no sidebar
+  if (location.pathname === '/obs') {
+    return <OBSOverlay />;
+  }
+
+  if (isLoading) {
+    return <LoadingScreen />;
   }
 
   return (
+    <div className="app-shell">
+      <AppSidebar />
+      <div className="main-content">
+        <Routes>
+          <Route path="/" element={<EditorPage />} />
+          <Route path="/editor" element={<EditorPage />} />
+          <Route path="/assets" element={<AssetsPage />} />
+          <Route path="/presets" element={<PresetsPage />} />
+          <Route path="/themes" element={<ThemesPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="*" element={<EditorPage />} />
+        </Routes>
+      </div>
+    </div>
+  );
+};
+
+// ─── Root App ─────────────────────────────────────────────────────────────────
+const App: React.FC = () => (
+  <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Dashboard activeTabInitial="scenes" />} />
+        {/* OBS overlay — no shell, no sidebar */}
         <Route path="/obs" element={<OBSOverlay />} />
-        <Route path="/streamdeck" element={<StreamDeck />} />
-        <Route path="/scenes" element={<Dashboard activeTabInitial="scenes" />} />
-        <Route path="/themes" element={<Dashboard activeTabInitial="widgets" />} />
-        <Route path="/widgets" element={<Dashboard activeTabInitial="widgets" />} />
-        <Route path="/goals" element={<Dashboard activeTabInitial="goals" />} />
-        <Route path="/assets" element={<Dashboard activeTabInitial="assets" />} />
-        <Route path="/settings" element={<Dashboard activeTabInitial="settings" />} />
-        <Route path="/shop" element={<Dashboard activeTabInitial="marketplace" />} />
-        <Route path="/links" element={<Dashboard activeTabInitial="integrations" />} />
-        <Route path="/scheduler" element={<Dashboard activeTabInitial="scheduler" />} />
-        <Route path="/marketplace" element={<Dashboard activeTabInitial="marketplace" />} />
-        <Route path="/integrations" element={<Dashboard activeTabInitial="integrations" />} />
-        <Route path="*" element={<Dashboard activeTabInitial="scenes" />} />
+        {/* All other routes — go through AppShell */}
+        <Route path="/*" element={<AppShell />} />
       </Routes>
     </BrowserRouter>
-  );
-}
+  </QueryClientProvider>
+);
 
 export default App;
