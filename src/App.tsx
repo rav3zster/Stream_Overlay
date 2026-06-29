@@ -38,6 +38,7 @@ const AppShell: React.FC = () => {
 
   // OBS route is fullscreen, no sidebar
   if (location.pathname === '/obs') {
+    if (isLoading) return <div style={{ background: '#000', width: '100vw', height: '100vh' }} />;
     return <OBSOverlay />;
   }
 
@@ -63,9 +64,7 @@ const App: React.FC = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <Routes>
-        {/* OBS overlay — no shell, no sidebar */}
-        <Route path="/obs" element={<OBSOverlay />} />
-        {/* All other routes — go through AppShell */}
+        {/* All routes go through AppShell to ensure session & realtime sync are active */}
         <Route path="/*" element={<AppShell />} />
       </Routes>
     </BrowserRouter>

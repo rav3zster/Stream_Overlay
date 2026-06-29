@@ -95,10 +95,155 @@ const MOCK_ASSETS: Asset[] = [
   { id: 'asset-4', name: 'logo_white.svg', type: 'svg', url: '', size: 12000 },
 ];
 
-const PRESETS = [
-  { id: 'minimal-dark', name: 'Minimal Dark', category: 'Minimal', colors: ['#0e0b1e', '#888888', '#ffffff'], widgetsCount: 3 },
-  { id: 'cyber-synth', name: 'Cyber Synth', category: 'Cyber', colors: ['#07050f', '#ff4dff', '#5cffe2'], widgetsCount: 5 },
-  { id: 'vtuber-cozy', name: 'VTuber Cozy', category: 'VTuber', colors: ['#f8d7e3', '#a8c8e8', '#c8a8e8'], widgetsCount: 4 },
+interface PresetWidgetDef {
+  type: string;
+  label: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  style?: Record<string, any>;
+  content?: Record<string, any>;
+}
+
+interface PresetDef {
+  id: string;
+  name: string;
+  category: string;
+  colors: string[];
+  desc: string;
+  widgets: PresetWidgetDef[];
+}
+
+const PRESETS: PresetDef[] = [
+  {
+    id: 'cyber-synth-starting',
+    name: 'Cyber Synth (Starting Soon)',
+    category: 'Starting Soon',
+    colors: ['#07050f', '#ff4dff', '#5cffe2'],
+    desc: 'Neon grid theme with countdown timer, clock, and scrolling ticker',
+    widgets: [
+      {
+        type: 'background',
+        label: 'Cyber BG',
+        x: 0, y: 0, width: 1920, height: 1080,
+        style: { background: 'linear-gradient(135deg, #07050f 0%, #140526 100%)', borderSize: 0 }
+      },
+      {
+        type: 'glass-panel',
+        label: 'Frosted Glass Center',
+        x: 560, y: 340, width: 800, height: 400,
+        style: { background: 'rgba(20,10,38,0.7)', borderRadius: 24, borderSize: 2, borderColor: '#ff4dff', glowColor: '#ff4dff', glowBlur: 20, glassEffect: true }
+      },
+      {
+        type: 'countdown-timer',
+        label: 'Starting Countdown',
+        x: 610, y: 440, width: 700, height: 180,
+        style: { background: 'transparent', borderSize: 0, fontSize: 84, fontColor: '#5cffe2', glowColor: '#5cffe2', glowBlur: 16, fontFamily: 'Space Grotesk' },
+        content: { type: 'countdown-timer', settings: { duration: 600, label: 'STARTING IN' } }
+      },
+      {
+        type: 'text',
+        label: 'Header Status Text',
+        x: 760, y: 380, width: 400, height: 50,
+        style: { background: 'transparent', borderSize: 0, fontSize: 24, fontColor: '#ffffff', fontFamily: 'Space Grotesk', fontWeight: '800', textAlign: 'center' },
+        content: { type: 'text', settings: { text: 'STREAM STARTING SOON' } }
+      },
+      {
+        type: 'clock',
+        label: 'Local Clock Widget',
+        x: 1620, y: 40, width: 260, height: 60,
+        style: { background: 'rgba(14,8,26,0.8)', borderRadius: 12, borderSize: 1, borderColor: '#5cffe2', fontSize: 20, fontColor: '#ffffff', padding: 12 },
+        content: { type: 'clock', settings: {} }
+      },
+      {
+        type: 'scrolling-text',
+        label: 'Footer Scrolling Ticker',
+        x: 0, y: 1020, width: 1920, height: 60,
+        style: { background: 'rgba(7,5,15,0.95)', borderSize: 0, fontSize: 18, fontColor: '#5cffe2', padding: 16, borderStyle: 'solid', borderColor: '#ff4dff' },
+        content: { type: 'scrolling-text', settings: { text: '⚡ WELCOME TO THE STREAM! • BE COZY AND COMPLY WITH CHAT RULES • FOLLOW TO PARTICIPATE IN GIVAWAYS • NOW PLAYING: CHILL SYNTHWAVE MIX ⚡' } }
+      }
+    ]
+  },
+  {
+    id: 'cozy-just-chatting',
+    name: 'Cozy Just Chatting',
+    category: 'Just Chatting',
+    colors: ['#2e1f2f', '#f9a8d4', '#c084fc'],
+    desc: 'Soft pink/purple theme with webcam box and live chat stream',
+    widgets: [
+      {
+        type: 'background',
+        label: 'Cozy Ambient BG',
+        x: 0, y: 0, width: 1920, height: 1080,
+        style: { background: 'linear-gradient(135deg, #1b0e1a 0%, #2f1934 100%)', borderSize: 0 }
+      },
+      {
+        type: 'camera-frame',
+        label: 'Webcam Border Frame',
+        x: 80, y: 140, width: 1120, height: 630,
+        style: { borderRadius: 16, borderSize: 4, borderColor: '#ff80b5', glowColor: '#ff80b5', glowBlur: 16 }
+      },
+      {
+        type: 'chat-box',
+        label: 'Chat Box Frame',
+        x: 1260, y: 140, width: 580, height: 800,
+        style: { background: 'rgba(27,14,26,0.8)', borderRadius: 16, borderSize: 1, borderColor: '#c084fc', padding: 16 }
+      },
+      {
+        type: 'spotify',
+        label: 'Cozy Music Feed',
+        x: 80, y: 810, width: 420, height: 100,
+        style: { background: 'rgba(255,255,255,0.05)', borderRadius: 50, padding: 16, borderSize: 1, borderColor: 'rgba(255,255,255,0.1)' }
+      },
+      {
+        type: 'social-links',
+        label: 'Streamer Social Handles',
+        x: 540, y: 840, width: 660, height: 60,
+        style: { background: 'transparent', borderSize: 0 }
+      }
+    ]
+  },
+  {
+    id: 'esports-gameplay',
+    name: 'Esports Tournament HUD',
+    category: 'Gameplay',
+    colors: ['#020617', '#3b82f6', '#ef4444'],
+    desc: 'High contrast esports hud with game frames and new sub feeds',
+    widgets: [
+      {
+        type: 'header',
+        label: 'Tournament Bar HUD',
+        x: 0, y: 0, width: 1920, height: 50,
+        style: { background: '#020617', borderSize: 0, padding: 12 }
+      },
+      {
+        type: 'text',
+        label: 'Championship Header Title',
+        x: 100, y: 10, width: 600, height: 30,
+        style: { background: 'transparent', borderSize: 0, fontSize: 16, fontColor: '#3b82f6', fontWeight: '900', fontFamily: 'Space Grotesk' },
+        content: { type: 'text', settings: { text: 'ESPORTS CHAMPIONSHIP LIVE' } }
+      },
+      {
+        type: 'camera-frame',
+        label: 'Esports Web Cam Frame',
+        x: 1540, y: 70, width: 340, height: 255,
+        style: { borderRadius: 4, borderSize: 2, borderColor: '#ef4444' }
+      },
+      {
+        type: 'latest-follower',
+        label: 'Recent Follower Ticker',
+        x: 40, y: 980, width: 320, height: 60,
+        style: { background: '#020617', borderRadius: 6, padding: 12, borderSize: 1, borderColor: '#3b82f6' }
+      },
+      {
+        type: 'latest-subscriber',
+        label: 'Recent Subscriber Ticker',
+        x: 380, y: 980, width: 320, height: 60,
+        style: { background: '#020617', borderRadius: 6, padding: 12, borderSize: 1, borderColor: '#3b82f6' }
+      }
+    ]
+  }
 ];
 
 const THEMES = [
@@ -232,6 +377,27 @@ export const LeftPanel: React.FC = () => {
               </button>
             );
           })}
+        </div>
+
+        {/* OBS Output Link at the bottom */}
+        <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8, width: '100%', alignItems: 'center', paddingBottom: 8 }}>
+          <div style={{ width: 32, height: 1, background: 'var(--color-border)', marginBottom: 4 }} />
+          <button
+            onClick={() => window.open('/obs', '_blank')}
+            data-tooltip="Open OBS Output"
+            className="sidebar-btn"
+            style={{
+              width: 44, height: 44, borderRadius: 8,
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+              background: 'transparent',
+              color: 'var(--color-text-muted)',
+              cursor: 'pointer', gap: 3
+            }}
+          >
+            <Tv size={16} />
+            <span style={{ fontSize: 8, fontWeight: 700 }}>Output</span>
+          </button>
         </div>
       </div>
 
@@ -678,21 +844,51 @@ const AssetsTabContent: React.FC = () => {
 // ─── Sub-Tab: Presets ─────────────────────────────────────────────────────────
 
 const PresetsTabContent: React.FC = () => {
-  const { addWidget, editingSceneId } = useEditorStore();
+  const { editingSceneId } = useEditorStore();
 
-  const handleUsePreset = (preset: typeof PRESETS[0]) => {
+  const handleUsePreset = (preset: PresetDef) => {
     if (!editingSceneId) return;
-    if (!confirm(`Apply layout template "${preset.name}" to this scene?`)) return;
+    if (!confirm(`Apply layout template "${preset.name}" to this scene? This will replace all existing widgets.`)) return;
 
-    // Insert mock boilerplate widgets matching preset layout
-    const sampleWidgetDefs: WidgetDef[] = [
-      { type: 'countdown-timer', label: 'Match Timer', icon: '⏱', defaultWidth: 600, defaultHeight: 160 },
-      { type: 'chat-box', label: 'Stream Chat', icon: '💬', defaultWidth: 320, defaultHeight: 500 },
-      { type: 'spotify', label: 'Song Feed', icon: '🎵', defaultWidth: 300, defaultHeight: 80 }
-    ];
-    sampleWidgetDefs.forEach(def => {
-      addWidget(createWidgetObject(def));
+    useEditorStore.getState().pushHistory();
+
+    const newWidgets = preset.widgets.map((pWidget, idx) => {
+      const id = `widget-${crypto.randomUUID()}`;
+      return {
+        id,
+        type: pWidget.type as WidgetType,
+        label: pWidget.label,
+        x: pWidget.x,
+        y: pWidget.y,
+        width: pWidget.width,
+        height: pWidget.height,
+        w: pWidget.width,
+        h: pWidget.height,
+        rotation: 0,
+        opacity: 100,
+        scale: 1,
+        zIndex: idx + 1,
+        visible: true,
+        locked: false,
+        style: {
+          borderRadius: 8,
+          background: 'rgba(14,8,26,0.8)',
+          borderSize: 1,
+          borderStyle: 'solid',
+          borderColor: 'rgba(168,85,247,0.4)',
+          padding: 12,
+          textAlign: 'center',
+          ...(pWidget.style ?? {}),
+        } as any,
+        animation: { type: 'none', duration: 1, delay: 0, loop: false } as any,
+        content: pWidget.content ?? { type: pWidget.type, settings: {} },
+      } as any;
     });
+
+    useEditorStore.setState(s => ({
+      scenes: s.scenes.map(sc => sc.id === editingSceneId ? { ...sc, widgets: newWidgets } : sc),
+      selectedIds: [],
+    }));
   };
 
   return (
@@ -715,13 +911,13 @@ const PresetsTabContent: React.FC = () => {
               background: `linear-gradient(135deg, ${preset.colors[0]} 0%, ${preset.colors[1]} 60%, ${preset.colors[2]} 100%)`
             }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#fff' }}>{preset.name}</span>
-                <span style={{ fontSize: 8, color: 'var(--color-text-muted)' }}>{preset.category} · {preset.widgetsCount} items</span>
+              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preset.name}</span>
+                <span style={{ fontSize: 8, color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preset.desc}</span>
               </div>
               <button
                 className="btn btn-primary"
-                style={{ fontSize: 9, padding: '3px 8px', borderRadius: 4 }}
+                style={{ fontSize: 9, padding: '3px 8px', borderRadius: 4, flexShrink: 0, marginLeft: 8 }}
                 onClick={() => handleUsePreset(preset)}
               >
                 Apply
@@ -832,8 +1028,17 @@ const SettingsTabContent: React.FC = () => {
               className="btn btn-secondary"
               style={{ fontSize: 9, padding: '2px 6px', height: 20 }}
               onClick={() => { navigator.clipboard.writeText(obsUrl); alert('OBS link copied to clipboard!'); }}
+              data-tooltip="Copy OBS Link"
             >
               <Copy size={9} />
+            </button>
+            <button
+              className="btn btn-secondary"
+              style={{ fontSize: 9, padding: '2px 6px', height: 20 }}
+              onClick={() => window.open('/obs', '_blank')}
+              data-tooltip="Open OBS Output"
+            >
+              <Tv size={9} />
             </button>
           </div>
         </div>

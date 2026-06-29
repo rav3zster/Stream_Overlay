@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   RotateCcw, RotateCw, ZoomIn, ZoomOut, Maximize2, Grid, Magnet, Eye, Save, Radio,
-  ChevronDown, Play, Pause, RotateCcw as ResetIcon, ArrowRight
+  ChevronDown, Play, Pause, RotateCcw as ResetIcon, ArrowRight, Tv
 } from 'lucide-react';
 import { useEditorStore } from '../../store/editorStore';
 import { useSessionStore } from '../../store/sessionStore';
@@ -222,6 +222,15 @@ export const TopToolbar: React.FC<TopToolbarProps> = () => {
               >
                 <ArrowRight size={12} />
                 {isEditingLive ? 'Push Updates to Stream' : 'Switch OBS to This Scene'}
+              </button>
+
+              <button
+                className="btn btn-secondary"
+                style={{ width: '100%', height: 32, fontSize: 11, gap: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                onClick={() => { window.open('/obs', '_blank'); setShowLiveDropdown(false); }}
+              >
+                <Tv size={12} />
+                Open OBS Output Screen
               </button>
 
               <div style={{ height: 1, background: 'var(--color-border)', margin: '2px 0' }} />
