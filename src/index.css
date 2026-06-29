@@ -1165,3 +1165,237 @@ html, body, #root {
 
 /* ── Tailwind compat layer (for existing widgets that use Tailwind classes) ── */
 
+/* ===========================================================================
+   THEME STYLING OVERRIDES FOR THE CREATIVE WORKSPACE UI
+   =========================================================================== */
+
+/* ── 1. Cyber Synth / Cyberpunk / Synthwave Theme (Neon, Monospace, Tech Glows) ── */
+.app-shell.theme-cyber-synth, 
+.app-shell.theme-cyberpunk-neon, 
+.app-shell.theme-synthwave, 
+.app-shell.theme-neon-tokyo, 
+.app-shell.theme-vaporwave {
+  --color-bg: #07050f;
+  --color-surface: #0e0b1e;
+  --color-surface-2: #14102c;
+  --color-surface-3: #1a1538;
+  --color-accent: #ff4dff;
+  --color-accent-2: #5cffe2;
+  --color-border: rgba(168, 85, 247, 0.25);
+  --color-border-hover: rgba(92, 255, 226, 0.45);
+  --color-border-active: #5cffe2;
+  --font-sans: 'Space Grotesk', sans-serif;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+}
+.app-shell.theme-cyber-synth .left-panel,
+.app-shell.theme-cyber-synth .right-panel,
+.app-shell.theme-cyber-synth .top-toolbar,
+.app-shell.theme-cyber-synth .sidebar {
+  border-color: rgba(92, 255, 226, 0.2) !important;
+  box-shadow: 0 0 16px rgba(168, 85, 247, 0.1);
+}
+.app-shell.theme-cyber-synth .btn-primary {
+  background: linear-gradient(135deg, #ff4dff, #5cffe2) !important;
+  color: #000 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 12px rgba(92, 255, 226, 0.4) !important;
+  border-radius: 4px !important;
+}
+.app-shell.theme-cyber-synth .scene-item.active {
+  background: rgba(92, 255, 226, 0.1) !important;
+  border-color: #5cffe2 !important;
+  color: #5cffe2 !important;
+}
+
+/* ── 2. Glassmorphism Theme (Backdrop blurs & frosted glass panels) ── */
+.app-shell.theme-glassmorphism {
+  --color-bg: #0a0515;
+  --color-surface: rgba(255, 255, 255, 0.04);
+  --color-surface-2: rgba(255, 255, 255, 0.08);
+  --color-surface-3: rgba(255, 255, 255, 0.14);
+  --color-accent: #c084fc;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-hover: rgba(255, 255, 255, 0.2);
+  --color-border-active: rgba(255, 255, 255, 0.4);
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+}
+.app-shell.theme-glassmorphism .left-panel,
+.app-shell.theme-glassmorphism .right-panel,
+.app-shell.theme-glassmorphism .top-toolbar {
+  background: rgba(14, 8, 26, 0.6) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  border-color: rgba(255, 255, 255, 0.09) !important;
+}
+.app-shell.theme-glassmorphism .scene-item,
+.app-shell.theme-glassmorphism .widget-card,
+.app-shell.theme-glassmorphism .preset-card,
+.app-shell.theme-glassmorphism .theme-card,
+.app-shell.theme-glassmorphism .inspector-section {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(8px) !important;
+}
+.app-shell.theme-glassmorphism .btn {
+  border-radius: 99px !important;
+  backdrop-filter: blur(4px) !important;
+}
+.app-shell.theme-glassmorphism .btn-primary {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.6), rgba(236, 72, 153, 0.6)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* ── 3. Minimal Theme (Flat solid dark, rectangular sharp corners) ── */
+.app-shell.theme-minimal-dark, 
+.app-shell.theme-pure-black, 
+.app-shell.theme-blank-dark {
+  --color-bg: #09090b;
+  --color-surface: #121214;
+  --color-surface-2: #1c1c1f;
+  --color-surface-3: #27272a;
+  --color-accent: #f4f4f5;
+  --color-border: #27272a;
+  --color-border-hover: #3f3f46;
+  --color-border-active: #a1a1aa;
+  --font-sans: 'Inter', sans-serif;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+}
+.app-shell.theme-minimal-dark *, 
+.app-shell.theme-minimal-dark button, 
+.app-shell.theme-minimal-dark input, 
+.app-shell.theme-minimal-dark select, 
+.app-shell.theme-minimal-dark textarea {
+  border-radius: 0px !important;
+}
+.app-shell.theme-minimal-dark .btn-primary {
+  background: #f4f4f5 !important;
+  color: #09090b !important;
+  border: 1px solid #f4f4f5 !important;
+  box-shadow: none !important;
+}
+.app-shell.theme-minimal-dark .left-panel,
+.app-shell.theme-minimal-dark .right-panel,
+.app-shell.theme-minimal-dark .top-toolbar {
+  border-color: #27272a !important;
+}
+.app-shell.theme-minimal-dark .scene-item.active {
+  background: #27272a !important;
+  color: #fff !important;
+  border: 1px solid #3f3f46 !important;
+}
+
+/* ── 4. Luxury Gold Theme (Premium gold detailing & elegant lines) ── */
+.app-shell.theme-luxury-gold, 
+.app-shell.theme-luxury {
+  --color-bg: #050505;
+  --color-surface: #0e0d0b;
+  --color-surface-2: #151411;
+  --color-surface-3: #1e1c18;
+  --color-accent: #c9a227;
+  --color-border: rgba(201, 162, 39, 0.16);
+  --color-border-hover: rgba(201, 162, 39, 0.45);
+  --color-border-active: #c9a227;
+  --font-sans: 'Inter', serif;
+}
+.app-shell.theme-luxury-gold .left-panel,
+.app-shell.theme-luxury-gold .right-panel,
+.app-shell.theme-luxury-gold .top-toolbar {
+  border-color: rgba(201, 162, 39, 0.2) !important;
+}
+.app-shell.theme-luxury-gold .btn-primary {
+  background: linear-gradient(135deg, #c9a227, #f5e7b2) !important;
+  color: #000 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 12px rgba(201, 162, 39, 0.2) !important;
+}
+
+/* ── 5. Racing Themes (McLaren papaya / Gulf racing blue & orange) ── */
+.app-shell.theme-mclaren {
+  --color-bg: #080808;
+  --color-surface: #101010;
+  --color-surface-2: #181818;
+  --color-surface-3: #222222;
+  --color-accent: #ff6600;
+  --color-border: #222222;
+  --color-border-hover: #ff6600;
+  --color-border-active: #00a19c;
+}
+.app-shell.theme-mclaren .btn-primary {
+  background: #ff6600 !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(255, 102, 0, 0.25) !important;
+}
+
+.app-shell.theme-porsche-gulf, 
+.app-shell.theme-porsche-gulf-inspired {
+  --color-bg: #0b1625;
+  --color-surface: #122238;
+  --color-surface-2: #192e4a;
+  --color-surface-3: #223c5e;
+  --color-accent: #f5831f;
+  --color-border: rgba(135, 206, 235, 0.15);
+  --color-border-hover: #87ceeb;
+  --color-border-active: #f5831f;
+}
+.app-shell.theme-porsche-gulf .btn-primary {
+  background: #f5831f !important;
+  color: #fff !important;
+  box-shadow: 0 0 10px rgba(245, 131, 31, 0.3) !important;
+}
+
+/* ── 6. Anime Sakura Theme (Soft cherry blossom pink & cozy elements) ── */
+.app-shell.theme-anime-sakura, 
+.app-shell.theme-pastel-planets {
+  --color-bg: #1f111b;
+  --color-surface: #2b1a26;
+  --color-surface-2: #382432;
+  --color-surface-3: #4a3243;
+  --color-accent: #ff80b5;
+  --color-border: rgba(255, 128, 181, 0.2);
+  --color-border-hover: #ffd6e7;
+  --color-border-active: #ff80b5;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+}
+.app-shell.theme-anime-sakura .btn-primary {
+  background: linear-gradient(135deg, #ff80b5, #ffd6e7) !important;
+  color: #2b1a26 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 0 12px rgba(255, 128, 181, 0.25) !important;
+}
+.app-shell.theme-anime-sakura .scene-item.active {
+  background: rgba(255, 128, 181, 0.15) !important;
+  border-color: #ff80b5 !important;
+}
+
+/* ── 7. Esports Blue (High-contrast blue gaming telemetry HUD) ── */
+.app-shell.theme-esports-blue {
+  --color-bg: #030712;
+  --color-surface: #0b1329;
+  --color-surface-2: #121e3d;
+  --color-surface-3: #1a2a54;
+  --color-accent: #1a56db;
+  --color-border: rgba(26, 86, 219, 0.25);
+  --color-border-hover: #0ea5e9;
+  --color-border-active: #0ea5e9;
+  --font-sans: 'Space Grotesk', sans-serif;
+  --radius-md: 2px;
+  --radius-lg: 4px;
+}
+.app-shell.theme-esports-blue .btn-primary {
+  background: #1a56db !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px rgba(26, 86, 219, 0.3) !important;
+}
+.app-shell.theme-esports-blue .scene-item.active {
+  background: rgba(14, 165, 233, 0.1) !important;
+  border-color: #0ea5e9 !important;
+}
+
+

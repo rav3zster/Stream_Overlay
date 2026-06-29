@@ -1,16 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { EditorCanvas } from '../editor/canvas/EditorCanvas';
 import { TopToolbar } from '../editor/toolbar/TopToolbar';
 import { LeftPanel } from '../editor/panels/LeftPanel';
 import { RightPanel } from '../editor/panels/RightPanel';
-import { LiveControlPanel } from '../editor/panels/LiveControlPanel';
-import { AddWidgetPanel } from '../editor/panels/AddWidgetPanel';
 import { useEditorStore } from '../store/editorStore';
 
 export const EditorPage: React.FC = () => {
-  const [showAddWidget, setShowAddWidget] = useState(false);
-  const [showLivePanel, setShowLivePanel] = useState(true);
   const {
     undo, redo,
     copySelected, pasteClipboard, removeSelectedWidgets,
@@ -34,36 +30,24 @@ export const EditorPage: React.FC = () => {
   }, { enableOnFormTags: false });
   useHotkeys('escape', () => {
     useEditorStore.getState().deselectAll();
-    setShowAddWidget(false);
   });
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-      <TopToolbar
-        onOpenAddWidget={() => setShowAddWidget(true)}
-        onOpenLivePanel={() => setShowLivePanel(v => !v)}
-      />
+      <TopToolbar />
 
       <div className="editor-layout" style={{ flex: 1, minHeight: 0 }}>
-        {/* Left Panel: Scenes + Layers */}
-        <LeftPanel onOpenAddWidget={() => setShowAddWidget(true)} />
+        {/* Left Panel: Scenes, Layers, Widgets, Assets, Presets, Themes, Settings */}
+        <LeftPanel />
 
         {/* Canvas */}
-        <div className="canvas-area">
+        <div className="canvas-area" style={{ flex: 1, height: '100%', position: 'relative' }}>
           <EditorCanvas />
         </div>
 
         {/* Right Panel: Inspector */}
         <RightPanel />
-
-        {/* Live Control Panel */}
-        {showLivePanel && <LiveControlPanel />}
       </div>
-
-      {/* Add Widget Modal */}
-      {showAddWidget && (
-        <AddWidgetPanel onClose={() => setShowAddWidget(false)} />
-      )}
     </div>
   );
 };

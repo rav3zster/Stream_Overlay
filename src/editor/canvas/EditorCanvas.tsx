@@ -141,8 +141,11 @@ export const EditorCanvas: React.FC = () => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   
+
+
   const [guides, setGuides] = useState<Guide[]>([]);
   const isPanningRef = useRef(false);
+  const isSpacePressedRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0, px: 0, py: 0 });
 
   // Rubber-band selection state
@@ -154,8 +157,6 @@ export const EditorCanvas: React.FC = () => {
   const [mousePos, setMousePos] = useState({ sx: 0, sy: 0, cx: 0, cy: 0 });
 
   const widgets = getDraftWidgets();
-  const stageW = CANVAS_W * zoom;
-  const stageH = CANVAS_H * zoom;
 
   // Toggle debug overlay with Ctrl+Shift+D
   useEffect(() => {
@@ -169,31 +170,20 @@ export const EditorCanvas: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // ── Zoom with Ctrl+Wheel ──
-  const handleWheel = useCallback((e: WheelEvent) => {
-    if (!e.ctrlKey && !e.metaKey) return;
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? -0.05 : 0.05;
-    useEditorStore.getState().setZoom(zoom + delta);
-  }, [zoom]);
 
-  useEffect(() => {
-    const el = wrapperRef.current;
-    if (!el) return;
-    el.addEventListener('wheel', handleWheel, { passive: false });
-    return () => el.removeEventListener('wheel', handleWheel);
-  }, [handleWheel]);
 
   // ── Pan with Space+Drag ──
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' && !e.repeat) {
+        isSpacePressedRef.current = true;
         if (wrapperRef.current) wrapperRef.current.style.cursor = 'grab';
         isPanningRef.current = false;
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
       if (e.code === 'Space') {
+        isSpacePressedRef.current = false;
         if (wrapperRef.current) wrapperRef.current.style.cursor = 'default';
         isPanningRef.current = false;
       }
@@ -204,7 +194,7 @@ export const EditorCanvas: React.FC = () => {
   }, []);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button === 1 || (e.button === 0 && e.altKey)) {
+    if (e.button === 1 || (e.button === 0 && (e.altKey || isSpacePressedRef.current))) {
       // Panning mode
       isPanningRef.current = true;
       panStartRef.current = { x: e.clientX, y: e.clientY, px: pan.x, py: pan.y };
@@ -273,6 +263,86 @@ export const EditorCanvas: React.FC = () => {
     setSelectionEnd(null);
   }, [selectionStart, selectionEnd, widgets, selectWidgets]);
 
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const stage = stageRef.current;
+    const editingSceneId = useEditorStore.getState().editingSceneId;
+    if (!stage || !editingSceneId) return;
+
+    try {
+      const dataStr = e.dataTransfer.getData('application/react-flow');
+      if (!dataStr) return;
+      const parsed = JSON.parse(dataStr);
+      
+      const rect = stage.getBoundingClientRect();
+      const dropX = Math.round((e.clientX - rect.left) / zoom);
+      const dropY = Math.round((e.clientY - rect.top) / zoom);
+
+      if (parsed.source === 'widget') {
+        const def = parsed.payload;
+        const maxZ = widgets.reduce((mx, w) => Math.max(mx, w.zIndex), 0);
+        const id = `widget-${crypto.randomUUID()}`;
+        const newWidget: DraftWidget = {
+          id,
+          type: def.type,
+          label: def.label,
+          x: dropX - Math.round(def.defaultWidth / 2),
+          y: dropY - Math.round(def.defaultHeight / 2),
+          width: def.defaultWidth,
+          height: def.defaultHeight,
+          w: def.defaultWidth,
+          h: def.defaultHeight,
+          rotation: 0,
+          opacity: 100,
+          scale: 1,
+          zIndex: maxZ + 1,
+          visible: true,
+          locked: false,
+          style: {
+            borderRadius: 8, background: 'rgba(14,8,26,0.8)',
+            borderSize: 1, borderStyle: 'solid', borderColor: 'rgba(168,85,247,0.4)',
+            padding: 12, textAlign: 'center', ...(def.defaultStyle ?? {}),
+          },
+          animation: { type: 'none', duration: 1, delay: 0, loop: false },
+          content: { type: def.type, settings: {} }
+        };
+        useEditorStore.getState().addWidget(newWidget);
+      } else if (parsed.source === 'asset') {
+        const asset = parsed.payload;
+        const type = asset.type === 'gif' ? 'gif' : asset.type === 'video' ? 'video' : 'image';
+        const maxZ = widgets.reduce((mx, w) => Math.max(mx, w.zIndex), 0);
+        const id = `widget-${crypto.randomUUID()}`;
+        const newWidget: DraftWidget = {
+          id,
+          type,
+          label: asset.name,
+          x: dropX - 200,
+          y: dropY - 125,
+          width: 400,
+          height: 250,
+          w: 400,
+          h: 250,
+          rotation: 0,
+          opacity: 100,
+          scale: 1,
+          zIndex: maxZ + 1,
+          visible: true,
+          locked: false,
+          style: {
+            borderRadius: 8, background: 'transparent',
+            borderSize: 1, borderStyle: 'dashed', borderColor: 'rgba(168,85,247,0.4)',
+            padding: 12, textAlign: 'center'
+          },
+          animation: { type: 'none', duration: 1, delay: 0, loop: false },
+          content: { type, settings: { url: asset.url } }
+        };
+        useEditorStore.getState().addWidget(newWidget);
+      }
+    } catch (err) {
+      console.error('Drop parsing error:', err);
+    }
+  }, [zoom, widgets]);
+
   // ── Alignment guides during drag ──
   const computeGuides = useCallback((draggingId: string, dx: number, dy: number) => {
     if (!snapEnabled) { setGuides([]); return; }
@@ -332,16 +402,25 @@ export const EditorCanvas: React.FC = () => {
     <div
       ref={wrapperRef}
       className="canvas-wrapper"
-      style={{ transform: `translate(${pan.x}px, ${pan.y}px)` }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={handleDrop}
     >
       {/* 1920×1080 Stage */}
       <div
         ref={stageRef}
         className="canvas-stage"
-        style={{ width: stageW, height: stageH, transform: `scale(${zoom})`, transformOrigin: 'top left' }}
+        style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          width: CANVAS_W,
+          height: CANVAS_H,
+          transform: `translate(-50%, -50%) translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          transformOrigin: 'center center'
+        }}
       >
         {/* Grid */}
         {showGrid && <div className="canvas-grid" style={{ backgroundSize: `${96}px ${54}px` }} />}

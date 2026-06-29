@@ -306,9 +306,10 @@ export const RightPanel: React.FC = () => {
         <div className="panel-header">
           <span className="panel-title">Inspector</span>
         </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'var(--color-text-muted)', padding: 24 }}>
-          <span style={{ fontSize: 28 }}>👆</span>
-          <span style={{ fontSize: 12, textAlign: 'center' }}>Click an element on the canvas to inspect it</span>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--color-text-muted)', padding: 24 }}>
+          <span style={{ fontSize: 32 }}>🔍</span>
+          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text-3)', textAlign: 'center' }}>No element selected.</span>
+          <span style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'center', maxWidth: 180 }}>Select an element on the canvas to inspect its properties.</span>
         </div>
       </div>
     );
@@ -320,8 +321,10 @@ export const RightPanel: React.FC = () => {
         <div className="panel-header">
           <span className="panel-title">{selected.length} selected</span>
         </div>
-        <div style={{ padding: 16, color: 'var(--color-text-muted)', fontSize: 12 }}>
-          Multi-select: bulk property editing coming soon.
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--color-text-muted)', padding: 24 }}>
+          <span style={{ fontSize: 32 }}>🗂️</span>
+          <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text-3)', textAlign: 'center' }}>Multiple selected</span>
+          <span style={{ fontSize: 11, color: 'var(--color-text-muted)', textAlign: 'center' }}>Group properties or align tools in the toolbar.</span>
         </div>
       </div>
     );
