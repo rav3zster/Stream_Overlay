@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { EditorPage } from './pages/EditorPage';
 import { OBSOverlay } from './features/overlay/OBSOverlay';
 import { useSessionStore } from './store/sessionStore';
-import { useLiveStore } from './store/liveStore';
+import { useLiveStore, startLiveTimerEngine } from './store/liveStore';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30000 } },
@@ -22,22 +22,27 @@ const LoadingScreen: React.FC = () => (
 // ─── App Shell with Session ────────────────────────────────────────────────────
 const AppShell: React.FC = () => {
   const { isLoading, initSession } = useSessionStore();
-  const { subscribeToRealtime, theme } = useLiveStore();
+  const { subscribeToRealtime, theme, projectId } = useLiveStore();
   const location = useLocation();
+  const isOBS = location.pathname === '/obs';
 
   // Initialize session on boot
   useEffect(() => {
     initSession();
   }, [initSession]);
 
-  // Subscribe to Supabase realtime after session is ready
+  // Re-subscribe whenever projectId becomes available (was null on first render)
+  // This ensures both the editor AND the /obs page get realtime timer + scene updates.
   useEffect(() => {
+    if (!projectId) return;
     const unsubscribe = subscribeToRealtime();
+    // Also ensure the timer engine is running (needed on /obs page which has no LiveControlPanel)
+    startLiveTimerEngine();
     return unsubscribe;
-  }, [subscribeToRealtime]);
+  }, [projectId, subscribeToRealtime]);
 
   // OBS route is fullscreen, no sidebar
-  if (location.pathname === '/obs') {
+  if (isOBS) {
     if (isLoading) return <div style={{ background: '#000', width: '100vw', height: '100vh' }} />;
     return <OBSOverlay />;
   }

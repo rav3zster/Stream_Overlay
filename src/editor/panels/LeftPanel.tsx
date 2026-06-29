@@ -847,11 +847,16 @@ const AssetsTabContent: React.FC = () => {
 // ─── Sub-Tab: Presets ─────────────────────────────────────────────────────────
 
 const PresetsTabContent: React.FC = () => {
-  const { editingSceneId } = useEditorStore();
+  const { scenes, editingSceneId } = useEditorStore();
+  const { syncToOBS } = useLiveStore();
+  const [applied, setApplied] = React.useState<string | null>(null);
 
   const handleUsePreset = (preset: PresetDef) => {
-    if (!editingSceneId) return;
-    if (!confirm(`Apply layout template "${preset.name}" to this scene? This will replace all existing widgets.`)) return;
+    if (!editingSceneId) {
+      alert('Please select a scene first.');
+      return;
+    }
+    if (!confirm(`Apply "${preset.name}" to this scene?\nThis will replace all existing widgets.`)) return;
 
     useEditorStore.getState().pushHistory();
 
@@ -882,16 +887,28 @@ const PresetsTabContent: React.FC = () => {
           padding: 12,
           textAlign: 'center',
           ...(pWidget.style ?? {}),
-        } as any,
-        animation: { type: 'none', duration: 1, delay: 0, loop: false } as any,
+        } as DraftWidget['style'],
+        animation: { type: 'none' as const, duration: 1, delay: 0, loop: false },
         content: pWidget.content ?? { type: pWidget.type, settings: {} },
-      } as any;
+      } as DraftWidget;
     });
 
+    // Apply via setState using the correct scenes reference
     useEditorStore.setState(s => ({
-      scenes: s.scenes.map(sc => sc.id === editingSceneId ? { ...sc, widgets: newWidgets } : sc),
+      scenes: s.scenes.map(sc =>
+        sc.id === editingSceneId ? { ...sc, widgets: newWidgets } : sc
+      ),
       selectedIds: [],
     }));
+
+    setApplied(preset.id);
+    setTimeout(() => setApplied(null), 2000);
+
+    // Offer to sync to OBS immediately
+    const editingScene = scenes.find(s => s.id === editingSceneId);
+    if (editingScene && confirm(`Preset applied! Send "${editingScene.label}" to OBS now?`)) {
+      syncToOBS(editingSceneId, editingScene.name);
+    }
   };
 
   return (
@@ -900,32 +917,57 @@ const PresetsTabContent: React.FC = () => {
         <span className="panel-title">Presets</span>
       </div>
       <div className="panel-body" style={{ padding: '8px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {PRESETS.map(preset => (
-          <div
-            key={preset.id}
-            className="preset-card"
-            style={{
-              background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
-              borderRadius: 8, padding: 8, display: 'flex', flexDirection: 'column', gap: 8
-            }}
-          >
-            <div style={{
-              height: 50, borderRadius: 4,
-              background: `linear-gradient(135deg, ${preset.colors[0]} 0%, ${preset.colors[1]} 60%, ${preset.colors[2]} 100%)`
-            }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preset.name}</span>
-                <span style={{ fontSize: 8, color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{preset.desc}</span>
-              </div>
-              <button
-                className="btn btn-primary"
-                style={{ fontSize: 9, padding: '3px 8px', borderRadius: 4, flexShrink: 0, marginLeft: 8 }}
-                onClick={() => handleUsePreset(preset)}
-              >
-                Apply
-              </button>
+        <div style={{ fontSize: 10, color: 'var(--color-text-muted)', padding: '0 2px 4px', borderBottom: '1px solid var(--color-border)' }}>
+          Select a preset to replace all widgets in the current scene. You can undo with Ctrl+Z.
+        </div>
+
+        {/* Group by category */}
+        {Array.from(new Set(PRESETS.map(p => p.category))).map(cat => (
+          <div key={cat}>
+            <div style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--color-text-muted)', marginBottom: 6, marginTop: 4 }}>
+              {cat}
             </div>
+            {PRESETS.filter(p => p.category === cat).map(preset => {
+              const isApplied = applied === preset.id;
+              return (
+                <div
+                  key={preset.id}
+                  style={{
+                    background: isApplied ? 'rgba(16,185,129,0.1)' : 'var(--color-surface-2)',
+                    border: `1px solid ${isApplied ? 'rgba(16,185,129,0.4)' : 'var(--color-border)'}`,
+                    borderRadius: 8, padding: 8, display: 'flex', flexDirection: 'column', gap: 8,
+                    marginBottom: 8, transition: 'all 0.2s ease',
+                  }}
+                >
+                  {/* Color preview strip */}
+                  <div style={{ display: 'flex', gap: 2, borderRadius: 4, overflow: 'hidden', height: 36 }}>
+                    {preset.colors.map((c, i) => (
+                      <div key={i} style={{ flex: 1, background: c }} />
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 6 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: isApplied ? 'var(--color-success)' : '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {isApplied ? '✓ Applied!' : preset.name}
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 2 }}>
+                        <span style={{ fontSize: 8, color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{preset.desc}</span>
+                        <span style={{ fontSize: 8, fontWeight: 700, color: 'var(--color-accent)', background: 'rgba(168,85,247,0.12)', padding: '1px 5px', borderRadius: 3, flexShrink: 0 }}>
+                          {preset.widgets.length}w
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      className="btn btn-primary"
+                      style={{ fontSize: 9, padding: '4px 10px', borderRadius: 4, flexShrink: 0, background: isApplied ? 'var(--color-success)' : undefined }}
+                      onClick={() => handleUsePreset(preset)}
+                    >
+                      {isApplied ? '✓' : 'Apply'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>

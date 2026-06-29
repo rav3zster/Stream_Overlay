@@ -1,30 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { useLiveStore } from '../../store/liveStore';
+import { useLiveStore, startLiveTimerEngine } from '../../store/liveStore';
 import { useEditorStore } from '../../store/editorStore';
 import { WidgetRenderer } from '../../widgets/WidgetRenderer';
 
-// ─── Minimal OBS Overlay ─────────────────────────────────────────────────────
-// This component renders at /obs and is loaded as a Browser Source in OBS.
-// It reads ONLY from liveStore (what OBS should see right now).
-// It never reads from editorStore (draft state).
-//
-// To prevent layout shift and rounding errors, it renders at a fixed 1920x1080
-// coordinate space, and automatically scales itself using CSS transform scale
-// to match the actual OBS Browser Source viewport size.
+// ─── OBS Overlay ──────────────────────────────────────────────────────────────
+// Rendered at /obs — loaded as a Browser Source in OBS.
+// Reads from liveStore (shared timer, scene, theme) and editorStore (widget layout).
+// Scales from the fixed 1920×1080 canvas to any viewport size.
 
 export const OBSOverlay: React.FC = () => {
-  const { liveSceneName } = useLiveStore();
+  const { liveSceneName, projectId, subscribeToRealtime } = useLiveStore();
   const { scenes } = useEditorStore();
   const [scale, setScale] = useState({ x: 1, y: 1 });
 
   // Update scale factor to fit window size
   useEffect(() => {
     const handleResize = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
       setScale({
-        x: w / 1920,
-        y: h / 1080,
+        x: window.innerWidth / 1920,
+        y: window.innerHeight / 1080,
       });
     };
     handleResize();
@@ -32,10 +26,24 @@ export const OBSOverlay: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Find the live scene's widgets from editorStore matching the liveSceneName
+  // Ensure timer engine is ticking on this page too
+  useEffect(() => {
+    startLiveTimerEngine();
+  }, []);
+
+  // Re-subscribe to realtime whenever projectId becomes available
+  // (AppShell handles this too, but this is a safety fallback for direct /obs access)
+  useEffect(() => {
+    if (!projectId) return;
+    const unsub = subscribeToRealtime();
+    return unsub;
+  }, [projectId, subscribeToRealtime]);
+
+  // Find the live scene widgets matching liveSceneName
   const liveScene = scenes.find(s => s.name === liveSceneName);
   const widgets = liveScene?.widgets ?? [];
   const sortedWidgets = [...widgets].sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
+  const visibleWidgets = sortedWidgets.filter(w => w.visible !== false);
 
   return (
     <div
@@ -49,11 +57,10 @@ export const OBSOverlay: React.FC = () => {
         transformOrigin: 'top left',
         background: 'transparent',
         overflow: 'hidden',
-        pointerEvents: 'none', // OBS source doesn't intercept mouse clicks on stream usually
+        pointerEvents: 'none',
       }}
     >
-      {/* Render widgets with identical renderer */}
-      {sortedWidgets.map(widget => (
+      {visibleWidgets.map(widget => (
         <WidgetRenderer key={widget.id} widget={widget} isEditor={false} />
       ))}
     </div>

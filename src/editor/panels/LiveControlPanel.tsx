@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { Radio, Play, Pause, RotateCcw } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Radio, Play, Pause, RotateCcw, Plus, Minus } from 'lucide-react';
 import { useLiveStore, startLiveTimerEngine } from '../../store/liveStore';
 import { useEditorStore } from '../../store/editorStore';
 
@@ -16,6 +16,7 @@ const formatTime = (seconds: number) => {
 export const LiveControlPanel: React.FC = () => {
   const { timer, liveSceneName, liveSceneId, addTime, pauseTimer, resumeTimer, resetTimer, syncToOBS } = useLiveStore();
   const { scenes, editingSceneId } = useEditorStore();
+  const [customReset, setCustomReset] = useState(10);
 
   const editingScene = scenes.find(s => s.id === editingSceneId);
   const liveScene = scenes.find(s => s.id === liveSceneId);
@@ -64,25 +65,56 @@ export const LiveControlPanel: React.FC = () => {
         {/* Divider */}
         <div style={{ height: 1, background: 'var(--color-border)', margin: '4px 0 12px' }} />
 
-        {/* Timer */}
-        <div style={{ textAlign: 'center' }}>
+        {/* ─── Timer ──────────────────────────── */}
+        <div>
           <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--color-text-muted)', marginBottom: 4 }}>
-            Stream Timer
+            Countdown Timer
           </div>
-          <div className="timer-display">{formatTime(timer.seconds)}</div>
 
-          {/* Timer add buttons */}
-          <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
-            {[1, 5, 10].map(m => (
-              <button key={m} className="btn btn-secondary" style={{ flex: 1, fontSize: 11, padding: '5px 0' }}
+          {/* Big time display */}
+          <div className="timer-display" style={{ marginBottom: 8 }}>
+            {formatTime(timer.seconds)}
+          </div>
+
+          {/* Status badge */}
+          <div style={{ textAlign: 'center', marginBottom: 8 }}>
+            <span style={{
+              fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', padding: '2px 8px', borderRadius: 4,
+              background: timer.isPaused ? 'rgba(251,191,36,0.15)' : timer.isRunning ? 'rgba(16,185,129,0.15)' : 'rgba(107,114,128,0.15)',
+              color: timer.isPaused ? '#fbbf24' : timer.isRunning ? 'var(--color-success)' : 'var(--color-text-muted)',
+            }}>
+              {timer.isPaused ? '⏸ PAUSED' : timer.isRunning ? '▶ RUNNING' : '⏹ STOPPED'}
+            </span>
+          </div>
+
+          {/* ── Add time row ── */}
+          <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Plus size={9} /> Add Time
+          </div>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+            {[1, 5, 10, 30].map(m => (
+              <button key={m} className="btn btn-secondary" style={{ flex: 1, fontSize: 10, padding: '4px 0' }}
                 onClick={() => addTime(m * 60)}>
                 +{m}m
               </button>
             ))}
           </div>
 
-          {/* Pause / Resume / Reset */}
-          <div style={{ display: 'flex', gap: 4 }}>
+          {/* ── Subtract time row ── */}
+          <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <Minus size={9} /> Remove Time
+          </div>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 10 }}>
+            {[1, 5, 10, 30].map(m => (
+              <button key={m} className="btn btn-secondary" style={{ flex: 1, fontSize: 10, padding: '4px 0' }}
+                onClick={() => addTime(-m * 60)}>
+                -{m}m
+              </button>
+            ))}
+          </div>
+
+          {/* ── Pause / Resume / Reset row ── */}
+          <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
             {timer.isRunning && !timer.isPaused ? (
               <button className="btn btn-secondary" style={{ flex: 1, fontSize: 11 }} onClick={pauseTimer}>
                 <Pause size={12} /> Pause
@@ -93,8 +125,26 @@ export const LiveControlPanel: React.FC = () => {
               </button>
             )}
             <button className="btn btn-secondary" style={{ fontSize: 11, padding: '5px 8px' }}
-              onClick={() => resetTimer(600)} data-tooltip="Reset to 10 min">
+              onClick={() => resetTimer(customReset * 60)} data-tooltip={`Reset to ${customReset} min`}>
               <RotateCcw size={12} />
+            </button>
+          </div>
+
+          {/* ── Custom reset value ── */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <span style={{ fontSize: 9, color: 'var(--color-text-muted)', fontWeight: 600, flexShrink: 0 }}>Reset to:</span>
+            <input
+              type="number"
+              min={1} max={180}
+              value={customReset}
+              onChange={e => setCustomReset(Math.max(1, parseInt(e.target.value) || 10))}
+              className="input input-mono"
+              style={{ flex: 1, fontSize: 10, padding: '3px 6px', textAlign: 'center' }}
+            />
+            <span style={{ fontSize: 9, color: 'var(--color-text-muted)', flexShrink: 0 }}>min</span>
+            <button className="btn btn-primary" style={{ fontSize: 9, padding: '3px 8px', flexShrink: 0 }}
+              onClick={() => resetTimer(customReset * 60)}>
+              Set
             </button>
           </div>
         </div>
