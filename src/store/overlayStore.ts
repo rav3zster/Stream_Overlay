@@ -359,6 +359,14 @@ const makeMockMessage = (): ChatMessage => ({
 const INITIAL_CHAT: ChatMessage[] = Array.from({ length: 6 }, makeMockMessage);
 
 // ==========================================================================
+// TIMER LOCAL WRITE GUARD
+// Exported so App.tsx realtime listener can check if a local write just happened.
+// Prevents the Supabase echo from overwriting a just-made local timer change.
+// ==========================================================================
+export let _timerLocalWriteTs = 0;
+export const markTimerLocalWrite = () => { _timerLocalWriteTs = Date.now(); };
+
+// ==========================================================================
 // BROADCAST TO LOCALSTORAGE (cross-tab sync, Supabase-ready hook)
 // ==========================================================================
 const broadcast = (slice: Record<string, unknown>) => {
@@ -878,26 +886,55 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
 
   // ─── Timer ───────────────────────────────────────────────────────────────
   addTime: (seconds: number) => {
-    set(s => ({ timer: { ...s.timer, seconds: s.timer.seconds + seconds } }));
+    // ── INSTRUMENTATION: Stage 1 ──────────────────────────────────────────
+    const oldSeconds = get().timer.seconds;
+    console.group('%c[TIMER DEBUG] addTime() called', 'color:#5cffe2;font-weight:bold');
+    console.log('  Stage 1 → addTime called with seconds:', seconds);
+    console.log('  Stage 2 → Old timer.seconds:', oldSeconds);
+
+    // ── Stage 3: Zustand set() ────────────────────────────────────────────
+    set(s => {
+      const newSeconds = s.timer.seconds + seconds;
+      console.log('  Stage 3 → Zustand set() executing. Old:', s.timer.seconds, '→ New:', newSeconds);
+      const newTimer = { ...s.timer, seconds: newSeconds };
+      console.log('  Stage 3 → New timer object (new ref?):', newTimer !== s.timer, newTimer);
+      return { timer: newTimer };
+    });
+
+    // ── Stage 4: Verify Zustand updated ──────────────────────────────────
+    const updatedState = get();
+    console.log('  Stage 4 → Zustand updated. timer.seconds now:', updatedState.timer.seconds);
+    if (updatedState.timer.seconds === oldSeconds) {
+      console.error('  ❌ STUCK: Zustand set() did NOT change timer.seconds!');
+    } else {
+      console.log('  ✅ Zustand state updated correctly.');
+    }
+
+    console.groupEnd();
+
     const { projectId, timer } = get();
+    markTimerLocalWrite(); // guard: block Supabase echo for 3s
     if (projectId) updateDbTimer(projectId, timer);
   },
 
   pauseTimer: () => {
     set(s => ({ timer: { ...s.timer, isRunning: false, isPaused: true } }));
     const { projectId, timer } = get();
+    markTimerLocalWrite();
     if (projectId) updateDbTimer(projectId, timer);
   },
 
   resumeTimer: () => {
     set(s => ({ timer: { ...s.timer, isRunning: true, isPaused: false } }));
     const { projectId, timer } = get();
+    markTimerLocalWrite();
     if (projectId) updateDbTimer(projectId, timer);
   },
 
   resetTimer: (seconds: number = 600) => {
     set({ timer: { seconds, isRunning: true, isPaused: false } });
     const { projectId, timer } = get();
+    markTimerLocalWrite();
     if (projectId) updateDbTimer(projectId, timer);
   },
 
@@ -905,6 +942,8 @@ export const useOverlayStore = create<OverlayState>((set, get) => ({
     const { timer } = get();
     if (!timer.isRunning || timer.isPaused || timer.seconds <= 0) return;
     set(s => ({ timer: { ...s.timer, seconds: Math.max(0, s.timer.seconds - 1) } }));
+    // Uncomment the line below to trace every tick (very verbose):
+    // console.log('[TIMER TICK] seconds now:', get().timer.seconds);
   },
 
   // ─── Chat ─────────────────────────────────────────────────────────────────

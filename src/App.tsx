@@ -3,9 +3,12 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Dashboard } from './features/admin/Dashboard';
 import { OBSOverlay } from './features/overlay/OBSOverlay';
 import { StreamDeck } from './features/streamdeck/StreamDeck';
-import { startTimerEngine, startChatDrip, startMusicEngine, useOverlayStore } from './store/overlayStore';
+import { startTimerEngine, startChatDrip, startMusicEngine, useOverlayStore, _timerLocalWriteTs } from './store/overlayStore';
 import { supabase } from './lib/supabase';
 import { fetchProjectData, getSessionUserId } from './lib/dbSync';
+
+// Note: _timerLocalWriteTs is a module-level let in overlayStore.ts.
+// We read it via the named export below in the realtime callback.
 
 // Start global engines once on app boot
 startTimerEngine();
@@ -37,12 +40,50 @@ function App() {
           const newSettings = payload.new as any;
           if (!newSettings) return;
 
+          // ── INSTRUMENTATION: Log every realtime settings event ──────────────────────
+          console.log('%c[TIMER DEBUG] Supabase realtime settings event received', 'color:orange', payload.new);
+
           // ── Timer sync: admin changes propagate to OBS via settings row ──
+          const msSinceLocalWrite = Date.now() - _timerLocalWriteTs;
+          console.log(`%c[TIMER DEBUG] ms since last local write: ${msSinceLocalWrite}ms (guard=3000ms)`, 'color:orange');
           const timerUpdate = {
             seconds: newSettings.timer_seconds ?? useOverlayStore.getState().timer.seconds,
             isRunning: newSettings.timer_is_running ?? useOverlayStore.getState().timer.isRunning,
             isPaused: newSettings.timer_is_paused ?? useOverlayStore.getState().timer.isPaused,
           };
+
+          if (msSinceLocalWrite < 3000) {
+            // Within 3 seconds of a local write — skip timer overwrite to avoid echo
+            console.warn('%c[TIMER DEBUG] ⚠️ Supabase echo blocked (within 3s of local write). Skipping timer overwrite.', 'color:orange;font-weight:bold');
+            useOverlayStore.setState({
+              theme: newSettings.theme,
+              currentScene: newSettings.current_scene,
+              // timer intentionally omitted
+              settings: {
+                ...useOverlayStore.getState().settings,
+                streamTitle: newSettings.stream_title,
+                streamerName: newSettings.streamer_name,
+                activeGame: newSettings.active_game,
+                tickerText: newSettings.ticker_text || '',
+                borderRadius: newSettings.border_radius,
+                animationSpeed: newSettings.animation_speed,
+                overlayOpacity: newSettings.overlay_opacity,
+                particleDensity: newSettings.particle_density,
+                tickerSpeed: newSettings.ticker_speed,
+                disableAnimations: newSettings.socials?.disableAnimations || false,
+                activeAnimationPack: newSettings.socials?.activeAnimationPack || 'float',
+                socials: {
+                  twitch: newSettings.socials?.twitch || '',
+                  twitter: newSettings.socials?.twitter || '',
+                  youtube: newSettings.socials?.youtube || '',
+                  discord: newSettings.socials?.discord || '',
+                }
+              }
+            });
+            return;
+          }
+
+          console.log('%c[TIMER DEBUG] Supabase applying timer update:', 'color:orange', timerUpdate);
 
           useOverlayStore.setState({
             theme: newSettings.theme,

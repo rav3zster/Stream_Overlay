@@ -104,6 +104,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
     addChatMessage,
   } = useOverlayStore();
 
+  // ── Granular timer selector so this component always re-renders when timer changes ──
+  const timer = useOverlayStore(s => s.timer);
+
   const [rightPanelTab, setRightPanelTab] = useState<'inspector' | 'controls'>('controls');
 
   // Auto-switch to inspector when a widget is selected
@@ -231,6 +234,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
   // Timer display
   const timerMins = Math.floor(timer.seconds / 60).toString().padStart(2, '0');
   const timerSecs = (timer.seconds % 60).toString().padStart(2, '0');
+
+  // ── INSTRUMENTATION: Stage 5 ─ Log every render with timer value ───────────────────────
+  console.log(`%c[TIMER DEBUG] Stage 5 → Dashboard rendered. timer.seconds=${timer.seconds} (${timerMins}:${timerSecs})`, 'color:#a855f7');
 
   const handleAISend = (e: React.FormEvent) => {
     e.preventDefault();
