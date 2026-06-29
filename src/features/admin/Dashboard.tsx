@@ -93,7 +93,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ activeTabInitial = 'scenes
   const navigate = useNavigate();
   const {
     currentScene, theme: activeTheme, viewerCount, settings,
-    timer, aiMessages, alertHistory, schedule,
+    aiMessages, alertHistory, schedule,
     chatMessages, showChat, showAvatar, showTicker,
     subGoal, donationGoal, followerGoal,
     selectedWidgetId,
