@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   RotateCcw, RotateCw, ZoomIn, ZoomOut, Maximize2, Grid, Magnet, Eye, Save, Radio,
-  Layers, Plus
+  Plus
 } from 'lucide-react';
 import { useEditorStore } from '../../store/editorStore';
 import { useSessionStore } from '../../store/sessionStore';

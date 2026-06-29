@@ -114,7 +114,7 @@ const AppearanceSection: React.FC<{ widget: DraftWidget; update: (u: Partial<Dra
           <input type="color" value={s.borderColor ?? '#a855f7'}
             onChange={e => updateStyle({ borderColor: e.target.value })}
             style={{ width: 28, height: 28, border: '1px solid var(--color-border)', borderRadius: 6, cursor: 'pointer' }} />
-          <select className="select" value={s.borderStyle ?? 'solid'} onChange={e => updateStyle({ borderStyle: e.target.value as any })} style={{ flex: 1, fontSize: 11 }}>
+          <select className="select" value={s.borderStyle ?? 'solid'} onChange={e => updateStyle({ borderStyle: e.target.value as 'solid' | 'dashed' | 'dotted' | 'none' })} style={{ flex: 1, fontSize: 11 }}>
             <option value="solid">Solid</option>
             <option value="dashed">Dashed</option>
             <option value="dotted">Dotted</option>
@@ -240,6 +240,7 @@ const AnimationSection: React.FC<{ widget: DraftWidget; update: (u: Partial<Draf
 // ─── Content Section ──────────────────────────────────────────────────────────
 const ContentSection: React.FC<{ widget: DraftWidget; update: (u: Partial<DraftWidget>) => void }> = ({ widget, update }) => {
   const content = widget.content;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateContent = (settings: Record<string, any>) => update({ content: { ...content, settings: { ...content.settings, ...settings } } });
 
   if (widget.type === 'countdown-timer') {

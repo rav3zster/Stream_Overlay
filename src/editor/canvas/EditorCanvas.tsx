@@ -100,7 +100,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           // Initializing size & start coordinates prevents jumps during resizing
           onResizeStart={({ setOrigin, dragStart }) => {
             setOrigin(['%', '%']);
-            dragStart && dragStart.set([widget.x, widget.y]);
+            if (dragStart) dragStart.set([widget.x, widget.y]);
           }}
           onResize={({ width, height, drag }) => {
             onUpdate(widget.id, {
@@ -134,7 +134,7 @@ export const EditorCanvas: React.FC = () => {
   const {
     zoom, pan, snapEnabled, showGrid, selectedIds, hoveredId,
     getDraftWidgets, selectWidget, selectWidgets, deselectAll, setHovered,
-    updateWidget, pushHistory, setZoom, setPan,
+    updateWidget, pushHistory, setPan,
     setIsDragging, setIsResizing,
   } = useEditorStore();
 
@@ -247,7 +247,7 @@ export const EditorCanvas: React.FC = () => {
     }
   }, [selectionStart, setPan, zoom]);
 
-  const handleMouseUp = useCallback((e: React.MouseEvent) => {
+  const handleMouseUp = useCallback(() => {
     isPanningRef.current = false;
     if (wrapperRef.current) wrapperRef.current.style.cursor = 'default';
 

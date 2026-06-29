@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Upload, Search, Trash2, Download, Image, Film, Music, FileText, Filter } from 'lucide-react';
+import { Upload, Search } from 'lucide-react';
 
 type AssetType = 'image' | 'gif' | 'video' | 'lottie' | 'audio' | 'font' | 'svg' | 'logo';
 

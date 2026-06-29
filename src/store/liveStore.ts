@@ -146,6 +146,7 @@ export const useLiveStore = create<LiveState>((set, get) => ({
       .on('postgres_changes',
         { event: '*', schema: 'public', table: 'settings', filter: `project_id=eq.${projectId}` },
         (payload) => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const d = payload.new as any;
           if (!d) return;
 

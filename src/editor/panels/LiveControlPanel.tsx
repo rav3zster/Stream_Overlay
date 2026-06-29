@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Radio, Play, Pause, RotateCcw, Plus, ChevronRight, Zap } from 'lucide-react';
+import { Radio, Play, Pause, RotateCcw } from 'lucide-react';
 import { useLiveStore, startLiveTimerEngine } from '../../store/liveStore';
 import { useEditorStore } from '../../store/editorStore';
 

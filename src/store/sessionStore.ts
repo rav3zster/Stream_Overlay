@@ -160,7 +160,9 @@ export const useSessionStore = create<SessionState>((set, get) => ({
           .in('scene_id', sceneIds);
 
         scenes = dbScenes.map(sc => {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const scPlacements = (placements || []).filter((p: any) => p.scene_id === sc.id);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const widgets: DraftWidget[] = scPlacements.map((p: any) => {
             const w = p.widgets;
             const ws = w?.widget_styles || {};
@@ -320,8 +322,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       useLiveStore.getState().setProjectId(project.id);
 
       set({ isLoading: false });
-    } catch (err: any) {
-      console.warn('Session init failed, using local defaults:', err.message);
+    } catch (err: unknown) {
+      console.warn('Session init failed, using local defaults:', err instanceof Error ? err.message : err);
 
       // Offline fallback — build scenes locally
       const fallbackScenes: Scene[] = DEFAULT_SCENES.map(s => {

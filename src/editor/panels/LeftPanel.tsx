@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tv, Film, Radio, Plus, ChevronRight, Edit2, Trash2, PlusCircle } from 'lucide-react';
+import { Tv, Film, Plus, ChevronRight, Trash2, PlusCircle } from 'lucide-react';
 import { useEditorStore } from '../../store/editorStore';
 import { useLiveStore } from '../../store/liveStore';
 import { useSessionStore } from '../../store/sessionStore';
@@ -11,7 +11,7 @@ interface LeftPanelProps {
 export const LeftPanel: React.FC<LeftPanelProps> = ({ onOpenAddWidget }) => {
   const { scenes, editingSceneId, setEditingScene } = useEditorStore();
   const { liveSceneId } = useLiveStore();
-  const { createScene, deleteScene } = useSessionStore();
+  const { createScene } = useSessionStore();
 
   const handleAddScene = async () => {
     const name = prompt('Scene name (e.g. "game-session"):');

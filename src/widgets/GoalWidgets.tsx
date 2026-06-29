@@ -19,6 +19,9 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({ type, compact = false })
   const followerGoal = useOverlayStore(s => s.followerGoal);
   const theme = useOverlayStore(s => s.theme);
   const profile = getThemeProfile(theme);
+  const latestFollower = useOverlayStore(s => s.latestFollower);
+  const latestSubscriber = useOverlayStore(s => s.latestSubscriber);
+  const latestDonation = useOverlayStore(s => s.latestDonation);
 
   const goal = type === 'sub' ? subGoal : type === 'donation' ? donationGoal : followerGoal;
   const cfg = GOAL_CONFIG[type];
@@ -32,10 +35,6 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({ type, compact = false })
   // 1. PASTEL PLANETS THEME DESIGN
   // ──────────────────────────────────────────────────────────────
   if (profile === 'planets') {
-    const latestFollower = useOverlayStore(s => s.latestFollower);
-    const latestSubscriber = useOverlayStore(s => s.latestSubscriber);
-    const latestDonation = useOverlayStore(s => s.latestDonation);
-
     if (compact) {
       let title = 'LATEST FOLLOWER';
       let value = latestFollower || 'No one';
@@ -94,10 +93,6 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({ type, compact = false })
   // 2. CYBER HUD THEME DESIGN
   // ──────────────────────────────────────────────────────────────
   if (profile === 'cyberhud') {
-    const latestFollower = useOverlayStore(s => s.latestFollower);
-    const latestSubscriber = useOverlayStore(s => s.latestSubscriber);
-    const latestDonation = useOverlayStore(s => s.latestDonation);
-
     if (compact) {
       let title = 'NEW FOLLOWER';
       let value = latestFollower || 'OFFLINE_NODE';
@@ -174,10 +169,6 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({ type, compact = false })
   // 3. ESPORTS TELEMETRY THEME DESIGN
   // ──────────────────────────────────────────────────────────────
   if (profile === 'esports') {
-    const latestFollower = useOverlayStore(s => s.latestFollower);
-    const latestSubscriber = useOverlayStore(s => s.latestSubscriber);
-    const latestDonation = useOverlayStore(s => s.latestDonation);
-
     if (compact) {
       let title = 'LAST FOLLOW';
       let value = latestFollower || 'NONE';
@@ -251,10 +242,6 @@ export const GoalWidget: React.FC<GoalWidgetProps> = ({ type, compact = false })
   // 2. MOTORSPORT RPM SHIFT LIGHT INDICATORS / TELEMETRY LABELS
   // ──────────────────────────────────────────────────────────────
   if (profile === 'racing') {
-    const latestFollower = useOverlayStore(s => s.latestFollower);
-    const latestSubscriber = useOverlayStore(s => s.latestSubscriber);
-    const latestDonation = useOverlayStore(s => s.latestDonation);
-
     if (compact) {
       // Telemetry Header Stat layout exactly matching the top widgets in the screenshot
       let title = 'LATEST FOLLOWER';

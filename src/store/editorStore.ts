@@ -102,6 +102,7 @@ export interface DraftWidget {
   animation: WidgetAnimation;
   content: {
     type: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     settings: Record<string, any>;
   };
 }

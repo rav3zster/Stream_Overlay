@@ -39,7 +39,7 @@ export const MediaWidget: React.FC<MediaWidgetProps> = ({ settings }) => {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
-    mixBlendMode: blendMode as any,
+    mixBlendMode: blendMode as React.CSSProperties['mixBlendMode'],
     clipPath: cropClipPath,
     transition: 'all 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
   };
@@ -80,8 +80,8 @@ export const MediaWidget: React.FC<MediaWidgetProps> = ({ settings }) => {
         );
       case 'lottie':
         return (
-          <div style={{ width: '100%', height: '100%', mixBlendMode: blendMode as any }} className={hoverClass}>
-            {/* @ts-ignore */}
+          <div style={{ width: '100%', height: '100%', mixBlendMode: blendMode as React.CSSProperties['mixBlendMode'] }} className={hoverClass}>
+            {/* @ts-expect-error - lottie-player is a web component */}
             <lottie-player
               src={url}
               background="transparent"

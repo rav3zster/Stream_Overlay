@@ -1,4 +1,3 @@
-import { create } from 'zustand';
 import { useEditorStore, type DraftWidget } from './editorStore';
 import { useLiveStore, type ThemeType } from './liveStore';
 
@@ -46,9 +45,10 @@ export interface OverlayTimer {
 // so that all existing widget renderers and sync scripts continue to work cleanly.
 
 export const useOverlayStore = Object.assign(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (selector: (state: any) => any) => {
     // We create a combined state object on the fly for selectors
-    const editor = useEditorStore();
+    useEditorStore();
     const live = useLiveStore();
 
     const combinedState = {
@@ -116,7 +116,7 @@ export const useOverlayStore = Object.assign(
   {
     // Expose getState for direct calls
     getState: () => {
-      const editor = useEditorStore.getState();
+      useEditorStore.getState();
       const live = useLiveStore.getState();
 
       return {
@@ -144,6 +144,7 @@ export const useOverlayStore = Object.assign(
       };
     },
     // Expose setState
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setState: (update: any) => {
       // Apply updates to the appropriate store
       if (typeof update === 'function') {

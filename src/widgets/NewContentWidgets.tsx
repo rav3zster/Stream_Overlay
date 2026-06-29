@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useOverlayStore } from '../store/overlayStore';
+import React, { useState, useEffect, useRef } from 'react';
 import { Cpu, Heart } from 'lucide-react';
 
 // ─── CLOCK & DATE WIDGET ──────────────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const ClockWidget: React.FC<{ settings?: Record<string, any> }> = ({ settings }) => {
   const [time, setTime] = useState(new Date());
   const use24h = settings?.use24h ?? false;
@@ -42,10 +42,11 @@ export const ClockWidget: React.FC<{ settings?: Record<string, any> }> = ({ sett
 };
 
 // ─── WEATHER WIDGET ────────────────────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const WeatherWidget: React.FC<{ settings?: Record<string, any> }> = ({ settings }) => {
-  const city = settings?.city || 'Tokyo, JP';
+  const city = (settings?.city as string) || 'Tokyo, JP';
+  const condition = 'Vibrant Rain';
   const [temp, setTemp] = useState(24);
-  const [condition, setCondition] = useState('Vibrant Rain');
 
   useEffect(() => {
     // Slight fluctuation
@@ -140,14 +141,17 @@ export const CpuRamWidget: React.FC = () => {
 };
 
 // ─── COUNTDOWN TIMER WIDGET ────────────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const CountdownWidget: React.FC<{ settings?: Record<string, any> }> = ({ settings }) => {
-  const targetLabel = settings?.targetLabel || 'GIVEAWAY IN';
-  const targetMinutes = settings?.targetMinutes || 15;
+  const targetLabel = (settings?.targetLabel as string) || 'GIVEAWAY IN';
+  const targetMinutes = (settings?.targetMinutes as number) || 15;
   const [secondsLeft, setSecondsLeft] = useState(targetMinutes * 60);
+  const prevTargetRef = useRef(targetMinutes);
 
-  useEffect(() => {
+  if (prevTargetRef.current !== targetMinutes) {
+    prevTargetRef.current = targetMinutes;
     setSecondsLeft(targetMinutes * 60);
-  }, [targetMinutes]);
+  }
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -170,8 +174,9 @@ export const CountdownWidget: React.FC<{ settings?: Record<string, any> }> = ({ 
 };
 
 // ─── CUSTOM TEXT / QUOTE WIDGET ────────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const CustomTextWidget: React.FC<{ settings?: Record<string, any> }> = ({ settings }) => {
-  const text = settings?.customText || '✨ Welcome to VibeOverlay Studio! Customize this text box in the inspector. ✨';
+  const text = (settings?.customText as string) || '✨ Welcome to VibeOverlay Studio! Customize this text box in the inspector. ✨';
   return (
     <div className="flex items-center justify-center h-full w-full p-3 text-center leading-relaxed break-words font-body text-[0.85vw] text-slate-200">
       {text}

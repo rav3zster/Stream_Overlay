@@ -9,7 +9,6 @@ interface VtuberWidgetProps {
 export const VtuberWidget: React.FC<VtuberWidgetProps> = ({ size = 'medium', sleeping = false }) => {
   const streamerName = useOverlayStore(s => s.settings.streamerName);
 
-  const scale = size === 'mini' ? 0.5 : size === 'large' ? 1.0 : 0.7;
   const avatarVW = size === 'mini' ? '4vw' : size === 'large' ? '8vw' : '6vw';
   const bodyH = size === 'mini' ? '5vw' : size === 'large' ? '10vw' : '7.5vw';
 

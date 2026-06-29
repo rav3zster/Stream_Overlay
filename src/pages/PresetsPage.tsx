@@ -139,7 +139,7 @@ const PRESETS: Preset[] = [
 ];
 
 // ── Gradient preview for preset cards
-const PresetPreview: React.FC<{ colors: string[]; name: string }> = ({ colors, name }) => (
+const PresetPreview: React.FC<{ colors: string[] }> = ({ colors }) => (
   <div
     className="preset-preview"
     style={{
@@ -158,7 +158,7 @@ const PresetPreview: React.FC<{ colors: string[]; name: string }> = ({ colors, n
 
 export const PresetsPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const { editingSceneId, addWidget, getDraftWidgets } = useEditorStore();
+  const { editingSceneId, addWidget } = useEditorStore();
 
   const filtered = PRESETS.filter(p =>
     selectedCategory === 'All' || p.category === selectedCategory
@@ -198,7 +198,7 @@ export const PresetsPage: React.FC = () => {
         <div className="presets-grid">
           {filtered.map(preset => (
             <div key={preset.id} className="preset-card">
-              <PresetPreview colors={preset.colors} name={preset.name} />
+              <PresetPreview colors={preset.colors} />
               <div className="preset-body">
                 <div className="preset-name">{preset.name}</div>
                 <div className="preset-desc">{preset.description}</div>

@@ -125,7 +125,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
   // Support custom gradient backgrounds
   const customGradient = widget.content?.settings?.gradient;
   let finalBg = isTransparentWidget ? 'transparent' : (customGradient || bg || 'rgba(14, 8, 26, 0.8)');
-  let finalRadius = borderRadius !== undefined ? `${borderRadius}px` : '8px';
+  const finalRadius = borderRadius !== undefined ? `${borderRadius}px` : '8px';
 
   // Support glassmorphism effect override
   if (widget.content?.settings?.glassEffect) {
@@ -135,7 +135,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
   }
 
   // Support blend modes
-  const mixBlendMode = (widget.content?.settings?.blendMode || 'normal') as any;
+  const mixBlendMode = (widget.content?.settings?.blendMode || 'normal') as React.CSSProperties['mixBlendMode'];
 
   // Support custom vector shape clip paths
   let customClipPath = clipPath;
@@ -165,7 +165,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
 
   const letterSpacing = widget.content?.settings?.letterSpacing !== undefined ? `${widget.content.settings.letterSpacing}px` : 'normal';
   const lineHeight = widget.content?.settings?.lineHeight !== undefined ? widget.content.settings.lineHeight : 'normal';
-  const textTransform = (widget.content?.settings?.textTransform || 'none') as any;
+  const textTransform = (widget.content?.settings?.textTransform || 'none') as React.CSSProperties['textTransform'];
 
   // Support text gradient fills
   let textGradBg = '';
@@ -206,8 +206,8 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
     WebkitTextStroke: webkitTextStroke,
     ...(textGradBg ? {
       backgroundImage: textGradBg,
-      WebkitBackgroundClip: 'text' as any,
-      WebkitTextFillColor: 'transparent' as any
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent'
     } : {}),
     overflow: 'hidden',
   };

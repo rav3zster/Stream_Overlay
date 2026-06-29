@@ -106,9 +106,10 @@ export const AddWidgetPanel: React.FC<AddWidgetPanelProps> = ({ onClose, initial
     const { getDraftWidgets } = useEditorStore.getState();
     const widgets = getDraftWidgets();
     const maxZ = widgets.reduce((mx, w) => Math.max(mx, w.zIndex), 0);
+    const id = `widget-${crypto.randomUUID()}`;
 
     const newWidget: DraftWidget = {
-      id: `widget-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id,
       type: def.type,
       label: def.label,
       x: Math.round((CANVAS_W - def.defaultWidth) / 2),

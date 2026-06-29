@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { EditorCanvas } from '../editor/canvas/EditorCanvas';
 import { TopToolbar } from '../editor/toolbar/TopToolbar';
@@ -12,7 +12,7 @@ export const EditorPage: React.FC = () => {
   const [showAddWidget, setShowAddWidget] = useState(false);
   const [showLivePanel, setShowLivePanel] = useState(true);
   const {
-    undo, redo, canUndo, canRedo,
+    undo, redo,
     copySelected, pasteClipboard, removeSelectedWidgets,
     selectedIds, duplicateWidget,
   } = useEditorStore();

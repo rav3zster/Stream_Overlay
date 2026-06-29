@@ -183,7 +183,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ maxMessages = 12, size =
           className="flex-grow overflow-y-auto p-[0.6vw] flex flex-col gap-[0.5vw] scrollbar-none"
           style={{ scrollbarWidth: 'none' }}
         >
-          {visible.map((msg, i) => {
+          {visible.map((msg) => {
             const teamBadgeNum = (msg.username.length * 7) % 99 + 1;
             return (
               <div key={msg.id} className="flex gap-[0.5vw] items-start border-l-2 border-[var(--accent-primary)] pl-2 bg-white/5 py-[0.3vw] px-[0.5vw] rounded-r">

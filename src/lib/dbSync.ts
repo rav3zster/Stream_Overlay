@@ -44,7 +44,7 @@ export interface DbProjectData {
 export async function fetchProjectData(userId: string): Promise<DbProjectData | null> {
   try {
     // 1. Get user project
-    let { data: projects, error: projErr } = await supabase
+    const { data: projects, error: projErr } = await supabase
       .from('projects')
       .select('id, name')
       .eq('user_id', userId)
@@ -58,7 +58,7 @@ export async function fetchProjectData(userId: string): Promise<DbProjectData | 
     const projectId = project.id;
 
     // 2. Get settings
-    let { data: settingsData, error: setErr } = await supabase
+    const { data: settingsData, error: setErr } = await supabase
       .from('settings')
       .select('*')
       .eq('project_id', projectId)
@@ -67,7 +67,7 @@ export async function fetchProjectData(userId: string): Promise<DbProjectData | 
     if (setErr || !settingsData) return null;
 
     // 3. Get goals
-    let { data: goalsData } = await supabase
+    const { data: goalsData } = await supabase
       .from('goals')
       .select('*')
       .eq('project_id', projectId);
@@ -90,7 +90,7 @@ export async function fetchProjectData(userId: string): Promise<DbProjectData | 
     });
 
     // 4. Get scenes
-    let { data: scenesData } = await supabase
+    const { data: scenesData } = await supabase
       .from('scenes')
       .select('*')
       .eq('project_id', projectId);
@@ -162,6 +162,7 @@ export async function fetchProjectData(userId: string): Promise<DbProjectData | 
         `)
         .in('scene_id', sceneIds);
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       placements?.forEach((p: any) => {
         const sceneName = scenesMap[p.scene_id] as SceneType;
         const w = p.widgets;
@@ -220,7 +221,7 @@ export async function fetchProjectData(userId: string): Promise<DbProjectData | 
     }
 
     // 6. Get scheduler
-    let { data: schedulerData } = await supabase
+    const { data: schedulerData } = await supabase
       .from('scheduler')
       .select('*')
       .eq('project_id', projectId);
@@ -256,10 +257,10 @@ export async function fetchProjectData(userId: string): Promise<DbProjectData | 
         avatarPosition: settingsData.socials?.avatarPosition || 'bottom-right',
         chatSize: settingsData.socials?.chatSize || 'medium',
         borderRadius: settingsData.border_radius,
-        animationSpeed: (settingsData.animation_speed as any) || 'normal',
+        animationSpeed: (settingsData.animation_speed as OverlaySettings['animationSpeed']) || 'normal',
         overlayOpacity: settingsData.overlay_opacity,
-        particleDensity: (settingsData.particle_density as any) || 'medium',
-        tickerSpeed: (settingsData.ticker_speed as any) || 'normal',
+        particleDensity: (settingsData.particle_density as OverlaySettings['particleDensity']) || 'medium',
+        tickerSpeed: (settingsData.ticker_speed as OverlaySettings['tickerSpeed']) || 'normal',
         disableAnimations: settingsData.socials?.disableAnimations || false,
         activeAnimationPack: settingsData.socials?.activeAnimationPack || 'float',
       },
@@ -276,6 +277,7 @@ export async function fetchProjectData(userId: string): Promise<DbProjectData | 
 }
 
 // Initialize project with defaults in database
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function initializeDefaultProject(userId: string, defaultState: any): Promise<DbProjectData> {
   const { data: project, error: projErr } = await supabase
     .from('projects')
@@ -347,6 +349,7 @@ export async function initializeDefaultProject(userId: string, defaultState: any
   });
 
   // Insert schedule
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const schToInsert = defaultState.schedule.map((s: any) => ({
     project_id: projectId,
     trigger_time: `${s.time}:00`,
@@ -439,7 +442,7 @@ export async function initializeDefaultProject(userId: string, defaultState: any
 
 export async function updateDbSettings(projectId: string, fields: OverlaySettings, currentScene: SceneType, theme: ThemeType) {
   try {
-    const payload: any = {
+    const payload: Record<string, unknown> = {
       streamer_name: fields.streamerName,
       stream_title: fields.streamTitle,
       active_game: fields.activeGame,
@@ -591,12 +594,11 @@ export async function deleteDbWidget(widgetId: string) {
 export async function updateDbWidgetPlacementBatch(updates: Array<{ id: string; fields: Partial<Widget> }>) {
   try {
     for (const update of updates) {
-      const placementFields: any = {};
-      const widgetFields: any = {};
-      const styleFields: any = {};
+      const placementFields: Record<string, unknown> = {};
+      const widgetFields: Record<string, unknown> = {};
+      const styleFields: Record<string, unknown> = {};
 
       const localKeys = ['x', 'y', 'w', 'h', 'rotation', 'opacity', 'scale', 'zIndex', 'visible', 'locked', 'parentId'];
-      const styleKeys = ['borderRadius', 'background', 'borderSize', 'borderStyle', 'borderColor', 'glowColor', 'glowBlur', 'shadowX', 'shadowY', 'shadowBlur', 'shadowColor', 'fontFamily', 'fontSize', 'fontWeight', 'fontColor', 'textAlign', 'padding'];
 
       Object.entries(update.fields).forEach(([key, val]) => {
         if (localKeys.includes(key)) {
@@ -611,6 +613,7 @@ export async function updateDbWidgetPlacementBatch(updates: Array<{ id: string; 
           widgetFields.animation = val;
         } else if (key === 'content') {
           widgetFields.content = val;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           widgetFields.settings = (val as any)?.settings;
         } else if (key === 'label') {
           widgetFields.name = val;
