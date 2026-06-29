@@ -5,7 +5,7 @@ import { Cpu, Heart } from 'lucide-react';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const ClockWidget: React.FC<{ settings?: Record<string, any> }> = ({ settings }) => {
   const [time, setTime] = useState(new Date());
-  const use24h = settings?.use24h ?? false;
+  const use24h = settings?.use24Hour ?? settings?.use24h ?? false;
   const showDate = settings?.showDate ?? true;
 
   useEffect(() => {

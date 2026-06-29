@@ -243,11 +243,17 @@ const ContentSection: React.FC<{ widget: DraftWidget; update: (u: Partial<DraftW
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateContent = (settings: Record<string, any>) => update({ content: { ...content, settings: { ...content.settings, ...settings } } });
 
-  if (widget.type === 'countdown-timer') {
+  const cType = widget.content?.type || widget.type;
+
+  // 1. Countdown Timer Widget
+  if (cType === 'countdown-timer' || cType === 'timer') {
     return (
-      <Section title="Content" icon={<Settings size={12} />} defaultOpen={false}>
+      <Section title="Timer Content" icon={<Settings size={12} />} defaultOpen>
         <Row label="Label">
-          <input className="input" value={content.settings.label ?? ''} onChange={e => updateContent({ label: e.target.value })} placeholder="STREAM STARTING SOON" />
+          <input className="input" value={content.settings.label ?? 'STARTING IN'} onChange={e => updateContent({ label: e.target.value })} placeholder="STARTING IN" />
+        </Row>
+        <Row label="Duration">
+          <NumInput value={content.settings.duration ?? 600} onChange={v => updateContent({ duration: Math.max(0, v) })} min={0} suffix="s" />
         </Row>
         <Row label="Show hrs">
           <label className="toggle">
@@ -259,34 +265,241 @@ const ContentSection: React.FC<{ widget: DraftWidget; update: (u: Partial<DraftW
     );
   }
 
-  if (widget.type === 'text' || widget.type === 'animated-text' || widget.type === 'typing-text') {
+  // 2. Text, Scroll text & Scrolling Ticker Widgets
+  if (['text', 'animated-text', 'typing-text', 'scrolling-text', 'ticker'].includes(cType)) {
+    const isScrolling = cType === 'scrolling-text' || cType === 'ticker';
     return (
-      <Section title="Content" icon={<Settings size={12} />} defaultOpen>
-        <Row label="Text">
+      <Section title="Text Content" icon={<Settings size={12} />} defaultOpen>
+        <Row label="Text Content">
           <textarea
             className="input"
             value={content.settings.text ?? ''}
             onChange={e => updateContent({ text: e.target.value })}
-            placeholder="Enter your text..."
+            placeholder="Enter text payload..."
             rows={3}
-            style={{ resize: 'vertical' }}
+            style={{ resize: 'vertical', fontSize: 11 }}
           />
+        </Row>
+        {isScrolling && (
+          <>
+            <Row label="Scroll Speed">
+              <select className="select" value={content.settings.scrollSpeed ?? 'medium'} onChange={e => updateContent({ scrollSpeed: e.target.value })}>
+                <option value="slow">Slow</option>
+                <option value="medium">Medium</option>
+                <option value="fast">Fast</option>
+              </select>
+            </Row>
+            <Row label="Direction">
+              <select className="select" value={content.settings.scrollDir ?? 'left'} onChange={e => updateContent({ scrollDir: e.target.value })}>
+                <option value="left">Left</option>
+                <option value="right">Right</option>
+              </select>
+            </Row>
+          </>
+        )}
+      </Section>
+    );
+  }
+
+  // 3. Goal Counter Widget ("counting features")
+  if (['goal-counter', 'dono-goal', 'sub-goal', 'follower-goal', 'goals'].includes(cType)) {
+    const current = content.settings.currentValue ?? 0;
+    const target = content.settings.targetValue ?? 100;
+    const label = content.settings.goalLabel ?? 'Follower Goal';
+
+    return (
+      <Section title="Goal Counter Settings" icon={<Settings size={12} />} defaultOpen>
+        <Row label="Goal Name">
+          <input className="input" value={label} onChange={e => updateContent({ goalLabel: e.target.value })} />
+        </Row>
+        <Row label="Target">
+          <NumInput value={target} onChange={v => updateContent({ targetValue: Math.max(1, v) })} min={1} />
+        </Row>
+        <Row label="Current">
+          <NumInput value={current} onChange={v => updateContent({ currentValue: v })} />
+        </Row>
+        {/* Counting increments features */}
+        <Row label="Counting">
+          <div style={{ display: 'flex', gap: 4, width: '100%' }}>
+            <button className="btn btn-secondary" style={{ flex: 1, fontSize: 9, height: 22, padding: 0 }} onClick={() => updateContent({ currentValue: current - 10 })}>-10</button>
+            <button className="btn btn-secondary" style={{ flex: 1, fontSize: 9, height: 22, padding: 0 }} onClick={() => updateContent({ currentValue: current - 1 })}>-1</button>
+            <button className="btn btn-secondary" style={{ flex: 1, fontSize: 9, height: 22, padding: 0 }} onClick={() => updateContent({ currentValue: current + 1 })}>+1</button>
+            <button className="btn btn-secondary" style={{ flex: 1, fontSize: 9, height: 22, padding: 0 }} onClick={() => updateContent({ currentValue: current + 10 })}>+10</button>
+          </div>
         </Row>
       </Section>
     );
   }
 
-  if (widget.type === 'chat-box') {
+  // 4. Music Player & Spotify ("Spotify API mock connection")
+  if (['spotify', 'music', 'now-playing-text'].includes(cType)) {
+    const isConnected = content.settings.connected ?? false;
+    const track = content.settings.trackTitle ?? 'Chill Synthwave Mix';
+    const artist = content.settings.artistName ?? 'VibeOverlay DJ';
+
     return (
-      <Section title="Content" icon={<Settings size={12} />} defaultOpen={false}>
-        <Row label="Max msgs">
+      <Section title="Spotify Settings" icon={<Settings size={12} />} defaultOpen>
+        <Row label="Status">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{
+              background: isConnected ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+              color: isConnected ? 'var(--color-success)' : '#ef4444',
+              fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 4, textTransform: 'uppercase'
+            }}>
+              {isConnected ? 'Connected 🟢' : 'Disconnected 🔴'}
+            </span>
+          </div>
+        </Row>
+        {!isConnected ? (
+          <button
+            className="btn btn-primary"
+            style={{ width: '100%', height: 26, fontSize: 9, marginTop: 4 }}
+            onClick={() => {
+              alert('Redirecting to Spotify login integration...\nAccount Rave_VT connected successfully!');
+              updateContent({ connected: true });
+            }}
+          >
+            Connect Spotify Account
+          </button>
+        ) : (
+          <>
+            <Row label="Track">
+              <input className="input" value={track} onChange={e => updateContent({ trackTitle: e.target.value })} />
+            </Row>
+            <Row label="Artist">
+              <input className="input" value={artist} onChange={e => updateContent({ artistName: e.target.value })} />
+            </Row>
+            <button
+              className="btn btn-secondary"
+              style={{ width: '100%', height: 22, fontSize: 9, marginTop: 4 }}
+              onClick={() => updateContent({ connected: false })}
+            >
+              Disconnect Spotify
+            </button>
+          </>
+        )}
+      </Section>
+    );
+  }
+
+  // 5. Chat Box Widget
+  if (cType === 'chat-box' || cType === 'chat') {
+    return (
+      <Section title="Chat Settings" icon={<Settings size={12} />} defaultOpen>
+        <Row label="Max Messages">
           <NumInput value={content.settings.maxMessages ?? 12} onChange={v => updateContent({ maxMessages: Math.max(1, v) })} min={1} max={50} />
         </Row>
-        <Row label="Show icons">
+        <Row label="Show Badges">
           <label className="toggle">
             <input type="checkbox" checked={content.settings.showIcons ?? true} onChange={e => updateContent({ showIcons: e.target.checked })} />
             <span className="toggle-track" />
           </label>
+        </Row>
+        <Row label="Style Theme">
+          <select className="select" value={content.settings.chatTheme ?? 'dark'} onChange={e => updateContent({ chatTheme: e.target.value })}>
+            <option value="dark">Standard Dark</option>
+            <option value="bubble">Clean Bubble</option>
+            <option value="transparent">Transparent Minimal</option>
+          </select>
+        </Row>
+      </Section>
+    );
+  }
+
+  // 6. Social Links Widget
+  if (cType === 'social-links' || cType === 'socials') {
+    return (
+      <Section title="Social Details" icon={<Settings size={12} />} defaultOpen>
+        <Row label="Twitch">
+          <input className="input" value={content.settings.twitch ?? 'Rave_VT'} onChange={e => updateContent({ twitch: e.target.value })} />
+        </Row>
+        <Row label="Twitter">
+          <input className="input" value={content.settings.twitter ?? '@RaveVT'} onChange={e => updateContent({ twitter: e.target.value })} />
+        </Row>
+        <Row label="Discord">
+          <input className="input" value={content.settings.discord ?? 'rave-vt-lounge'} onChange={e => updateContent({ discord: e.target.value })} />
+        </Row>
+      </Section>
+    );
+  }
+
+  // 7. Clock & Date Widget
+  if (cType === 'clock' || cType === 'date') {
+    return (
+      <Section title="Clock Settings" icon={<Settings size={12} />} defaultOpen>
+        <Row label="Show Sec">
+          <label className="toggle">
+            <input type="checkbox" checked={content.settings.showSeconds ?? true} onChange={e => updateContent({ showSeconds: e.target.checked })} />
+            <span className="toggle-track" />
+          </label>
+        </Row>
+        <Row label="24h Format">
+          <label className="toggle">
+            <input type="checkbox" checked={content.settings.use24Hour ?? false} onChange={e => updateContent({ use24Hour: e.target.checked })} />
+            <span className="toggle-track" />
+          </label>
+        </Row>
+      </Section>
+    );
+  }
+
+  // 8. VTuber Placeholder Widget
+  if (cType === 'vtuber') {
+    return (
+      <Section title="Avatar Settings" icon={<Settings size={12} />} defaultOpen>
+        <Row label="Sleeping">
+          <label className="toggle">
+            <input type="checkbox" checked={content.settings.sleeping ?? false} onChange={e => updateContent({ sleeping: e.target.checked })} />
+            <span className="toggle-track" />
+          </label>
+        </Row>
+        <Row label="Sensitivity">
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input type="range" className="slider" min={0} max={100} value={content.settings.micSensitivity ?? 50}
+              onChange={e => updateContent({ micSensitivity: parseInt(e.target.value) })} style={{ flex: 1 }} />
+            <span style={{ fontSize: 10, color: 'var(--color-text-muted)', width: 24 }}>{content.settings.micSensitivity ?? 50}%</span>
+          </div>
+        </Row>
+      </Section>
+    );
+  }
+
+  // 9. Camera / Webcam / Game Captures Frames
+  if (['camera-frame', 'avatar-frame', 'game-capture', 'game-frame'].includes(cType)) {
+    return (
+      <Section title="Frame Settings" icon={<Settings size={12} />} defaultOpen>
+        <Row label="Aspect Ratio">
+          <select className="select" value={content.settings.aspectRatio ?? '16:9'} onChange={e => updateContent({ aspectRatio: e.target.value })}>
+            <option value="16:9">Widescreen (16:9)</option>
+            <option value="4:3">Webcam standard (4:3)</option>
+            <option value="1:1">Profile Square (1:1)</option>
+            <option value="custom">Custom Freesize</option>
+          </select>
+        </Row>
+        <Row label="Glow Speed">
+          <select className="select" value={content.settings.glowSpeed ?? 'medium'} onChange={e => updateContent({ glowSpeed: e.target.value })}>
+            <option value="slow">Slow Pulse</option>
+            <option value="medium">Medium Glow</option>
+            <option value="fast">Rapid Sparkle</option>
+          </select>
+        </Row>
+      </Section>
+    );
+  }
+
+  // 10. General Media Widgets (Image, GIF, Video, Lottie, SVG)
+  if (['image', 'gif', 'video', 'lottie', 'svg', 'logo', 'media'].includes(cType)) {
+    return (
+      <Section title="Media Properties" icon={<Settings size={12} />} defaultOpen>
+        <Row label="URL/Source">
+          <input className="input" value={content.settings.url ?? ''} onChange={e => updateContent({ url: e.target.value })} placeholder="https://example.com/file.png" style={{ fontSize: 10 }} />
+        </Row>
+        <Row label="Object Fit">
+          <select className="select" value={content.settings.objectFit ?? 'cover'} onChange={e => updateContent({ objectFit: e.target.value })}>
+            <option value="cover">Cover (Fill & Crop)</option>
+            <option value="contain">Contain (Fit Box)</option>
+            <option value="fill">Stretch to Box</option>
+          </select>
         </Row>
       </Section>
     );

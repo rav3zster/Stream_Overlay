@@ -13,6 +13,21 @@ import { VtuberWidget } from './VtuberWidget';
 import { SocialWidget } from './SocialWidget';
 import { TickerWidget } from './TickerWidget';
 
+// New editor-native widgets (read from content.settings, no overlayStore dependency)
+import {
+  EditorCountdownTimer,
+  EditorClockWidget,
+  EditorTextWidget,
+  EditorScrollingText,
+  EditorMusicWidget,
+  EditorGoalWidget,
+  EditorChatWidget,
+  EditorSocialWidget,
+  EditorFrameWidget,
+  EditorMediaWidget,
+  EditorGenericWidget,
+} from './EditorWidgets';
+
 // Import new widgets
 import {
   ClockWidget,
@@ -280,19 +295,78 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
   const renderContent = () => {
     const cType = widget.content?.type || widget.type;
     const settings = widget.content?.settings || {};
-    
+
+    // ── New editor-native renderers (read from content.settings) ──────────
+    switch (cType) {
+      case 'countdown-timer':
+        return <EditorCountdownTimer settings={settings} />;
+      case 'clock':
+      case 'date':
+        return <EditorClockWidget settings={settings} />;
+      case 'text':
+      case 'animated-text':
+      case 'typing-text':
+      case 'now-playing-text':
+        return <EditorTextWidget settings={settings} />;
+      case 'scrolling-text':
+      case 'ticker':
+        return <EditorScrollingText settings={settings} />;
+      case 'spotify':
+      case 'music':
+        return <EditorMusicWidget settings={settings} />;
+      case 'goal-counter':
+      case 'dono-goal':
+      case 'sub-goal':
+      case 'follower-goal':
+      case 'goals':
+        return <EditorGoalWidget settings={settings} />;
+      case 'chat-box':
+      case 'chat':
+        return <EditorChatWidget settings={settings} />;
+      case 'social-links':
+      case 'socials':
+        return <EditorSocialWidget settings={settings} />;
+      case 'camera-frame':
+      case 'avatar-frame':
+        return <EditorFrameWidget settings={settings} label="Webcam" />;
+      case 'game-capture':
+      case 'game-frame':
+        return <EditorFrameWidget settings={settings} label="Game Capture" />;
+      case 'image':
+      case 'gif':
+      case 'video':
+      case 'lottie':
+      case 'svg':
+      case 'logo':
+      case 'media':
+        return <EditorMediaWidget settings={settings} />;
+      // Structural / decorative widgets
+      case 'background':
+      case 'glass-panel':
+      case 'container':
+      case 'header':
+      case 'footer':
+      case 'sidebar':
+      case 'divider':
+      case 'spacer':
+      case 'neon-card':
+      case 'glass-card':
+      case 'glow-effect':
+      case 'line':
+      case 'badge':
+      case 'shape':
+        return null; // These are pure CSS containers — their style does the rendering
+    }
+
+    // ── Legacy overlay renderers (fallback for old widget types) ─────────
     switch (cType) {
       case 'timer':
         return <TimerWidget size={settings.size} label={settings.customLabel} />;
-      case 'chat':
-        return <ChatWidget size={settings.size} maxMessages={settings.maxMessages} />;
-      case 'music':
-        return <MusicWidget compact={settings.compact} />;
       case 'alerts':
         return <AlertsWidget />;
       case 'sub-goal':
         return <SubscriberGoalWidget compact={settings.compact} />;
-      case 'dono-goal':
+      case 'donation-goal':
         return <DonationGoalWidget compact={settings.compact} />;
       case 'follower-goal':
         return <FollowerGoalWidget compact={settings.compact} />;
@@ -300,15 +374,6 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
         return <EventListWidget />;
       case 'vtuber':
         return <VtuberWidget size={settings.size} sleeping={settings.sleeping} />;
-      case 'socials':
-        return <SocialWidget />;
-      case 'ticker':
-        return <TickerWidget />;
-      
-      // New contents
-      case 'clock':
-      case 'date':
-        return <ClockWidget settings={settings} />;
       case 'weather':
         return <WeatherWidget settings={settings} />;
       case 'stream-uptime':
@@ -327,17 +392,13 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
         return <PetWidget />;
       case 'polls':
         return <PollsWidget />;
-      case 'media':
-        return <MediaWidget settings={settings} />;
-      case 'game-frame':
-        return <GameFrameWidget settings={settings} />;
-      
+      case 'latest-follower':
+      case 'latest-subscriber':
+      case 'latest-donation':
+      case 'viewer-count':
+        return <EditorGenericWidget type={cType} />;
       default:
-        return (
-          <div className="flex items-center justify-center h-full text-slate-500 font-display uppercase tracking-widest text-[0.8vw]">
-            {cType} Widget
-          </div>
-        );
+        return <EditorGenericWidget type={cType} />;
     }
   };
 
