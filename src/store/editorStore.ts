@@ -17,7 +17,9 @@ export type WidgetType =
   | 'event-list' | 'spotify' | 'alerts' | 'poll' | 'goals' | 'schedule' | 'weather'
   // Decorative
   | 'shape' | 'neon-card' | 'glass-card' | 'glow-effect' | 'particles' | 'line' | 'badge'
-  | 'corner-decoration' | 'light-rays';
+  | 'corner-decoration' | 'light-rays'
+  // Backward compatibility types
+  | 'timer' | 'chat' | 'music' | 'dono-goal' | 'sub-goal' | 'follower-goal' | 'game-frame' | 'socials' | 'ticker';
 
 export type AnimationType = 'none' | 'fade' | 'scale' | 'slide-up' | 'slide-left' | 'bounce' | 'glow' | 'pulse' | 'float' | 'shake' | 'spin';
 
@@ -82,8 +84,12 @@ export interface DraftWidget {
   // Position & size in px on 1920×1080 canvas
   x: number;
   y: number;
-  width: number;
-  height: number;
+  width?: number;
+  height?: number;
+  // Duplicate coordinates w/h to satisfy old layout types
+  w?: number;
+  h?: number;
+  parentId?: string;
   rotation: number;
   opacity: number;
   scale: number;
@@ -99,6 +105,7 @@ export interface DraftWidget {
     settings: Record<string, any>;
   };
 }
+
 
 export interface Scene {
   id: string;
@@ -266,13 +273,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const { editingSceneId } = get();
     if (!editingSceneId) return;
     get().pushHistory();
+    const newWidget = { ...widget };
+    if (newWidget.width !== undefined && newWidget.w === undefined) newWidget.w = newWidget.width;
+    if (newWidget.w !== undefined && newWidget.width === undefined) newWidget.width = newWidget.w;
+    if (newWidget.height !== undefined && newWidget.h === undefined) newWidget.h = newWidget.height;
+    if (newWidget.h !== undefined && newWidget.height === undefined) newWidget.height = newWidget.h;
+
     set(s => ({
       scenes: s.scenes.map(sc =>
         sc.id === editingSceneId
-          ? { ...sc, widgets: [...sc.widgets, widget] }
+          ? { ...sc, widgets: [...sc.widgets, newWidget] }
           : sc
       ),
-      selectedIds: [widget.id],
+      selectedIds: [newWidget.id],
     }));
   },
 
@@ -312,11 +325,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         sc.id === editingSceneId
           ? {
               ...sc,
-              widgets: sc.widgets.map(w =>
-                w.id === widgetId
-                  ? { ...w, ...updates, style: updates.style ? { ...w.style, ...updates.style } : w.style }
-                  : w
-              ),
+              widgets: sc.widgets.map(w => {
+                if (w.id !== widgetId) return w;
+                const newW = { ...w, ...updates };
+                if (updates.width !== undefined) newW.w = updates.width;
+                if (updates.w !== undefined) newW.width = updates.w;
+                if (updates.height !== undefined) newW.h = updates.height;
+                if (updates.h !== undefined) newW.height = updates.h;
+                if (updates.style) newW.style = { ...w.style, ...updates.style };
+                return newW;
+              }),
             }
           : sc
       ),
@@ -334,7 +352,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
               widgets: sc.widgets.map(w => {
                 const u = updates[w.id];
                 if (!u) return w;
-                return { ...w, ...u, style: u.style ? { ...w.style, ...u.style } : w.style };
+                const newW = { ...w, ...u };
+                if (u.width !== undefined) newW.w = u.width;
+                if (u.w !== undefined) newW.width = u.w;
+                if (u.height !== undefined) newW.h = u.height;
+                if (u.h !== undefined) newW.height = u.h;
+                if (u.style) newW.style = { ...w.style, ...u.style };
+                return newW;
               }),
             }
           : sc

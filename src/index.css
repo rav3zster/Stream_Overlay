@@ -247,9 +247,18 @@ html, body, #root {
     0 0 0 1px rgba(168,85,247,0.3),
     0 32px 80px rgba(0,0,0,0.8),
     0 0 80px rgba(168,85,247,0.05);
-  transform-origin: center center;
+  transform-origin: top left;
   overflow: hidden;
 }
+
+.rubber-band {
+  position: absolute;
+  border: 1px solid var(--color-accent);
+  background: rgba(168, 85, 247, 0.08);
+  pointer-events: none;
+  z-index: 9999;
+}
+
 
 /* ── Canvas Grid ── */
 .canvas-grid {
@@ -1144,4 +1153,15 @@ html, body, #root {
   pointer-events: none;
 }
 
+/* ── Normalize WidgetRenderer when nested inside Editor Canvas ── */
+.canvas-widget > div[id^="w-"] {
+  left: 0 !important;
+  top: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
+  transform: none !important;
+}
+
 /* ── Tailwind compat layer (for existing widgets that use Tailwind classes) ── */
+

@@ -175,10 +175,10 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
 
   const containerStyle: React.CSSProperties = {
     position: 'absolute',
-    left: `${widget.x}%`,
-    top: `${widget.y}%`,
-    width: `${widget.w}%`,
-    height: `${widget.h}%`,
+    left: `${widget.x}px`,
+    top: `${widget.y}px`,
+    width: `${widget.width ?? widget.w ?? 100}px`,
+    height: `${widget.height ?? widget.h ?? 100}px`,
     transform: `rotate(${widget.rotation || 0}deg) scale(${widget.scale || 1.0})`,
     opacity: isEditor && !widget.visible ? 0.35 : (widget.opacity ?? 100) / 100,
     zIndex: widget.zIndex || 1,
@@ -195,7 +195,7 @@ export const WidgetRenderer: React.FC<WidgetRendererProps> = ({ widget, isEditor
     
     // Typography
     fontFamily: widget.style?.fontFamily || 'inherit',
-    fontSize: widget.style?.fontSize ? `${widget.style.fontSize}vw` : 'inherit',
+    fontSize: widget.style?.fontSize ? `${widget.style.fontSize}px` : 'inherit',
     fontWeight: widget.style?.fontWeight || 'normal',
     color: widget.style?.fontColor || 'inherit',
     textAlign: widget.style?.textAlign || 'left',

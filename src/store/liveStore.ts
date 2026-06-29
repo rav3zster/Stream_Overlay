@@ -11,7 +11,9 @@ export type ThemeType =
   | 'halloween' | 'christmas' | 'snow-season'
   | 'mclaren' | 'porsche-gulf' | 'ferrari' | 'mercedes-amg' | 'red-bull'
   | 'pure-transparent' | 'pure-black' | 'pure-white'
-  | 'pastel-planets' | 'cyber-hud' | 'esports-blue';
+  | 'pastel-planets' | 'cyber-hud' | 'esports-blue'
+  // Legacy themes matching themes.ts
+  | 'neon-tokyo' | 'vaporwave' | 'galaxy-violet' | 'anime-bedroom' | 'minimal-purple' | 'luxury' | 'snow' | 'transparent' | 'blank-dark' | 'blank-light';
 
 export interface LiveTimer {
   seconds: number;

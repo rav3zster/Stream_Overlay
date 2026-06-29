@@ -115,6 +115,8 @@ export const AddWidgetPanel: React.FC<AddWidgetPanelProps> = ({ onClose, initial
       y: Math.round((CANVAS_H - def.defaultHeight) / 2),
       width: def.defaultWidth,
       height: def.defaultHeight,
+      w: def.defaultWidth,
+      h: def.defaultHeight,
       rotation: 0,
       opacity: 100,
       scale: 1,

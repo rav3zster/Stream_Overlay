@@ -1,50 +1,22 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Moveable from 'react-moveable';
 import { useEditorStore, type DraftWidget } from '../../store/editorStore';
+import { WidgetRenderer } from '../../widgets/WidgetRenderer';
 
 // ─── Canvas dimensions ────────────────────────────────────────────────────────
 export const CANVAS_W = 1920;
 export const CANVAS_H = 1080;
 
-// ─── Widget placeholder renderer (uses existing WidgetRenderer for real content) ──
-const WidgetPlaceholder: React.FC<{ widget: DraftWidget }> = ({ widget }) => {
-  const icons: Record<string, string> = {
-    'countdown-timer': '⏱', 'chat-box': '💬', 'spotify': '🎵', 'alerts': '🔔',
-    'goals': '🎯', 'event-list': '📋', 'image': '🖼', 'video': '📹', 'text': '✏️',
-    'animated-text': '✨', 'scrolling-text': '📜', 'vtuber': '🎭', 'camera-frame': '📷',
-    'shape': '⬛', 'glass-card': '🪟', 'neon-card': '💠', 'badge': '🏅',
-    'viewer-count': '👁', 'latest-follower': '❤️', 'latest-subscriber': '⭐',
-    'follower-feed': '📥', 'subscriber-feed': '🌟', 'donation-feed': '💰',
-    'poll': '📊', 'schedule': '📅', 'weather': '🌤', 'clock': '🕐',
-    'social-links': '🔗', 'logo': '⚡', 'header': '▬', 'footer': '▬',
-    'container': '□', 'background': '🎨', 'glass-panel': '🪟', 'divider': '─',
-    'particles': '✦', 'glow-effect': '💫', 'line': '─', 'lottie': '🌀',
-    'gif': '🎞', 'svg': '▲', '3d-model': '💎', 'game-capture': '🎮',
-  };
-  const icon = icons[widget.type] ?? '⬛';
-  const bg = widget.style.background || 'rgba(168,85,247,0.15)';
-  const border = `${widget.style.borderSize ?? 1}px ${widget.style.borderStyle ?? 'solid'} ${widget.style.borderColor ?? 'rgba(168,85,247,0.5)'}`;
-  const br = widget.style.borderRadius ?? 8;
-  const glow = widget.style.glowBlur && widget.style.glowColor
-    ? `0 0 ${widget.style.glowBlur}px ${widget.style.glowColor}`
-    : undefined;
-
-  return (
-    <div style={{
-      width: '100%', height: '100%', background: bg, border, borderRadius: br,
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      gap: 4, boxShadow: glow, overflow: 'hidden',
-      opacity: widget.opacity / 100,
-    }}>
-      <span style={{ fontSize: Math.min(widget.width, widget.height) * 0.18, lineHeight: 1 }}>{icon}</span>
-      <span style={{
-        fontSize: Math.max(9, Math.min(14, widget.height * 0.1)),
-        fontWeight: 600, color: 'rgba(255,255,255,0.7)',
-        fontFamily: 'Inter, sans-serif', textAlign: 'center', padding: '0 4px',
-        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        maxWidth: '90%',
-      }}>{widget.label}</span>
-    </div>
+// Helper to check if two bounding rectangles overlap
+const overlaps = (
+  r1: { x: number; y: number; w: number; h: number },
+  r2: { x: number; y: number; w: number; h: number }
+) => {
+  return !(
+    r1.x + r1.w < r2.x ||
+    r2.x + r2.w < r1.x ||
+    r1.y + r1.h < r2.y ||
+    r2.y + r2.h < r1.y
   );
 };
 
@@ -75,8 +47,10 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
         id={`widget-${widget.id}`}
         className={`canvas-widget${isSelected ? ' selected' : ''}${isHovered && !isSelected ? ' hovered' : ''}${widget.locked ? ' locked' : ''}`}
         style={{
-          left: widget.x, top: widget.y,
-          width: widget.width, height: widget.height,
+          left: widget.x,
+          top: widget.y,
+          width: widget.width ?? widget.w ?? 100,
+          height: widget.height ?? widget.h ?? 100,
           transform: `rotate(${widget.rotation}deg) scale(${widget.scale})`,
           zIndex: widget.zIndex,
           transformOrigin: 'center center',
@@ -94,7 +68,7 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           onSelect(widget.id, false);
         }}
       >
-        <WidgetPlaceholder widget={widget} />
+        <WidgetRenderer widget={widget} isEditor={true} />
       </div>
 
       {isSelected && !widget.locked && (
@@ -106,32 +80,42 @@ const CanvasWidget: React.FC<CanvasWidgetProps> = ({
           rotatable={true}
           scalable={false}
           snappable={true}
-          throttleDrag={0}
-          throttleResize={0}
-          throttleRotate={0}
           keepRatio={false}
           renderDirections={['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se']}
           rotationPosition="top"
           zoom={1 / zoom}
 
+          // Initializing start coordinates prevents offset jumps during dragging
+          onDragStart={({ set }) => {
+            set([widget.x, widget.y]);
+          }}
           onDrag={({ beforeTranslate }) => {
             onUpdate(widget.id, {
-              x: Math.round(widget.x + beforeTranslate[0]),
-              y: Math.round(widget.y + beforeTranslate[1]),
+              x: Math.round(beforeTranslate[0]),
+              y: Math.round(beforeTranslate[1]),
             });
           }}
           onDragEnd={onDragEnd}
 
+          // Initializing size & start coordinates prevents jumps during resizing
+          onResizeStart={({ setOrigin, dragStart }) => {
+            setOrigin(['%', '%']);
+            dragStart && dragStart.set([widget.x, widget.y]);
+          }}
           onResize={({ width, height, drag }) => {
             onUpdate(widget.id, {
-              width: Math.max(20, Math.round(width)),
-              height: Math.max(20, Math.round(height)),
-              x: Math.round(widget.x + drag.beforeTranslate[0]),
-              y: Math.round(widget.y + drag.beforeTranslate[1]),
+              width: Math.max(10, Math.round(width)),
+              height: Math.max(10, Math.round(height)),
+              x: Math.round(drag.beforeTranslate[0]),
+              y: Math.round(drag.beforeTranslate[1]),
             });
           }}
           onResizeEnd={onDragEnd}
 
+          // Initializing rotation prevents jumping to zero angle
+          onRotateStart={({ set }) => {
+            set(widget.rotation);
+          }}
           onRotate={({ beforeRotation }) => {
             onUpdate(widget.id, { rotation: Math.round(beforeRotation) });
           }}
@@ -149,19 +133,41 @@ interface Guide { pos: number; orientation: 'horizontal' | 'vertical'; }
 export const EditorCanvas: React.FC = () => {
   const {
     zoom, pan, snapEnabled, showGrid, selectedIds, hoveredId,
-    getDraftWidgets, selectWidget, deselectAll, setHovered,
+    getDraftWidgets, selectWidget, selectWidgets, deselectAll, setHovered,
     updateWidget, pushHistory, setZoom, setPan,
     setIsDragging, setIsResizing,
   } = useEditorStore();
 
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  
   const [guides, setGuides] = useState<Guide[]>([]);
   const isPanningRef = useRef(false);
   const panStartRef = useRef({ x: 0, y: 0, px: 0, py: 0 });
 
+  // Rubber-band selection state
+  const [selectionStart, setSelectionStart] = useState<{ x: number; y: number } | null>(null);
+  const [selectionEnd, setSelectionEnd] = useState<{ x: number; y: number } | null>(null);
+
+  // Developer Debug Mode state
+  const [debugMode, setDebugMode] = useState(false);
+  const [mousePos, setMousePos] = useState({ sx: 0, sy: 0, cx: 0, cy: 0 });
+
   const widgets = getDraftWidgets();
   const stageW = CANVAS_W * zoom;
   const stageH = CANVAS_H * zoom;
+
+  // Toggle debug overlay with Ctrl+Shift+D
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.code === 'KeyD') {
+        e.preventDefault();
+        setDebugMode(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // ── Zoom with Ctrl+Wheel ──
   const handleWheel = useCallback((e: WheelEvent) => {
@@ -198,29 +204,74 @@ export const EditorCanvas: React.FC = () => {
   }, []);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    // Space+drag panning
     if (e.button === 1 || (e.button === 0 && e.altKey)) {
+      // Panning mode
       isPanningRef.current = true;
       panStartRef.current = { x: e.clientX, y: e.clientY, px: pan.x, py: pan.y };
       if (wrapperRef.current) wrapperRef.current.style.cursor = 'grabbing';
       return;
     }
-    // Click empty → deselect
-    deselectAll();
-  }, [pan, deselectAll]);
+
+    if (e.button === 0) {
+      // Start rubber-band selection
+      const stage = stageRef.current;
+      if (!stage) return;
+      const rect = stage.getBoundingClientRect();
+      const canvasX = (e.clientX - rect.left) / zoom;
+      const canvasY = (e.clientY - rect.top) / zoom;
+      setSelectionStart({ x: canvasX, y: canvasY });
+      setSelectionEnd({ x: canvasX, y: canvasY });
+      deselectAll();
+    }
+  }, [pan, zoom, deselectAll]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const rect = stage.getBoundingClientRect();
+    const canvasX = Math.round((e.clientX - rect.left) / zoom);
+    const canvasY = Math.round((e.clientY - rect.top) / zoom);
+
+    // Track mouse coordinates for Developer debug overlay
+    setMousePos({ sx: e.clientX, sy: e.clientY, cx: canvasX, cy: canvasY });
+
     if (isPanningRef.current) {
       const dx = e.clientX - panStartRef.current.x;
       const dy = e.clientY - panStartRef.current.y;
       setPan({ x: panStartRef.current.px + dx, y: panStartRef.current.py + dy });
+      return;
     }
-  }, [setPan]);
 
-  const handleMouseUp = useCallback(() => {
+    if (selectionStart) {
+      setSelectionEnd({ x: canvasX, y: canvasY });
+    }
+  }, [selectionStart, setPan, zoom]);
+
+  const handleMouseUp = useCallback((e: React.MouseEvent) => {
     isPanningRef.current = false;
     if (wrapperRef.current) wrapperRef.current.style.cursor = 'default';
-  }, []);
+
+    if (selectionStart && selectionEnd) {
+      const x = Math.min(selectionStart.x, selectionEnd.x);
+      const y = Math.min(selectionStart.y, selectionEnd.y);
+      const w = Math.abs(selectionStart.x - selectionEnd.x);
+      const h = Math.abs(selectionStart.y - selectionEnd.y);
+
+      // Select widgets inside the selection rectangle if dragging was significant
+      if (w > 4 || h > 4) {
+        const intersected = widgets.filter(widget => {
+          return overlaps(
+            { x: widget.x, y: widget.y, w: widget.width ?? widget.w ?? 100, h: widget.height ?? widget.h ?? 100 },
+            { x, y, w, h }
+          );
+        });
+        selectWidgets(intersected.map(w => w.id));
+      }
+    }
+
+    setSelectionStart(null);
+    setSelectionEnd(null);
+  }, [selectionStart, selectionEnd, widgets, selectWidgets]);
 
   // ── Alignment guides during drag ──
   const computeGuides = useCallback((draggingId: string, dx: number, dy: number) => {
@@ -230,16 +281,19 @@ export const EditorCanvas: React.FC = () => {
     const others = widgets.filter(w => w.id !== draggingId);
     const newGuides: Guide[] = [];
 
-    const dCx = dragging.x + dx + dragging.width / 2;
-    const dCy = dragging.y + dy + dragging.height / 2;
+    const dCx = dragging.x + dx + (dragging.width ?? dragging.w ?? 100) / 2;
+    const dCy = dragging.y + dy + (dragging.height ?? dragging.h ?? 100) / 2;
 
     others.forEach(o => {
-      const oCx = o.x + o.width / 2;
-      const oCy = o.y + o.height / 2;
-      if (Math.abs(dCx - oCx) < 6) newGuides.push({ pos: oCx, orientation: 'vertical' });
-      if (Math.abs(dCy - oCy) < 6) newGuides.push({ pos: oCy, orientation: 'horizontal' });
-      if (Math.abs(dragging.x + dx - o.x) < 6) newGuides.push({ pos: o.x, orientation: 'vertical' });
-      if (Math.abs(dragging.y + dy - o.y) < 6) newGuides.push({ pos: o.y, orientation: 'horizontal' });
+      const oW = o.width ?? o.w ?? 100;
+      const oH = o.height ?? o.h ?? 100;
+      const oCx = o.x + oW / 2;
+      const oCy = o.y + oH / 2;
+
+      if (Math.abs(dCx - oCx) < 8) newGuides.push({ pos: oCx, orientation: 'vertical' });
+      if (Math.abs(dCy - oCy) < 8) newGuides.push({ pos: oCy, orientation: 'horizontal' });
+      if (Math.abs(dragging.x + dx - o.x) < 8) newGuides.push({ pos: o.x, orientation: 'vertical' });
+      if (Math.abs(dragging.y + dy - o.y) < 8) newGuides.push({ pos: o.y, orientation: 'horizontal' });
     });
 
     setGuides(newGuides);
@@ -264,6 +318,16 @@ export const EditorCanvas: React.FC = () => {
   // Sort widgets by zIndex for rendering
   const sortedWidgets = [...widgets].sort((a, b) => a.zIndex - b.zIndex);
 
+  // Render rubber-band rectangle style
+  const rubberBandStyle = selectionStart && selectionEnd ? {
+    left: Math.min(selectionStart.x, selectionEnd.x),
+    top: Math.min(selectionStart.y, selectionEnd.y),
+    width: Math.abs(selectionStart.x - selectionEnd.x),
+    height: Math.abs(selectionStart.y - selectionEnd.y),
+  } : null;
+
+  const selectedWidget = widgets.find(w => selectedIds.includes(w.id));
+
   return (
     <div
       ref={wrapperRef}
@@ -275,11 +339,17 @@ export const EditorCanvas: React.FC = () => {
     >
       {/* 1920×1080 Stage */}
       <div
+        ref={stageRef}
         className="canvas-stage"
         style={{ width: stageW, height: stageH, transform: `scale(${zoom})`, transformOrigin: 'top left' }}
       >
         {/* Grid */}
         {showGrid && <div className="canvas-grid" style={{ backgroundSize: `${96}px ${54}px` }} />}
+
+        {/* Rubber-band Selection Box */}
+        {rubberBandStyle && (
+          <div className="rubber-band" style={rubberBandStyle} />
+        )}
 
         {/* Alignment guides */}
         {guides.map((g, i) => (
@@ -312,9 +382,37 @@ export const EditorCanvas: React.FC = () => {
         background: 'rgba(14,11,30,0.9)', border: '1px solid rgba(168,85,247,0.2)',
         borderRadius: 99, padding: '4px 12px', fontSize: 11, fontWeight: 600,
         color: 'rgba(196,181,253,0.8)', pointerEvents: 'none', fontFamily: 'JetBrains Mono, monospace',
+        zIndex: 50,
       }}>
         {Math.round(zoom * 100)}%
       </div>
+
+      {/* Developer Debug Overlay */}
+      {debugMode && (
+        <div style={{
+          position: 'fixed', bottom: 16, left: 16,
+          background: 'rgba(14,8,26,0.95)', border: '1px solid var(--color-danger)',
+          borderRadius: 8, padding: 12, fontSize: 10, fontFamily: 'JetBrains Mono, monospace',
+          color: 'var(--color-text-2)', pointerEvents: 'none', zIndex: 100,
+          display: 'flex', flexDirection: 'column', gap: 4, width: 260,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.5), 0 0 10px rgba(239,68,68,0.2)',
+        }}>
+          <div style={{ color: 'var(--color-danger)', fontWeight: 700, fontSize: 11, marginBottom: 2 }}>🐞 DEV DEBUG MODE</div>
+          <div>Mouse Screen: ({mousePos.sx}, {mousePos.sy})</div>
+          <div>Mouse Canvas: ({mousePos.cx}, {mousePos.cy})</div>
+          <div>Canvas Pan: ({pan.x}px, {pan.y}px)</div>
+          <div>Canvas Zoom: {Math.round(zoom * 100)}%</div>
+          <div>Selected ID: {selectedWidget ? selectedWidget.id : 'none'}</div>
+          {selectedWidget && (
+            <>
+              <div style={{ color: 'var(--color-cyan)', marginTop: 4 }}>[Widget Bounding Box]</div>
+              <div>X: {selectedWidget.x}px, Y: {selectedWidget.y}px</div>
+              <div>W: {selectedWidget.width ?? selectedWidget.w}px, H: {selectedWidget.height ?? selectedWidget.h}px</div>
+              <div>Angle: {selectedWidget.rotation}°</div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 };

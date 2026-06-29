@@ -164,26 +164,70 @@ export const useSessionStore = create<SessionState>((set, get) => ({
           const widgets: DraftWidget[] = scPlacements.map((p: any) => {
             const w = p.widgets;
             const ws = w?.widget_styles || {};
+
+            // Coordinate normalization: If width and height are small (<= 100),
+            // it means they are legacy percentage values, so we scale them to pixels.
+            let xVal = p.x;
+            let yVal = p.y;
+            let widthVal = p.width;
+            let heightVal = p.height;
+            if (p.width <= 100 && p.height <= 100) {
+              xVal = (p.x / 100) * 1920;
+              yVal = (p.y / 100) * 1080;
+              widthVal = (p.width / 100) * 1920;
+              heightVal = (p.height / 100) * 1080;
+            }
+
+            xVal = Math.round(xVal);
+            yVal = Math.round(yVal);
+            widthVal = Math.round(widthVal);
+            heightVal = Math.round(heightVal);
+
             return {
               id: w?.id ?? p.id,
               type: w?.widget_type ?? 'text',
               label: w?.name ?? 'Widget',
-              x: p.x, y: p.y, width: p.width, height: p.height,
-              rotation: p.rotation ?? 0, opacity: p.opacity ?? 100,
-              scale: p.scale ?? 1, zIndex: p.z_index ?? 1,
-              visible: p.visible ?? true, locked: p.locked ?? false,
+              x: xVal,
+              y: yVal,
+              width: widthVal,
+              height: heightVal,
+              w: widthVal,
+              h: heightVal,
+              rotation: p.rotation ?? 0,
+              opacity: p.opacity ?? 100,
+              scale: p.scale ?? 1,
+              zIndex: p.z_index ?? 1,
+              visible: p.visible ?? true,
+              locked: p.locked ?? false,
               style: {
-                borderRadius: ws.border_radius, background: ws.background,
-                borderSize: ws.border_size, borderStyle: ws.border_style,
-                borderColor: ws.border_color, glowColor: ws.glow_color,
-                glowBlur: ws.glow_blur, shadowX: ws.shadow_x, shadowY: ws.shadow_y,
-                shadowBlur: ws.shadow_blur, shadowColor: ws.shadow_color,
-                fontFamily: ws.font_family, fontSize: ws.font_size,
-                fontWeight: ws.font_weight, fontColor: ws.font_color,
-                textAlign: ws.text_align ?? 'center', padding: ws.padding,
+                borderRadius: ws.border_radius,
+                background: ws.background,
+                borderSize: ws.border_size,
+                borderStyle: ws.border_style,
+                borderColor: ws.border_color,
+                glowColor: ws.glow_color,
+                glowBlur: ws.glow_blur,
+                shadowX: ws.shadow_x,
+                shadowY: ws.shadow_y,
+                shadowBlur: ws.shadow_blur,
+                shadowColor: ws.shadow_color,
+                fontFamily: ws.font_family,
+                fontSize: ws.font_size,
+                fontWeight: ws.font_weight,
+                fontColor: ws.font_color,
+                textAlign: ws.text_align ?? 'center',
+                padding: ws.padding,
               },
-              animation: { type: w?.animation?.type ?? 'none', duration: w?.animation?.duration ?? 1, delay: w?.animation?.delay ?? 0, loop: w?.animation?.loop ?? false },
-              content: { type: w?.content?.type ?? w?.widget_type, settings: w?.content?.settings ?? {} },
+              animation: {
+                type: w?.animation?.type ?? 'none',
+                duration: w?.animation?.duration ?? 1,
+                delay: w?.animation?.delay ?? 0,
+                loop: w?.animation?.loop ?? false,
+              },
+              content: {
+                type: w?.content?.type ?? w?.widget_type,
+                settings: w?.content?.settings ?? {},
+              },
             };
           });
           return { id: sc.id, name: sc.name, label: sc.name, widgets };
@@ -198,11 +242,17 @@ export const useSessionStore = create<SessionState>((set, get) => ({
             .select()
             .single();
           if (inserted) {
+            // Seeding default scene widgets (copy pixels to w/h)
+            const seedWidgets = (DEFAULT_SCENE_WIDGETS[s.name] ?? []).map(sw => ({
+              ...sw,
+              w: sw.width,
+              h: sw.height
+            }));
             insertedScenes.push({
               id: inserted.id,
               name: s.name,
               label: s.label,
-              widgets: DEFAULT_SCENE_WIDGETS[s.name] ?? [],
+              widgets: seedWidgets,
             });
           }
         }
@@ -274,10 +324,17 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       console.warn('Session init failed, using local defaults:', err.message);
 
       // Offline fallback — build scenes locally
-      const fallbackScenes: Scene[] = DEFAULT_SCENES.map(s => ({
-        ...s,
-        widgets: DEFAULT_SCENE_WIDGETS[s.name] ?? [],
-      }));
+      const fallbackScenes: Scene[] = DEFAULT_SCENES.map(s => {
+        const seedWidgets = (DEFAULT_SCENE_WIDGETS[s.name] ?? []).map(sw => ({
+          ...sw,
+          w: sw.width,
+          h: sw.height
+        }));
+        return {
+          ...s,
+          widgets: seedWidgets,
+        };
+      });
       useEditorStore.getState().setScenes(fallbackScenes);
       useEditorStore.getState().setEditingScene(fallbackScenes[0].id);
       const historyInit: Record<string, DraftWidget[][]> = {};
@@ -297,9 +354,101 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     if (!project) return;
     const scene = useEditorStore.getState().scenes.find(s => s.id === sceneId);
     if (!scene) return;
-    // Batch upsert widgets — simplified: update existing placements
-    // Full implementation would diff and upsert
-    console.log('[SessionStore] saveScene:', sceneId, scene.widgets.length, 'widgets');
+
+    try {
+      // 1. Get current placements in this scene from DB
+      const { data: dbPlacements } = await supabase
+        .from('scene_widgets')
+        .select('widget_id')
+        .eq('scene_id', sceneId);
+
+      const dbWidgetIds = dbPlacements?.map(p => p.widget_id) || [];
+      const currentWidgetIds = scene.widgets.map(w => w.id);
+
+      // 2. Identify widgets to delete (present in DB but not in current draft)
+      const toDelete = dbWidgetIds.filter(id => !currentWidgetIds.includes(id));
+      if (toDelete.length > 0) {
+        await supabase.from('widgets').delete().in('id', toDelete);
+        // Cascade deletes scene_widgets placements automatically
+      }
+
+      // 3. Upsert current widgets and styles
+      for (const w of scene.widgets) {
+        // Find or create style
+        const { data: widgetData } = await supabase
+          .from('widgets')
+          .select('style_id')
+          .eq('id', w.id)
+          .maybeSingle();
+
+        let styleId = widgetData?.style_id;
+
+        const stylePayload = {
+          project_id: project.id,
+          name: `${w.label} Style`,
+          border_radius: w.style?.borderRadius ?? 8,
+          background: w.style?.background || 'rgba(14, 8, 26, 0.8)',
+          border_size: w.style?.borderSize ?? 1,
+          border_style: w.style?.borderStyle || 'solid',
+          border_color: w.style?.borderColor || '#A855F7',
+          glow_color: w.style?.glowColor || null,
+          glow_blur: w.style?.glowBlur ?? 0,
+          shadow_x: w.style?.shadowX ?? 0,
+          shadow_y: w.style?.shadowY ?? 4,
+          shadow_blur: w.style?.shadowBlur ?? 10,
+          shadow_color: w.style?.shadowColor || 'rgba(0,0,0,0.5)',
+          font_family: w.style?.fontFamily || null,
+          font_size: w.style?.fontSize || null,
+          font_weight: w.style?.fontWeight || null,
+          font_color: w.style?.fontColor || null,
+          text_align: w.style?.textAlign || 'center',
+          padding: w.style?.padding ?? 4
+        };
+
+        if (styleId) {
+          // Update style
+          await supabase.from('widget_styles').update(stylePayload).eq('id', styleId);
+        } else {
+          // Create style
+          const { data: newStyle } = await supabase
+            .from('widget_styles')
+            .insert(stylePayload)
+            .select()
+            .single();
+          styleId = newStyle?.id || null;
+        }
+
+        // Upsert widget
+        await supabase.from('widgets').upsert({
+          id: w.id,
+          project_id: project.id,
+          style_id: styleId,
+          widget_type: w.type,
+          name: w.label,
+          settings: w.content?.settings || {},
+          content: w.content || {},
+          animation: w.animation || {}
+        });
+
+        // Upsert placement
+        await supabase.from('scene_widgets').upsert({
+          scene_id: sceneId,
+          widget_id: w.id,
+          x: w.x,
+          y: w.y,
+          width: w.width,
+          height: w.height,
+          rotation: w.rotation,
+          opacity: w.opacity,
+          scale: w.scale,
+          z_index: w.zIndex,
+          visible: w.visible,
+          locked: w.locked
+        });
+      }
+    } catch (err) {
+      console.error('Failed to save scene:', err);
+    }
   },
 
   createScene: async (name, label) => {

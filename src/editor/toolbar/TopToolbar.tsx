@@ -38,7 +38,7 @@ export const TopToolbar: React.FC<TopToolbarProps> = ({ onOpenAddWidget, onOpenL
   return (
     <div className="top-toolbar">
       {/* Scene name */}
-      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-2)', minWidth: 120, truncate: 'true', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-2)', minWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
         {scene?.label ?? 'No Scene'}
       </span>
 
